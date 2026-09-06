@@ -1,0 +1,12 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Allow public read for catalog assets, product images, branding logos, and documents
+      allow read: if true;
+      
+      // Allow uploads with size validation (up to 20MB per asset)
+      allow write: if request.resource.size < 20 * 1024 * 1024;
+    }
+  }
+}
