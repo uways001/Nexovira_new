@@ -450,14 +450,19 @@ app.post('/api/v1/paystack/initialize', async (req, res) => {
       });
     }
 
+    const pubKey = getPaystackPublicKey();
     res.json({
       status: true,
       message: initResult.message || 'Paystack transaction initialized successfully',
+      authorization_url: initResult.authorizationUrl,
+      access_code: initResult.accessCode,
+      reference: initResult.reference,
+      publicKey: pubKey,
       data: {
         authorization_url: initResult.authorizationUrl,
         access_code: initResult.accessCode,
         reference: initResult.reference,
-        publicKey: getPaystackPublicKey()
+        publicKey: pubKey
       }
     });
   } catch (err: any) {
@@ -563,6 +568,172 @@ app.get('/api/v1/products', (req, res) => {
     return res.json({ success: true, products: filtered });
   }
   res.json({ success: true, products: inMemoryProducts });
+});
+
+// RESTful Route Isolation for Admin Product Management
+// 3a. GET /api/v1/admin/products/:id/edit - Retrieve existing product for editing (with full archive metadata)
+app.get('/api/v1/admin/products/:id/edit', (req, res) => {
+  const productId = req.params.id;
+  const product = inMemoryProducts.find(p => p.id === productId);
+
+  if (!product) {
+    return res.status(404).json({
+      error: 'Product Not Found',
+      message: `Product with ID "${productId}" does not exist in inventory catalog.`
+    });
+  }
+
+  res.json({
+    success: true,
+    product,
+    meta: {
+      productId: product.id,
+      createdAt: product.createdAt || new Date().toISOString(),
+      updatedAt: (product as any).updatedAt || product.createdAt || new Date().toISOString(),
+      isArchiveRecord: true,
+      sku: `NEXO-${product.id}`,
+      status: 'active'
+    }
+  });
+});
+
+// 3b. GET /api/v1/admin/products/:id - Alias endpoint for fetching single product
+app.get('/api/v1/admin/products/:id', (req, res) => {
+  const productId = req.params.id;
+  const product = inMemoryProducts.find(p => p.id === productId);
+
+  if (!product) {
+    return res.status(404).json({
+      error: 'Product Not Found',
+      message: `Product with ID "${productId}" does not exist.`
+    });
+  }
+
+  res.json({ success: true, product });
+});
+
+// 3c. PUT /api/v1/admin/products/:id - Strictly isolated endpoint to UPDATE/MODIFY an existing product
+app.put('/api/v1/admin/products/:id', (req, res) => {
+  const productId = req.params.id;
+  const authHeader = req.headers.authorization;
+  const customUserId = (req.headers['x-user-id'] as string) || req.body.authenticated_user_id || req.body.authUserId;
+  const userRole = (req.headers['x-user-role'] as string) || req.body.userRole || 'seller';
+  const userEmail = (req.headers['x-user-email'] as string) || req.body.userEmail || '';
+
+  const isAdmin = userRole === 'admin' || userEmail === 'nexovirasupport@gmail.com' || userEmail === 'admin@nexovira.com';
+  
+  let authenticatedUserId = customUserId;
+  if (!authenticatedUserId && authHeader && authHeader.startsWith('Bearer ')) {
+    authenticatedUserId = authHeader.replace('Bearer ', '').trim();
+  }
+
+  const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+  if (existingProductIndex < 0) {
+    return res.status(404).json({
+      error: 'Product Not Found',
+      message: `Cannot update: Product with ID "${productId}" does not exist. Use POST /api/v1/admin/products to create new inventory.`
+    });
+  }
+
+  const existingProduct = inMemoryProducts[existingProductIndex];
+  const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
+
+  // Authorization check
+  if (!isAdmin && authenticatedUserId && authenticatedUserId !== existingSellerId) {
+    return res.status(403).json({
+      error: 'Forbidden (403 Unauthorized)',
+      message: `Row-Level Security violation: authenticated_user.id "${authenticatedUserId}" does not match product.seller_id "${existingSellerId}".`
+    });
+  }
+
+  const updatePayload = req.body.product || req.body;
+  const updatedProduct = {
+    ...existingProduct,
+    ...updatePayload,
+    id: productId, // Immutable ID
+    createdAt: existingProduct.createdAt, // Preserve original creation date
+    updatedAt: new Date().toISOString()
+  };
+
+  inMemoryProducts[existingProductIndex] = updatedProduct;
+
+  return res.json({
+    success: true,
+    message: `Existing inventory item "${updatedProduct.title}" updated successfully`,
+    action: 'UPDATE_ENTRY',
+    product: updatedProduct
+  });
+});
+
+// 3d. PATCH /api/v1/admin/products/:id - Isolated endpoint for partial updates to existing product
+app.patch('/api/v1/admin/products/:id', (req, res) => {
+  const productId = req.params.id;
+  const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+
+  if (existingProductIndex < 0) {
+    return res.status(404).json({
+      error: 'Product Not Found',
+      message: `Cannot patch: Product with ID "${productId}" does not exist.`
+    });
+  }
+
+  const existingProduct = inMemoryProducts[existingProductIndex];
+  const updatePayload = req.body.product || req.body;
+  const updatedProduct = {
+    ...existingProduct,
+    ...updatePayload,
+    id: productId,
+    createdAt: existingProduct.createdAt,
+    updatedAt: new Date().toISOString()
+  };
+
+  inMemoryProducts[existingProductIndex] = updatedProduct;
+
+  return res.json({
+    success: true,
+    message: `Product entry "${updatedProduct.title}" updated successfully`,
+    action: 'SAVE_CHANGES',
+    product: updatedProduct
+  });
+});
+
+// 3e. POST /api/v1/admin/products - Strictly isolated endpoint to CREATE a new product
+app.post('/api/v1/admin/products', (req, res) => {
+  const productData = req.body.product || req.body;
+  const candidateId = productData.id;
+
+  if (candidateId) {
+    const exists = inMemoryProducts.some(p => p.id === candidateId);
+    if (exists) {
+      return res.status(409).json({
+        error: 'Conflict (409)',
+        message: `A product with ID "${candidateId}" already exists. You must use PUT /api/v1/admin/products/${candidateId} to modify existing inventory.`
+      });
+    }
+  }
+
+  const newId = candidateId || `prod-admin-${Date.now()}`;
+  const newProduct = {
+    ...productData,
+    id: newId,
+    sellerId: productData.sellerId || 'nexovira-official',
+    seller_id: productData.seller_id || 'nexovira-official',
+    sellerName: productData.sellerName || 'NEXOVIRA Official',
+    sellerVerified: true,
+    price: Number(productData.price || 100),
+    currency: productData.currency || 'USD',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  inMemoryProducts.unshift(newProduct);
+
+  return res.status(201).json({
+    success: true,
+    message: 'New product document created and published successfully',
+    action: 'CREATE_PRODUCT',
+    product: newProduct
+  });
 });
 
 app.post('/api/v1/products', (req, res) => {

@@ -195,7 +195,10 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
         throw new Error(initRes.error || 'Failed to initialize Paystack session.');
       }
 
-      const { reference, publicKey, authorization_url } = initRes.data;
+      const initData = (initRes.data as any)?.data || initRes.data;
+      const reference = initData?.reference || (initRes.data as any)?.reference || tempOrderId;
+      const publicKey = initData?.publicKey || (initRes.data as any)?.publicKey;
+      const authorization_url = initData?.authorization_url || (initRes.data as any)?.authorization_url;
 
       // Step B: Open Paystack payment modal with compliant callback
       await openPaystackCheckout({

@@ -103,11 +103,16 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   const [simulatingType, setSimulatingType] = useState<'stock' | 'price' | null>(null);
   const [testAlertToast, setTestAlertToast] = useState<{ message: string; type: 'stock' | 'price' } | null>(null);
 
+  const effectiveUid = user?.uid || userProfile?.uid || '';
+  const effectiveEmail = userProfile?.email || user?.email || '';
+  const effectiveDisplayName = userProfile?.displayName || user?.displayName || (effectiveEmail ? effectiveEmail.split('@')[0] : 'Valued Shopper');
+  const effectivePhone = userProfile?.phone || (user as any)?.phoneNumber || '+234 Verified';
+
   const fetchAlerts = async () => {
-    if (user) {
+    if (effectiveUid) {
       setLoadingAlerts(true);
       try {
-        const res = await getUserPriceAlertsFromFirestore(user.uid);
+        const res = await getUserPriceAlertsFromFirestore(effectiveUid);
         setPriceAlerts(res);
       } finally {
         setLoadingAlerts(false);
@@ -116,11 +121,13 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   };
 
   const fetchNotificationPreferences = async () => {
-    if (user) {
+    if (effectiveUid) {
       setLoadingPrefs(true);
       try {
-        const prefs = await getUserNotificationPreferencesFromFirestore(user.uid);
-        setNotificationPrefs(prefs);
+        const prefs = await getUserNotificationPreferencesFromFirestore(effectiveUid);
+        if (prefs) {
+          setNotificationPrefs(prefs);
+        }
       } finally {
         setLoadingPrefs(false);
       }
@@ -128,9 +135,9 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   };
 
   const fetchWishlist = async () => {
-    if (user) {
+    if (effectiveUid) {
       try {
-        const ids = await getUserWishlistFromFirestore(user.uid);
+        const ids = await getUserWishlistFromFirestore(effectiveUid);
         setWishlistIds(ids);
       } catch {
         const local = localStorage.getItem('nexovira_wishlist');
@@ -147,9 +154,9 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       setAllCatalogProducts([]);
     });
 
-    if (user) {
+    if (effectiveUid) {
       setLoadingOrders(true);
-      getOrdersFromFirestore(user.uid, false)
+      getOrdersFromFirestore(effectiveUid, false)
         .then(res => setOrders(res))
         .catch(console.error)
         .finally(() => setLoadingOrders(false));
@@ -174,22 +181,26 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
         window.removeEventListener('nexovira_notif_preferences_changed', handlePrefsChanged);
         window.removeEventListener('nexovira_wishlist_changed', handleWishlistChanged);
       };
+    } else {
+      setLoadingOrders(false);
+      setLoadingAlerts(false);
+      setLoadingPrefs(false);
     }
-  }, [user]);
+  }, [effectiveUid]);
 
   const handleTogglePref = async (key: keyof WishlistNotificationPreferences, valueOverride?: any) => {
-    if (!user) return;
+    if (!effectiveUid) return;
     const newValue = valueOverride !== undefined ? valueOverride : !notificationPrefs[key];
     const updated = {
       ...notificationPrefs,
       [key]: newValue,
-      notificationEmail: user.email || notificationPrefs.notificationEmail || ''
+      notificationEmail: effectiveEmail || notificationPrefs.notificationEmail || ''
     };
 
     setNotificationPrefs(updated);
     setSavingPrefs(true);
     try {
-      await saveUserNotificationPreferencesToFirestore(user.uid, updated);
+      await saveUserNotificationPreferencesToFirestore(effectiveUid, updated);
       setPrefsSuccessMsg('Notification preferences updated & synced to Firestore');
       setTimeout(() => setPrefsSuccessMsg(''), 3000);
     } catch (err) {
@@ -200,7 +211,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   };
 
   const handleSimulateWishlistAlert = async (type: 'BACK_IN_STOCK' | 'PRICE_DROP') => {
-    if (!user) return;
+    if (!effectiveUid) return;
     setSimulatingType(type === 'BACK_IN_STOCK' ? 'stock' : 'price');
     try {
       // Find a wishlisted item or fallback to first product
@@ -212,7 +223,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
         return;
       }
 
-      await dispatchWishlistAlertSimulation(user.uid, type, targetProduct);
+      await dispatchWishlistAlertSimulation(effectiveUid, type, targetProduct);
 
       const msg = type === 'BACK_IN_STOCK'
         ? `Back-in-stock alert dispatched for "${targetProduct.title}"! Checked inbox & bell notification.`
@@ -226,8 +237,8 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
   };
 
   const handleRemoveFromWishlist = async (productId: string) => {
-    if (!user) return;
-    await toggleWishlistInFirestore(user.uid, productId, wishlistIds);
+    if (!effectiveUid) return;
+    await toggleWishlistInFirestore(effectiveUid, productId, wishlistIds);
     setWishlistIds(prev => prev.filter(id => id !== productId));
   };
 
@@ -236,7 +247,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     return allCatalogProducts.filter(p => wishlistIds.includes(p.id));
   }, [allCatalogProducts, wishlistIds]);
 
-  const primaryLink = `https://nexovira.name.ng/marketplace?ref=${user?.uid || 'NEXO-USER'}`;
+  const primaryLink = `https://nexovira.name.ng/marketplace?ref=${effectiveUid || 'NEXO-USER'}`;
 
   // Extract all purchased digital e-books from user orders
   const purchasedEbooks = React.useMemo(() => {
@@ -317,12 +328,13 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     );
   }
 
-  const initials = (userProfile?.displayName || user.displayName || user.email || 'U')
+  const initials = (effectiveDisplayName || effectiveEmail || 'U')
     .split(' ')
+    .filter(Boolean)
     .map(n => n[0])
     .join('')
     .substring(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'U';
 
   const isAffiliateAccount = userProfile?.role === 'affiliate' || userProfile?.isAffiliate === true;
 
@@ -366,14 +378,14 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black">{userProfile?.displayName || user.displayName || 'Valued Shopper'}</h1>
+              <h1 className="text-xl font-black">{effectiveDisplayName}</h1>
               {isAdmin && (
                 <span className="text-[10px] bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full font-bold">
                   ADMIN
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{user.email} • {userProfile?.phone || '+234 Verified'}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{effectiveEmail || 'Verified Account'} • {effectivePhone}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" /> Verified Account
@@ -1347,19 +1359,19 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Full Name</label>
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl font-bold text-white">
-                  {userProfile?.displayName || user.displayName || 'N/A'}
+                  {effectiveDisplayName}
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl font-bold text-white">
-                  {user.email}
+                  {effectiveEmail || 'N/A'}
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Phone Number</label>
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl font-bold text-white">
-                  {userProfile?.phone || user.phoneNumber || '+234 911 044 3054'}
+                  {effectivePhone}
                 </div>
               </div>
               <div>
@@ -1380,7 +1392,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">Wishlist & Price Drop Email Subscriptions</h3>
-                  <p className="text-xs text-slate-400">Manage instant alerts sent to {user.email}</p>
+                  <p className="text-xs text-slate-400">Manage instant alerts sent to {effectiveEmail || 'your email'}</p>
                 </div>
               </div>
               <button

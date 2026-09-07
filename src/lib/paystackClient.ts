@@ -14,18 +14,54 @@ export const loadPaystackScript = (): Promise<boolean> => {
       resolve(true);
       return;
     }
-    const existing = document.getElementById('paystack-inline-js');
+
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (!settled) {
+        settled = true;
+        resolve(ok);
+      }
+    };
+
+    // Check periodically in case script was already loading or loaded
+    const checkInterval = setInterval(() => {
+      if ((window as any).PaystackPop) {
+        clearInterval(checkInterval);
+        finish(true);
+      }
+    }, 150);
+
+    // Timeout safety net (max 4 seconds)
+    setTimeout(() => {
+      clearInterval(checkInterval);
+      finish(Boolean((window as any).PaystackPop));
+    }, 4000);
+
+    const existing = document.getElementById('paystack-inline-js') as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener('load', () => resolve(true));
-      existing.addEventListener('error', () => resolve(false));
+      existing.addEventListener('load', () => {
+        clearInterval(checkInterval);
+        finish(true);
+      });
+      existing.addEventListener('error', () => {
+        clearInterval(checkInterval);
+        finish(false);
+      });
       return;
     }
+
     const script = document.createElement('script');
     script.id = 'paystack-inline-js';
     script.src = 'https://js.paystack.co/v1/inline.js';
     script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.onload = () => {
+      clearInterval(checkInterval);
+      finish(true);
+    };
+    script.onerror = () => {
+      clearInterval(checkInterval);
+      finish(false);
+    };
     document.body.appendChild(script);
   });
 };
@@ -56,8 +92,9 @@ export interface PaystackCheckoutOptions {
 export const openPaystackCheckout = async (options: PaystackCheckoutOptions): Promise<void> => {
   const isLoaded = await loadPaystackScript();
   const PaystackPop = typeof window !== 'undefined' ? (window as any).PaystackPop : null;
+  const cleanPublicKey = (options.publicKey || '').trim();
 
-  if (isLoaded && PaystackPop && options.publicKey && options.publicKey.trim().length > 0) {
+  if (isLoaded && PaystackPop && cleanPublicKey.length > 0) {
     // Plain synchronous function required by Paystack validator
     const syncCallback = function(response: any) {
       try {
@@ -82,9 +119,9 @@ export const openPaystackCheckout = async (options: PaystackCheckoutOptions): Pr
     };
 
     const setupConfig: Record<string, any> = {
-      key: options.publicKey.trim(),
-      email: options.email.trim(),
-      amount: Math.round(options.amountInKobo),
+      key: cleanPublicKey,
+      email: options.email.trim().toLowerCase(),
+      amount: Math.round(Number(options.amountInKobo) || 0),
       ref: options.reference,
       callback: syncCallback,
       onClose: syncOnClose,
@@ -104,9 +141,18 @@ export const openPaystackCheckout = async (options: PaystackCheckoutOptions): Pr
 
   // Fallback: Redirect to Paystack standard hosted checkout page
   if (options.authorizationUrl) {
-    window.location.href = options.authorizationUrl;
-    return;
+    try {
+      if (window.top && window.top !== window) {
+        window.top.location.href = options.authorizationUrl;
+      } else {
+        window.location.href = options.authorizationUrl;
+      }
+      return;
+    } catch {
+      window.open(options.authorizationUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
   }
 
-  throw new Error('Paystack checkout could not be opened. Please verify your internet connection.');
+  throw new Error('Paystack checkout could not be opened. Please verify your internet connection or try again.');
 };

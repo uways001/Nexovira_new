@@ -497,6 +497,63 @@ export async function getProductsFromFirestore(): Promise<Product[]> {
   }
 }
 
+// 1b. Fetch Single Product from Firestore
+export async function getProductFromFirestore(productId: string): Promise<Product | null> {
+  try {
+    const prodDocRef = doc(db, 'products', productId);
+    const docSnap = await getDoc(prodDocRef);
+    if (!docSnap.exists()) return null;
+
+    const data = docSnap.data();
+    if (data.status === 'deleted') return null;
+
+    return {
+      id: docSnap.id,
+      title: data.title || data.name || 'NEXOVIRA Product',
+      brand: data.brand || 'NEXOVIRA',
+      categoryId: data.categoryId || 'appliances',
+      price: data.priceUSD || data.price || 100,
+      originalPrice: data.originalPrice,
+      discountPercentage: data.discountPercentage,
+      currency: data.currency || 'USD',
+      rating: data.ratingAvg || data.rating || 5.0,
+      reviewCount: data.reviewsCount || data.reviewCount || 0,
+      stock: data.stock ?? 10,
+      sellerId: data.sellerId || 'store-1',
+      sellerName: data.sellerName || 'NEXOVIRA Official',
+      sellerVerified: data.sellerVerified ?? true,
+      images: data.images || data.imageUrls || ['https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=800&auto=format&fit=crop&q=80'],
+      productImages: data.productImages,
+      isDigital: data.isDigital ?? (data.productType === 'digital_ebook'),
+      productType: data.productType || (data.isDigital ? 'digital_ebook' : 'physical'),
+      pdfUrl: data.pdfUrl || data.digitalFileUrl,
+      pdfFileName: data.pdfFileName,
+      pdfFileSize: data.pdfFileSize,
+      author: data.author,
+      publisher: data.publisher,
+      pagesCount: data.pagesCount,
+      isbn: data.isbn,
+      language: data.language,
+      previewPagesCount: data.previewPagesCount,
+      affiliateCommissionRate: data.affiliateCommissionRate,
+      description: data.description || '',
+      keyFeatures: data.keyFeatures || data.features || [],
+      specifications: data.specifications || {},
+      energyRating: data.energyRating,
+      capacity: data.capacity,
+      warranty: data.warranty || '2 Years Warranty',
+      featured: data.featured ?? true,
+      isFlashDeal: data.isFlashDeal ?? false,
+      isBestSeller: data.isBestSeller ?? false,
+      tags: data.tags || [],
+      createdAt: data.createdAt || new Date().toISOString()
+    };
+  } catch (err) {
+    handleFirestoreError(err, OperationType.GET, `products/${productId}`);
+    return null;
+  }
+}
+
 /**
  * Real-Time Firestore Subscription: Products
  * Listens to Firestore 'products' collection and notifies callback with updated array in real-time.

@@ -122,9 +122,9 @@ export const SetPriceAlertModal: React.FC<SetPriceAlertModalProps> = ({
       const nativeAmount = parseFloat(targetInputNative) || convertFromUSD(customTargetUSD, currency);
 
       const saved = await createPriceAlertInFirestore({
-        userId: user.uid,
-        userEmail: user.email || 'customer@nexovira.com',
-        userName: userProfile?.displayName || user.displayName || 'Valued Shopper',
+        userId: user?.uid || userProfile?.uid || 'guest',
+        userEmail: user?.email || userProfile?.email || 'customer@nexovira.com',
+        userName: userProfile?.displayName || user?.displayName || 'Valued Shopper',
         productId: product.id,
         productTitle: product.title,
         productImage: product.images[0] || '',
@@ -169,7 +169,9 @@ export const SetPriceAlertModal: React.FC<SetPriceAlertModalProps> = ({
     setIsSimulating(true);
     setErrorMsg('');
     try {
-      const res = await simulatePriceDropForProduct(product, discountPercent || 15, user.uid, user.email || '');
+      const targetUid = user?.uid || userProfile?.uid || '';
+      const targetEmail = user?.email || userProfile?.email || '';
+      const res = await simulatePriceDropForProduct(product, discountPercent || 15, targetUid, targetEmail);
       if (res.triggered) {
         setSuccessMsg(`Simulated price drop to ${formatCurrency(res.newPriceUSD, currency)}! Price drop notification dispatched to your notification center.`);
       } else {

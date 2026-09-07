@@ -358,10 +358,10 @@ export const Header: React.FC<HeaderProps> = ({
                 title="My Profile & Portal"
               >
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-xs flex items-center justify-center">
-                  {(userProfile?.displayName || user.email || 'U')[0].toUpperCase()}
+                  {(userProfile?.displayName || user?.displayName || userProfile?.email || user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <span className="hidden xl:inline text-xs font-bold truncate max-w-[100px]">
-                  {userProfile?.displayName || user.displayName || user.email?.split('@')[0]}
+                  {userProfile?.displayName || user?.displayName || userProfile?.email?.split('@')[0] || user?.email?.split('@')[0] || 'User'}
                 </span>
                 {(userProfile?.role === 'affiliate' || userProfile?.isAffiliate) && (
                   <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-500/20 text-rose-400 border border-rose-500/30">
@@ -538,11 +538,11 @@ export const Header: React.FC<HeaderProps> = ({
                 className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition-opacity"
               >
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-sm flex items-center justify-center shrink-0">
-                  {(userProfile?.displayName || user.email || 'U')[0].toUpperCase()}
+                  {(userProfile?.displayName || user?.displayName || userProfile?.email || user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-white truncate">
-                    {userProfile?.displayName || user.displayName || user.email?.split('@')[0]}
+                    {userProfile?.displayName || user?.displayName || userProfile?.email?.split('@')[0] || user?.email?.split('@')[0] || 'User'}
                   </p>
                   <p className="text-[10px] text-cyan-400 font-mono capitalize">
                     {userProfile?.role || 'Customer'} Portal →

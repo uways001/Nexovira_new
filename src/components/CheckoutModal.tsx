@@ -103,7 +103,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         throw new Error(initResponse.error || 'Failed to initialize Paystack session.');
       }
 
-      const { reference, publicKey, authorization_url } = initResponse.data;
+      const initData = (initResponse.data as any)?.data || initResponse.data;
+      const reference = initData?.reference || (initResponse.data as any)?.reference || tempOrderId;
+      const publicKey = initData?.publicKey || (initResponse.data as any)?.publicKey;
+      const authorization_url = initData?.authorization_url || (initResponse.data as any)?.authorization_url;
 
       // 2. Open Paystack payment modal with compliant callback
       setProcessingStatus('Connecting to Paystack gateway...');

@@ -33,6 +33,11 @@ interface EbookProductUploadFormProps {
   sellerId: string;
   sellerName: string;
   isAdmin?: boolean;
+  isEditMode?: boolean;
+  submitButtonText?: string;
+  cancelButtonText?: string;
+  headerTitle?: string;
+  headerSubtitle?: string;
 }
 
 export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
@@ -41,8 +46,16 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
   onCancel,
   sellerId,
   sellerName,
-  isAdmin = false
+  isAdmin = false,
+  isEditMode: isEditModeProp,
+  submitButtonText,
+  cancelButtonText,
+  headerTitle,
+  headerSubtitle
 }) => {
+  // Explicit isEditMode check mandated by Rule 3
+  const isEditMode = isEditModeProp !== undefined ? isEditModeProp : Boolean(initialProduct?.id);
+
   // Product Type State
   const [productType, setProductType] = useState<'physical' | 'digital_ebook'>(
     initialProduct?.productType || (initialProduct?.isDigital ? 'digital_ebook' : 'physical')
@@ -78,9 +91,9 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
 
   const [galleryImages, setGalleryImages] = useState<ProductImage[]>(initialGalleryItems);
 
-  // Common Fields State
+  // Common Fields State (Pre-populated from initialProduct)
   const [title, setTitle] = useState(initialProduct?.title || '');
-  const [brand, setBrand] = useState(initialProduct?.brand || 'NEXOVIRA Press');
+  const [brand, setBrand] = useState(initialProduct?.brand || (initialProduct?.isDigital ? 'NEXOVIRA Press' : 'NEXOVIRA Tech'));
   const [price, setPrice] = useState<number>(initialProduct?.price || 25);
   const [originalPrice, setOriginalPrice] = useState<number>(initialProduct?.originalPrice || 35);
   const [categoryId, setCategoryId] = useState<CategoryId>(
@@ -101,6 +114,92 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
   const [pdfUrl, setPdfUrl] = useState<string>(initialProduct?.pdfUrl || '');
   const [pdfFileName, setPdfFileName] = useState<string>(initialProduct?.pdfFileName || '');
   const [pdfFileSize, setPdfFileSize] = useState<string>(initialProduct?.pdfFileSize || '');
+
+  // Snapshot of original archive values for visual change indicators
+  const originalSnapshot = React.useRef({
+    title: initialProduct?.title || '',
+    brand: initialProduct?.brand || (initialProduct?.isDigital ? 'NEXOVIRA Press' : 'NEXOVIRA Tech'),
+    price: initialProduct?.price || 25,
+    originalPrice: initialProduct?.originalPrice || 35,
+    stock: initialProduct?.stock ?? 50,
+    categoryId: initialProduct?.categoryId || (initialProduct?.isDigital ? 'ebooks' : 'air-conditioners'),
+    description: initialProduct?.description || '',
+    warranty: initialProduct?.warranty || '1 Year Guarantee',
+    tags: initialProduct?.tags ? initialProduct.tags.join(', ') : 'ebook, guide, tech',
+    author: initialProduct?.author || 'NEXOVIRA Author',
+    publisher: initialProduct?.publisher || 'NEXOVIRA Digital Publishing',
+    publicationYear: initialProduct?.publicationYear || new Date().getFullYear().toString(),
+    isbn: initialProduct?.isbn || '',
+    pdfUrl: initialProduct?.pdfUrl || ''
+  }).current;
+
+  // Helper to determine if a field was modified from the archive baseline
+  const getFieldChange = (fieldKey: keyof typeof originalSnapshot, currentValue: any) => {
+    if (!isEditMode) return { isModified: false, original: '' };
+    const orig = originalSnapshot[fieldKey];
+    const isModified = currentValue !== orig;
+    return {
+      isModified,
+      original: String(orig)
+    };
+  };
+
+  // Revert single field to its original archive value
+  const handleRevertField = (fieldKey: keyof typeof originalSnapshot) => {
+    const orig = originalSnapshot[fieldKey];
+    switch (fieldKey) {
+      case 'title': setTitle(orig as string); break;
+      case 'brand': setBrand(orig as string); break;
+      case 'price': setPrice(orig as number); break;
+      case 'originalPrice': setOriginalPrice(orig as number); break;
+      case 'stock': setStock(orig as number); break;
+      case 'categoryId': setCategoryId(orig as CategoryId); break;
+      case 'description': setDescription(orig as string); break;
+      case 'warranty': setWarranty(orig as string); break;
+      case 'tags': setTags(orig as string); break;
+      case 'author': setAuthor(orig as string); break;
+      case 'publisher': setPublisher(orig as string); break;
+      case 'publicationYear': setPublicationYear(orig as string); break;
+      case 'isbn': setIsbn(orig as string); break;
+      case 'pdfUrl': setPdfUrl(orig as string); break;
+    }
+  };
+
+  // Revert all fields to archive baseline
+  const handleRevertAll = () => {
+    setTitle(originalSnapshot.title);
+    setBrand(originalSnapshot.brand);
+    setPrice(originalSnapshot.price);
+    setOriginalPrice(originalSnapshot.originalPrice);
+    setStock(originalSnapshot.stock);
+    setCategoryId(originalSnapshot.categoryId);
+    setDescription(originalSnapshot.description);
+    setWarranty(originalSnapshot.warranty);
+    setTags(originalSnapshot.tags);
+    setAuthor(originalSnapshot.author);
+    setPublisher(originalSnapshot.publisher);
+    setPublicationYear(originalSnapshot.publicationYear);
+    setIsbn(originalSnapshot.isbn);
+    setPdfUrl(originalSnapshot.pdfUrl);
+  };
+
+  // Calculate total modified parameters count
+  const modifiedFieldsCount = isEditMode ? [
+    title !== originalSnapshot.title,
+    brand !== originalSnapshot.brand,
+    price !== originalSnapshot.price,
+    originalPrice !== originalSnapshot.originalPrice,
+    stock !== originalSnapshot.stock,
+    categoryId !== originalSnapshot.categoryId,
+    description !== originalSnapshot.description,
+    warranty !== originalSnapshot.warranty,
+    tags !== originalSnapshot.tags,
+    author !== originalSnapshot.author,
+    publisher !== originalSnapshot.publisher,
+    publicationYear !== originalSnapshot.publicationYear,
+    isbn !== originalSnapshot.isbn,
+    pdfUrl !== originalSnapshot.pdfUrl
+  ].filter(Boolean).length : 0;
 
   // UI States
   const [isDragging, setIsDragging] = useState(false);
@@ -389,15 +488,21 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl text-left space-y-6 text-xs text-slate-900 dark:text-slate-100 max-w-4xl mx-auto">
       
-      {/* Header */}
+      {/* Header - Enforce explicit separation between Add and Edit flows (Rule 1 & Rule 3) */}
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
           <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             {isDigital ? <BookOpen className="w-5 h-5 text-purple-500" /> : <Package className="w-5 h-5 text-cyan-500" />}
-            <span>{initialProduct?.id ? 'Edit Product Listing' : 'Publish Product to Marketplace'}</span>
+            <span>
+              {headerTitle || (isEditMode 
+                ? `Modifying Existing Inventory: ${initialProduct?.title || 'Product'}` 
+                : 'Create New Inventory Entry')}
+            </span>
           </h2>
-          <p className="text-slate-400 text-xs">
-            {isDigital ? 'Create a digital e-book entry with secure PDF delivery' : 'List hardware or physical appliances with stock inventory'}
+          <p className="text-slate-400 text-xs mt-0.5">
+            {headerSubtitle || (isEditMode 
+              ? 'Catalog Archive Record • Changes update live pricing, stock allocations, and metadata'
+              : (isDigital ? 'Create a digital e-book entry with secure PDF delivery' : 'List hardware or physical appliances with stock inventory'))}
           </p>
         </div>
 
@@ -412,6 +517,24 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
         )}
       </div>
 
+      {/* Unsaved Changes Indicator Bar in Edit Mode (Rule 3) */}
+      {isEditMode && modifiedFieldsCount > 0 && (
+        <div className="p-3.5 bg-amber-500/10 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-amber-300 text-xs shadow-md">
+          <div className="flex items-center gap-2.5 font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+            <span>Unsaved Changes: {modifiedFieldsCount} parameter{modifiedFieldsCount > 1 ? 's' : ''} modified from catalog archive record</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleRevertAll}
+            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Revert All to Archive</span>
+          </button>
+        </div>
+      )}
+
       {formError && (
         <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 font-bold rounded-2xl flex items-center gap-2 text-xs animate-shake">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -421,74 +544,100 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* 1. PRODUCT TYPE SELECTOR */}
-        <div className="space-y-2">
-          <label className="block text-xs font-bold uppercase text-slate-400">1. Select Product Type *</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleTypeSelect('physical')}
-              className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3.5 cursor-pointer ${
-                productType === 'physical'
-                  ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-md ring-2 ring-cyan-500/20'
-                  : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-700'
-              }`}
-            >
-              <div className={`p-2.5 rounded-xl ${productType === 'physical' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}`}>
-                <Package className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-sm font-extrabold text-slate-900 dark:text-white">Physical Product</div>
-                <div className="text-[11px] text-slate-400 font-normal">Appliances, devices, solar hardware with inventory & shipping</div>
-              </div>
-            </button>
+        {/* 1. PRODUCT TYPE / CLASSIFICATION (Rule 3: Hide creation selector in Edit Mode) */}
+        {!isEditMode ? (
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase text-slate-400">1. Select Product Type *</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleTypeSelect('physical')}
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3.5 cursor-pointer ${
+                  productType === 'physical'
+                    ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-md ring-2 ring-cyan-500/20'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <div className={`p-2.5 rounded-xl ${productType === 'physical' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}`}>
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-extrabold text-slate-900 dark:text-white">Physical Product</div>
+                  <div className="text-[11px] text-slate-400 font-normal">Appliances, devices, solar hardware with inventory & shipping</div>
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => handleTypeSelect('digital_ebook')}
-              className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3.5 cursor-pointer ${
-                productType === 'digital_ebook'
-                  ? 'bg-purple-500/10 border-purple-500 text-purple-400 shadow-md ring-2 ring-purple-500/20'
-                  : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-700'
-              }`}
-            >
-              <div className={`p-2.5 rounded-xl ${productType === 'digital_ebook' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-800 text-slate-400'}`}>
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-sm font-extrabold text-slate-900 dark:text-white">Digital E-book</div>
-                <div className="text-[11px] text-slate-400 font-normal">PDF books, manuals & research with instant digital library delivery</div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* 2. DIGITAL E-BOOK TOGGLE SWITCH */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${isDigital ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-extrabold text-sm text-slate-900 dark:text-white">Is this a Digital E-book?</span>
-              <p className="text-[11px] text-slate-400">Activates PDF file upload, author information, and instant library access</p>
+              <button
+                type="button"
+                onClick={() => handleTypeSelect('digital_ebook')}
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3.5 cursor-pointer ${
+                  productType === 'digital_ebook'
+                    ? 'bg-purple-500/10 border-purple-500 text-purple-400 shadow-md ring-2 ring-purple-500/20'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <div className={`p-2.5 rounded-xl ${productType === 'digital_ebook' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-800 text-slate-400'}`}>
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-extrabold text-slate-900 dark:text-white">Digital E-book</div>
+                  <div className="text-[11px] text-slate-400 font-normal">PDF books, manuals & research with instant digital library delivery</div>
+                </div>
+              </button>
             </div>
           </div>
+        ) : (
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl ${isDigital ? 'bg-purple-500/20 text-purple-400' : 'bg-cyan-500/20 text-cyan-400'}`}>
+                {isDigital ? <BookOpen className="w-5 h-5" /> : <Package className="w-5 h-5" />}
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-white flex items-center gap-2">
+                  <span>Archive Classification: {isDigital ? 'Digital E-Book (Instant PDF Delivery)' : 'Physical Appliance (Inventory-Tracked)'}</span>
+                  <span className="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded font-mono">
+                    Immutable Record Schema
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Product classification is locked in the catalog archive. Modifications apply to pricing tiers, specifications, inventory stock, and media gallery.
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block text-xs font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/60 px-2.5 py-1 rounded-lg">
+              Asset ID: {initialProduct?.id}
+            </span>
+          </div>
+        )}
 
-          <button
-            type="button"
-            onClick={() => handleToggleDigital(!isDigital)}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
-              isDigital ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-800'
-            }`}
-          >
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
-                isDigital ? 'translate-x-6' : 'translate-x-1'
+        {/* 2. DIGITAL E-BOOK TOGGLE SWITCH (Rule 3: Hidden in Edit Mode) */}
+        {!isEditMode && (
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${isDigital ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-extrabold text-sm text-slate-900 dark:text-white">Is this a Digital E-book?</span>
+                <p className="text-[11px] text-slate-400">Activates PDF file upload, author information, and instant library access</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleToggleDigital(!isDigital)}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                isDigital ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-800'
               }`}
-            />
-          </button>
-        </div>
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                  isDigital ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        )}
 
         {/* 3. E-BOOK PDF UPLOAD SECTION (WHEN DIGITAL E-BOOK = ON) */}
         {isDigital && (
@@ -576,43 +725,115 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
           </div>
         )}
 
-        {/* 4. GENERAL PRODUCT / E-BOOK METADATA */}
+        {/* 4. GENERAL PRODUCT / E-BOOK METADATA (With Visual Change Indicators) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-bold text-slate-400 mb-1">
-              {isDigital ? 'E-book Title *' : 'Product Title *'}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-400">
+                {isDigital ? 'E-book Title *' : 'Product Title *'}
+              </label>
+              {(() => {
+                const change = getFieldChange('title', title);
+                if (!change.isModified) return null;
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Modified • Archive: "{change.original}"
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRevertField('title')}
+                      className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                    >
+                      Revert
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={isDigital ? 'e.g. Masterclass on Solar Energy Systems' : 'e.g. NEXOVIRA Smart AC 1.5HP'}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:border-cyan-500"
+              className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:border-cyan-500 ${
+                getFieldChange('title', title).isModified
+                  ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                  : 'border-slate-200 dark:border-slate-800'
+              }`}
             />
           </div>
 
           {isDigital ? (
             <div>
-              <label className="block font-bold text-slate-400 mb-1">Author Name *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-400">Author Name *</label>
+                {(() => {
+                  const change = getFieldChange('author', author);
+                  if (!change.isModified) return null;
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Modified • Archive: "{change.original}"
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRevertField('author')}
+                        className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                      >
+                        Revert
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
               <input
                 type="text"
                 required={isDigital}
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="e.g. Dr. A. O. Ogunlesi"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none ${
+                  getFieldChange('author', author).isModified
+                    ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
           ) : (
             <div>
-              <label className="block font-bold text-slate-400 mb-1">Brand / Manufacturer</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-400">Brand / Manufacturer</label>
+                {(() => {
+                  const change = getFieldChange('brand', brand);
+                  if (!change.isModified) return null;
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Modified • Archive: "{change.original}"
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRevertField('brand')}
+                        className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                      >
+                        Revert
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
               <input
                 type="text"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 placeholder="e.g. NEXOVIRA Tech"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none ${
+                  getFieldChange('brand', brand).isModified
+                    ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
           )}
@@ -622,44 +843,91 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
         {isDigital && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
             <div>
-              <label className="block font-bold text-slate-400 mb-1">Publisher</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-400">Publisher</label>
+                {getFieldChange('publisher', publisher).isModified && (
+                  <span className="text-[10px] font-bold text-amber-400">Modified</span>
+                )}
+              </div>
               <input
                 type="text"
                 value={publisher}
                 onChange={(e) => setPublisher(e.target.value)}
                 placeholder="NEXOVIRA Press"
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs"
+                className={`w-full bg-white dark:bg-slate-900 border rounded-xl px-3 py-2 text-xs ${
+                  getFieldChange('publisher', publisher).isModified
+                    ? 'border-amber-500/70 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-400 mb-1">Publication Year</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-400">Publication Year</label>
+                {getFieldChange('publicationYear', publicationYear).isModified && (
+                  <span className="text-[10px] font-bold text-amber-400">Modified</span>
+                )}
+              </div>
               <input
                 type="text"
                 value={publicationYear}
                 onChange={(e) => setPublicationYear(e.target.value)}
                 placeholder="2026"
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs"
+                className={`w-full bg-white dark:bg-slate-900 border rounded-xl px-3 py-2 text-xs ${
+                  getFieldChange('publicationYear', publicationYear).isModified
+                    ? 'border-amber-500/70 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-400 mb-1">ISBN (Optional)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-400">ISBN (Optional)</label>
+                {getFieldChange('isbn', isbn).isModified && (
+                  <span className="text-[10px] font-bold text-amber-400">Modified</span>
+                )}
+              </div>
               <input
                 type="text"
                 value={isbn}
                 onChange={(e) => setIsbn(e.target.value)}
                 placeholder="978-3-16-148410-0"
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono"
+                className={`w-full bg-white dark:bg-slate-900 border rounded-xl px-3 py-2 text-xs font-mono ${
+                  getFieldChange('isbn', isbn).isModified
+                    ? 'border-amber-500/70 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
           </div>
         )}
 
-        {/* PRICE & DISCOUNT */}
+        {/* PRICE & DISCOUNT (With Visual Change Indicators) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block font-bold text-slate-400 mb-1">Price (USD) *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-400">Price (USD) *</label>
+              {(() => {
+                const change = getFieldChange('price', price);
+                if (!change.isModified) return null;
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Modified • Archive: "${change.original}"
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRevertField('price')}
+                      className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                    >
+                      Revert
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
             <div className="relative">
               <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
               <input
@@ -668,20 +936,39 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
                 min={1}
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:outline-none"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:outline-none ${
+                  getFieldChange('price', price).isModified
+                    ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-slate-400 mb-1">Original Price (USD)</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-400">Original Price (USD)</label>
+              {(() => {
+                const change = getFieldChange('originalPrice', originalPrice);
+                if (!change.isModified) return null;
+                return (
+                  <span className="text-[10px] font-bold text-amber-400">
+                    Modified (Archive: ${change.original})
+                  </span>
+                );
+              })()}
+            </div>
             <div className="relative">
               <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
               <input
                 type="number"
                 value={originalPrice}
                 onChange={(e) => setOriginalPrice(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:outline-none"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold focus:outline-none ${
+                  getFieldChange('originalPrice', originalPrice).isModified
+                    ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
           </div>
@@ -698,13 +985,37 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
             </div>
           ) : (
             <div>
-              <label className="block font-bold text-slate-400 mb-1">Inventory Stock Quantity *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-400">Inventory Stock Quantity *</label>
+                {(() => {
+                  const change = getFieldChange('stock', stock);
+                  if (!change.isModified) return null;
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Modified • Archive: {change.original} units
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRevertField('stock')}
+                        className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                      >
+                        Revert
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
               <input
                 type="number"
                 required={!isDigital}
                 value={stock}
                 onChange={(e) => setStock(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none ${
+                  getFieldChange('stock', stock).isModified
+                    ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               />
             </div>
           )}
@@ -722,38 +1033,56 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="font-bold text-slate-400">Description & Overview</label>
-            <button
-              type="button"
-              onClick={handleGenerateAI}
-              disabled={isGeneratingAI || !title.trim()}
-              className="text-cyan-500 hover:text-cyan-400 font-bold flex items-center gap-1 text-xs disabled:opacity-50"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{isGeneratingAI ? 'AI Writing...' : 'Generate with AI'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {getFieldChange('description', description).isModified && (
+                <span className="text-[10px] font-bold text-amber-400">Content Modified</span>
+              )}
+              <button
+                type="button"
+                onClick={handleGenerateAI}
+                disabled={isGeneratingAI || !title.trim()}
+                className="text-cyan-500 hover:text-cyan-400 font-bold flex items-center gap-1 text-xs disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{isGeneratingAI ? 'AI Writing...' : 'Generate with AI'}</span>
+              </button>
+            </div>
           </div>
           <textarea
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={isDigital ? 'Describe the e-book contents, chapters, key takeaways...' : 'Describe technical specifications and key features...'}
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-cyan-500"
+            className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl p-3 text-sm focus:outline-none focus:border-cyan-500 ${
+              getFieldChange('description', description).isModified
+                ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                : 'border-slate-200 dark:border-slate-800'
+            }`}
           />
         </div>
 
         {/* TAGS */}
         <div>
-          <label className="block font-bold text-slate-400 mb-1">Search Tags (Comma Separated)</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block font-bold text-slate-400">Search Tags (Comma Separated)</label>
+            {getFieldChange('tags', tags).isModified && (
+              <span className="text-[10px] font-bold text-amber-400">Tags Modified</span>
+            )}
+          </div>
           <input
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="ebook, solar energy, guide, manual"
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs"
+            className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2 text-xs ${
+              getFieldChange('tags', tags).isModified
+                ? 'border-amber-500/70 ring-2 ring-amber-500/20 bg-amber-500/5'
+                : 'border-slate-200 dark:border-slate-800'
+            }`}
           />
         </div>
 
-        {/* PREVIEW & ACTIONS */}
+        {/* PREVIEW & ACTIONS (Rule 2: Explicit Dynamic Action Button Labels) */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             type="button"
@@ -761,7 +1090,7 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
             className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2"
           >
             <Eye className="w-4 h-4 text-cyan-400" />
-            <span>Preview E-book Card</span>
+            <span>Preview Storefront Card</span>
           </button>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -769,9 +1098,9 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs"
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition-colors"
               >
-                Cancel
+                {cancelButtonText || (isEditMode ? 'Cancel & Return to Products' : 'Cancel')}
               </button>
             )}
 
@@ -782,9 +1111,11 @@ export const EbookProductUploadForm: React.FC<EbookProductUploadFormProps> = ({
                 isDigital
                   ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90'
                   : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 hover:opacity-90'
-              } disabled:opacity-50`}
+              } disabled:opacity-50 cursor-pointer`}
             >
-              {isSaving ? 'Publishing to Firestore...' : isDigital ? 'Publish Digital E-book' : 'Publish Product Document'}
+              {isSaving
+                ? (isEditMode ? 'Saving Changes to Inventory...' : 'Publishing to Catalog...')
+                : (submitButtonText || (isEditMode ? 'Save Changes' : (isDigital ? 'Publish Digital E-book' : 'Publish Product Document')))}
             </button>
           </div>
         </div>
