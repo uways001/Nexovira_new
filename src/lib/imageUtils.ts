@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebase';
+import { uploadDataUrlToStorage } from './storageService';
 
 /**
  * Creates an instantaneous preview URL for any selected File (0ms latency)
@@ -118,36 +119,41 @@ export async function uploadImageWithFallback(
     throw new Error('Please select a valid image file (JPG, PNG, WebP, GIF, SVG).');
   }
 
-  if (!storage) {
-    throw new Error('Firebase Storage is not initialized.');
-  }
-
   // Compress to produce an optimized, lightweight asset
   const compressedDataUrl = await compressImageFile(file);
 
-  try {
-    const cleanExt = file.name.split('.').pop()?.toLowerCase() || 'webp';
-    const cleanName = `${customId}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
-    const storageRef = ref(storage, `${folder}/${cleanName}`);
+  const cleanExt = file.name.split('.').pop()?.toLowerCase() || 'webp';
+  const cleanName = `${customId}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
 
-    const res = await fetch(compressedDataUrl);
-    const blob = await res.blob();
-    const uploadResult = await uploadBytes(storageRef, blob, {
-      contentType: blob.type || 'image/webp',
-      customMetadata: {
-        originalName: file.name,
-        uploadedAt: new Date().toISOString()
+  // 1. Try client-side direct Firebase Storage if available
+  if (storage) {
+    try {
+      const storageRef = ref(storage, `${folder}/${cleanName}`);
+
+      const res = await fetch(compressedDataUrl);
+      const blob = await res.blob();
+      const uploadResult = await uploadBytes(storageRef, blob, {
+        contentType: blob.type || 'image/webp',
+        customMetadata: {
+          originalName: file.name,
+          uploadedAt: new Date().toISOString()
+        }
+      });
+
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      if (downloadUrl) {
+        return downloadUrl;
       }
-    });
-
-    const downloadUrl = await getDownloadURL(uploadResult.ref);
-    if (!downloadUrl) {
-      throw new Error('Firebase Storage did not return a valid download URL.');
+    } catch (storageErr: any) {
+      console.warn('[Direct Firebase Storage upload skipped, seamlessly falling back to server pipeline]:', storageErr?.message || storageErr);
     }
+  }
 
-    return downloadUrl;
-  } catch (storageErr: any) {
-    console.error('[Firebase Storage Upload Error]:', storageErr);
-    throw new Error(`Firebase Storage upload failed: ${storageErr?.message || 'Check storage permissions in Firebase Console.'}`);
+  // 2. Resilient fallback: backend storage pipeline
+  try {
+    return await uploadDataUrlToStorage(compressedDataUrl, cleanName, folder);
+  } catch (finalErr: any) {
+    console.error('[Image Upload Final Error]:', finalErr);
+    throw new Error(`Upload failed: ${finalErr?.message || 'Please check your connection and try again.'}`);
   }
 }

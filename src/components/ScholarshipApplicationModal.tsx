@@ -35,7 +35,7 @@ import {
   lookupScholarshipApplicationByRefOrEmail
 } from '../lib/firestoreService';
 import { safeFetchJson, safeJsonParse } from '../lib/safeFetch';
-import { loadPaystackScript } from '../lib/paystackClient';
+import { openPaystackCheckout } from '../lib/paystackClient';
 
 interface ScholarshipApplicationModalProps {
   isOpen: boolean;
@@ -197,37 +197,28 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
 
       const { reference, publicKey, authorization_url } = initRes.data;
 
-      // Step B: Load Paystack inline SDK and open checkout iframe
-      const isLoaded = await loadPaystackScript();
-
-      if (isLoaded && (window as any).PaystackPop) {
-        const handler = (window as any).PaystackPop.setup({
-          key: publicKey,
-          email: payerEmail.trim(),
-          amount: Math.round(fee * 100),
-          ref: reference,
-          metadata: {
-            custom_fields: [
-              { display_name: 'Applicant Name', variable_name: 'applicant_name', value: payerName.trim() },
-              { display_name: 'Course Title', variable_name: 'course_title', value: currentCourse.title },
-              { display_name: 'Phone Number', variable_name: 'phone_number', value: payerPhone.trim() }
-            ]
-          },
-          callback: async (response: { reference: string }) => {
-            await finalizeScholarshipPayment(response.reference || reference, tempOrderId);
-          },
-          onClose: () => {
-            setIsVerifyingPayment(false);
-            setPaymentError('Payment window was closed. Your card was not debited. You can click to retry.');
-          }
-        });
-
-        handler.openIframe();
-      } else if (authorization_url) {
-        window.location.href = authorization_url;
-      } else {
-        throw new Error('Unable to connect to Paystack. Please check your internet connection.');
-      }
+      // Step B: Open Paystack payment modal with compliant callback
+      await openPaystackCheckout({
+        publicKey,
+        email: payerEmail.trim(),
+        amountInKobo: Math.round(fee * 100),
+        reference,
+        authorizationUrl: authorization_url,
+        metadata: {
+          custom_fields: [
+            { display_name: 'Applicant Name', variable_name: 'applicant_name', value: payerName.trim() },
+            { display_name: 'Course Title', variable_name: 'course_title', value: currentCourse.title },
+            { display_name: 'Phone Number', variable_name: 'phone_number', value: payerPhone.trim() }
+          ]
+        },
+        onSuccess: (response) => {
+          void finalizeScholarshipPayment(response.reference || reference, tempOrderId);
+        },
+        onClose: () => {
+          setIsVerifyingPayment(false);
+          setPaymentError('Payment window was closed. Your card was not debited. You can click to retry.');
+        }
+      });
     } catch (err: any) {
       console.error('Payment initialization error:', err);
       setIsVerifyingPayment(false);

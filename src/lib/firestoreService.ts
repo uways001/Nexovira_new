@@ -67,6 +67,7 @@ import {
   CMSActivityLog
 } from '../types';
 import { safeJsonParse } from './safeFetch';
+import { broadcastGlobalChange } from './globalSync';
 import { DEFAULT_SCHOLARSHIP_COURSES } from '../data/defaultAcademyCourses';
 import { PRODUCTS, CATEGORIES, TECH_SERVICES } from '../data/mockData';
 import { INITIAL_NIGERIA_SERVICES, INITIAL_SERVICE_PROVIDERS } from '../data/nigeriaServicesData';
@@ -698,6 +699,7 @@ export async function saveCategoryToFirestore(categoryData: {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nexovira:categories-changed', { detail: { action: 'saved', category: categoryObj } }));
     }
+    broadcastGlobalChange('CATEGORY_UPDATED', catId, categoryObj);
 
     return categoryObj;
   } catch (err) {
@@ -725,6 +727,7 @@ export async function deleteCategoryFromFirestore(categoryId: string): Promise<v
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexovira:categories-changed', { detail: { action: 'deleted', categoryId } }));
   }
+  broadcastGlobalChange('CATEGORY_DELETED', categoryId);
 }
 
 // 3. Create Product (Strict Server-Level seller_id Assignment)
@@ -788,6 +791,7 @@ export async function createProduct(productData: Partial<Product>): Promise<stri
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nexovira:products-changed', { detail: { action: 'created', productId: prodId } }));
     }
+    broadcastGlobalChange('PRODUCT_UPDATED', prodId, payload);
     return prodId;
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `products/${prodId}`);
@@ -851,6 +855,7 @@ export async function updateProduct(productId: string, updates: Partial<Product>
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nexovira:products-changed', { detail: { action: 'updated', productId } }));
     }
+    broadcastGlobalChange('PRODUCT_UPDATED', productId, payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `products/${productId}`);
     throw err;
@@ -965,6 +970,7 @@ export async function deleteProduct(
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('nexovira:products-changed', { detail: { action: 'deleted', productId } }));
       }
+      broadcastGlobalChange('PRODUCT_DELETED', productId);
       return;
     }
 
@@ -1024,11 +1030,13 @@ export async function deleteProduct(
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nexovira:products-changed', { detail: { action: 'deleted', productId } }));
     }
+    broadcastGlobalChange('PRODUCT_DELETED', productId);
   } catch (err: any) {
     console.warn('Product deletion note:', err?.message || err);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nexovira:products-changed', { detail: { action: 'deleted', productId } }));
     }
+    broadcastGlobalChange('PRODUCT_DELETED', productId);
   }
 }
 
@@ -1331,11 +1339,26 @@ export async function getStoreSettingsFromFirestore(): Promise<{
 export async function updateStoreSettingsInFirestore(settingsData: any): Promise<void> {
   try {
     await setDoc(doc(db, 'settings', 'store_config'), settingsData, { merge: true });
+    broadcastGlobalChange('SETTINGS_UPDATED', 'store_config', settingsData);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, 'settings/store_config');
     throw err;
   }
 }
+
+export function subscribeToStoreSettings(
+  callback: (settings: any) => void,
+  onError?: (err: any) => void
+): Unsubscribe {
+  const docRef = doc(db, 'settings', 'store_config');
+  return onSnapshot(docRef, (snap) => {
+    if (snap.exists()) {
+      callback(snap.data());
+    }
+  }, onError);
+}
+
+export const saveStoreSettingsToFirestore = updateStoreSettingsInFirestore;
 
 // 11. Tech Services & Verified Talent Management (Admin-Controlled & Nigeria Services)
 export async function getTechServicesFromFirestore(includeDrafts = false): Promise<TechService[]> {
@@ -1470,6 +1493,7 @@ export async function saveTechServiceToFirestore(serviceData: Partial<TechServic
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nexovira:services-changed', { detail: { action: 'saved', serviceId: servId } }));
     }
+    broadcastGlobalChange('SERVICE_UPDATED', servId, payload);
     return servId;
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `services/${serviceData.id || 'new'}`);
@@ -1498,6 +1522,7 @@ export async function deleteTechServiceFromFirestore(serviceId: string, userRole
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexovira:services-changed', { detail: { action: 'deleted', serviceId } }));
   }
+  broadcastGlobalChange('SERVICE_DELETED', serviceId);
 }
 
 // 11b. Service Providers Management (Nexovira Services Nigeria) - Full Cloud Sync & Real-Time Listeners
@@ -3337,7 +3362,7 @@ export async function getOfficialCoursesFromFirestore(includeDrafts = false): Pr
     return list;
   } catch (err) {
     console.error('[Firestore] Error retrieving courses:', err);
-    throw err;
+    return [];
   }
 }
 
@@ -3405,6 +3430,7 @@ export async function saveOfficialCourseToFirestore(course: Course, userRole?: s
         detail: { action: 'saved', courseId: course.id } 
       }));
     }
+    broadcastGlobalChange('COURSE_UPDATED', course.id, normalizedCourse);
   } catch (err) {
     console.error('[Firestore] Course save error:', err);
     handleFirestoreError(err, OperationType.UPDATE, `courses/${course.id}`);
@@ -3427,6 +3453,7 @@ export async function deleteCourseFromFirestore(courseId: string, userRole?: str
         detail: { action: 'deleted', courseId } 
       }));
     }
+    broadcastGlobalChange('COURSE_DELETED', courseId);
   } catch (err) {
     console.error('[Firestore] Course permanent delete error:', err);
     handleFirestoreError(err, OperationType.DELETE, `courses/${courseId}`);
@@ -5218,6 +5245,8 @@ export async function deleteUserFromFirestore(targetUid: string, operatorRole?: 
 // 12. CMS, BRANDING & ADMIN DATA PERSISTENCE (FIREBASE AS AUTHORITATIVE SOURCE)
 // ============================================================================
 
+export type { BrandingSettings, WebsiteContentSettings } from '../types';
+
 const DEFAULT_BRANDING: BrandingSettings = {
   id: 'general',
   companyName: 'NEXOVIRA',
@@ -5225,6 +5254,8 @@ const DEFAULT_BRANDING: BrandingSettings = {
   logoUrl: '',
   primaryColor: '#06b6d4',
   accentColor: '#3b82f6',
+  address: '14 Admiralty Way, Victoria Island, Lagos, Nigeria',
+  supportPhone: '+234 911 044 3054',
   updatedAt: new Date().toISOString()
 };
 
@@ -5241,6 +5272,20 @@ export async function getBrandingFromFirestore(): Promise<BrandingSettings> {
   return DEFAULT_BRANDING;
 }
 
+export function subscribeToBranding(
+  callback: (branding: BrandingSettings) => void,
+  onError?: (err: any) => void
+): Unsubscribe {
+  const brandingRef = doc(db, 'branding', 'general');
+  return onSnapshot(brandingRef, (snap) => {
+    if (snap.exists()) {
+      callback({ ...DEFAULT_BRANDING, ...(snap.data() as BrandingSettings) });
+    } else {
+      callback(DEFAULT_BRANDING);
+    }
+  }, onError);
+}
+
 export async function saveBrandingToFirestore(brandingData: Partial<BrandingSettings>): Promise<BrandingSettings> {
   const brandingRef = doc(db, 'branding', 'general');
   const nowIso = new Date().toISOString();
@@ -5254,6 +5299,7 @@ export async function saveBrandingToFirestore(brandingData: Partial<BrandingSett
   };
   await setDoc(brandingRef, sanitizeFirestoreData(payload), { merge: true });
   await logCMSActivityInFirestore('UPDATE_BRANDING', 'branding/general', { companyName: payload.companyName, logoUrl: payload.logoUrl });
+  broadcastGlobalChange('BRANDING_UPDATED', 'general', payload);
   return payload;
 }
 
@@ -5282,6 +5328,20 @@ export async function getWebsiteContentFromFirestore(): Promise<WebsiteContentSe
   return DEFAULT_WEBSITE_CONTENT;
 }
 
+export function subscribeToWebsiteContent(
+  callback: (content: WebsiteContentSettings) => void,
+  onError?: (err: any) => void
+): Unsubscribe {
+  const docRef = doc(db, 'websiteContent', 'main');
+  return onSnapshot(docRef, (snap) => {
+    if (snap.exists()) {
+      callback({ ...DEFAULT_WEBSITE_CONTENT, ...(snap.data() as WebsiteContentSettings) });
+    } else {
+      callback(DEFAULT_WEBSITE_CONTENT);
+    }
+  }, onError);
+}
+
 export async function saveWebsiteContentToFirestore(content: Partial<WebsiteContentSettings>): Promise<WebsiteContentSettings> {
   const docRef = doc(db, 'websiteContent', 'main');
   const nowIso = new Date().toISOString();
@@ -5293,6 +5353,7 @@ export async function saveWebsiteContentToFirestore(content: Partial<WebsiteCont
   };
   await setDoc(docRef, sanitizeFirestoreData(payload), { merge: true });
   await logCMSActivityInFirestore('UPDATE_WEBSITE_CONTENT', 'websiteContent/main', { heroHeading: payload.heroHeading });
+  broadcastGlobalChange('CONTENT_UPDATED', 'main', payload);
   return payload;
 }
 

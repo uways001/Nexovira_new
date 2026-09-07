@@ -13,6 +13,7 @@ import {
 import { calculateOrderFinancials } from '../lib/affiliateEngine';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson } from '../lib/safeFetch';
+import { openPaystackCheckout } from '../lib/paystackClient';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -21,29 +22,6 @@ interface CheckoutModalProps {
   onOrderSuccess: (order: Order) => void;
   currentCurrency?: CurrencyCode;
 }
-
-// Dynamically load Paystack inline script if not already present in the window
-const loadPaystackScript = (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    if ((window as any).PaystackPop) {
-      resolve(true);
-      return;
-    }
-    const existing = document.getElementById('paystack-inline-js');
-    if (existing) {
-      existing.addEventListener('load', () => resolve(true));
-      existing.addEventListener('error', () => resolve(false));
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = 'paystack-inline-js';
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
@@ -127,42 +105,31 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       const { reference, publicKey, authorization_url } = initResponse.data;
 
-      // 2. Load Paystack inline SDK
+      // 2. Open Paystack payment modal with compliant callback
       setProcessingStatus('Connecting to Paystack gateway...');
-      const isScriptLoaded = await loadPaystackScript();
-
-      if (isScriptLoaded && (window as any).PaystackPop) {
-        // Open Paystack Inline Modal
-        const handler = (window as any).PaystackPop.setup({
-          key: publicKey,
-          email: email,
-          amount: Math.round(totalNGN * 100), // In kobo
-          ref: reference,
-          metadata: {
-            custom_fields: [
-              { display_name: 'Customer Name', variable_name: 'customer_name', value: fullName },
-              { display_name: 'Phone Number', variable_name: 'phone_number', value: phone },
-              { display_name: 'Order Reference', variable_name: 'order_reference', value: tempOrderId }
-            ]
-          },
-          callback: async (response: { reference: string; status?: string }) => {
-            // Payment reported by client — MANDATORY SERVER-SIDE VERIFICATION
-            await verifyAndFinalizeOrder(response.reference || reference, tempOrderId);
-          },
-          onClose: () => {
-            setIsProcessing(false);
-            setProcessingStatus('');
-            setPaymentError('Payment window was closed. Your order was not charged. You can retry anytime.');
-          }
-        });
-
-        handler.openIframe();
-      } else if (authorization_url) {
-        // Fallback: Redirect to Paystack standard checkout page
-        window.location.href = authorization_url;
-      } else {
-        throw new Error('Paystack inline SDK could not be loaded. Please check your internet connection.');
-      }
+      await openPaystackCheckout({
+        publicKey,
+        email,
+        amountInKobo: Math.round(totalNGN * 100),
+        reference,
+        authorizationUrl: authorization_url,
+        metadata: {
+          custom_fields: [
+            { display_name: 'Customer Name', variable_name: 'customer_name', value: fullName },
+            { display_name: 'Phone Number', variable_name: 'phone_number', value: phone },
+            { display_name: 'Order Reference', variable_name: 'order_reference', value: tempOrderId }
+          ]
+        },
+        onSuccess: (response) => {
+          // Payment reported by client — MANDATORY SERVER-SIDE VERIFICATION
+          void verifyAndFinalizeOrder(response.reference || reference, tempOrderId);
+        },
+        onClose: () => {
+          setIsProcessing(false);
+          setProcessingStatus('');
+          setPaymentError('Payment window was closed. Your order was not charged. You can retry anytime.');
+        }
+      });
     } catch (err: any) {
       console.error('Paystack initialization error:', err);
       setIsProcessing(false);

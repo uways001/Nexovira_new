@@ -3,6 +3,7 @@ import { NexoviraLogo } from './NexoviraLogo';
 import { ShieldCheck, Sparkles, MapPin, Phone, MessageSquare, Globe, CheckCircle2, AlertCircle } from 'lucide-react';
 import { CategoryId, CurrencyCode } from '../types';
 import { subscribeNewsletterToFirestore } from '../lib/firestoreService';
+import { useBranding } from '../context/BrandingContext';
 
 interface FooterProps {
   onSelectCategory: (cat: CategoryId | 'all') => void;
@@ -17,10 +18,15 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigate,
   currentCurrency = 'NGN'
 }) => {
+  const { brandName, tagline, whatsappPhone, storePhone, branding } = useBranding();
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const cleanWhatsapp = (whatsappPhone || '2348129595134').replace(/[^0-9]/g, '');
+  const displayAddress = branding?.address || '14 Admiralty Way, Victoria Island, Lagos, Nigeria';
+  const displayPhone = storePhone || branding?.supportPhone || '+234 911 044 3054';
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,25 +73,25 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="lg:col-span-2 space-y-4">
             <NexoviraLogo size={36} showText={true} showTagline={true} taglineClassName="text-xs font-semibold text-cyan-400/90 mt-0.5" />
             <p className="text-xs text-cyan-300 font-semibold italic">
-              "Innovation begins with vision. Smart living, better every day."
+              "{tagline || 'Innovation begins with vision. Smart living, better every day.'}"
             </p>
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-              NEXOVIRA is a digital marketplace ecosystem for appliances, smart home equipment, consumer technology, and electronics. Grounded in verified inventory data.
+              {brandName || 'NEXOVIRA'} is a digital marketplace ecosystem for appliances, smart home equipment, consumer technology, and electronics. Grounded in verified inventory data.
             </p>
 
             <div className="space-y-1.5 text-xs text-slate-400 font-medium">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>14 Admiralty Way, Victoria Island, Lagos, Nigeria</span>
+                <span>{displayAddress}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <a href="tel:+2349110443054" className="hover:text-white font-mono">+234 911 044 3054</a>
+                <a href={`tel:${displayPhone.replace(/[^0-9+]/g, '')}`} className="hover:text-white font-mono">{displayPhone}</a>
               </div>
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <a href="https://wa.me/2348129595134" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 font-mono text-emerald-400">
-                  WhatsApp: +234 812 959 5134
+                <a href={`https://wa.me/${cleanWhatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 font-mono text-emerald-400">
+                  WhatsApp: +{cleanWhatsapp}
                 </a>
               </div>
             </div>

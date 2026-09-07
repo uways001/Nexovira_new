@@ -1,5 +1,6 @@
 import React from 'react';
 import { MessageSquare, ExternalLink } from 'lucide-react';
+import { useBranding } from '../context/BrandingContext';
 
 interface WhatsAppSupportButtonProps {
   whatsappNumber?: string;
@@ -8,11 +9,13 @@ interface WhatsAppSupportButtonProps {
 }
 
 export const WhatsAppSupportButton: React.FC<WhatsAppSupportButtonProps> = ({
-  whatsappNumber = '+2348129595134',
+  whatsappNumber,
   defaultMessage = 'Hello NEXOVIRA Support, I would like assistance with...',
   variant = 'inline',
 }) => {
-  const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
+  const { whatsappPhone } = useBranding();
+  const effectiveNumber = whatsappNumber || whatsappPhone || '2348129595134';
+  const cleanNumber = effectiveNumber.replace(/[^0-9]/g, '');
   const encodedMsg = encodeURIComponent(defaultMessage);
   const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMsg}`;
 

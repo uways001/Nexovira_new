@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import logoPngImg from '../assets/Logo.jpeg';
+import { useBranding } from '../context/BrandingContext';
 
 interface NexoviraLogoProps {
   className?: string;
@@ -10,6 +11,7 @@ interface NexoviraLogoProps {
   taglineClassName?: string;
   imgClassName?: string;
   variant?: 'vector' | 'image';
+  customLogoUrl?: string;
 }
 
 export const NexoviraLogo: React.FC<NexoviraLogoProps> = ({
@@ -21,8 +23,12 @@ export const NexoviraLogo: React.FC<NexoviraLogoProps> = ({
   taglineClassName = 'text-[10px] sm:text-xs font-semibold text-cyan-500 dark:text-cyan-400',
   imgClassName = '',
   variant = 'image',
+  customLogoUrl,
 }) => {
   const [imgError, setImgError] = useState(false);
+  const { logoUrl: contextLogoUrl, brandName, tagline } = useBranding();
+
+  const activeLogo = customLogoUrl || contextLogoUrl || logoPngImg || '/Logo.jpeg';
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
@@ -33,8 +39,9 @@ export const NexoviraLogo: React.FC<NexoviraLogoProps> = ({
       >
         {variant === 'image' && !imgError ? (
           <img
-            src={logoPngImg || '/Logo.jpeg'}
-            alt="NEXOVIRA Logo"
+            key={activeLogo}
+            src={activeLogo}
+            alt={`${brandName || 'NEXOVIRA'} Logo`}
             referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
             className={`w-full h-full object-cover rounded-xl ${imgClassName}`}
@@ -159,11 +166,11 @@ export const NexoviraLogo: React.FC<NexoviraLogoProps> = ({
       {showText && (
         <div className="flex flex-col text-left">
           <span className={`font-extrabold tracking-wider bg-gradient-to-r from-slate-900 via-cyan-900 to-slate-900 dark:from-white dark:via-cyan-300 dark:to-cyan-400 bg-clip-text text-transparent uppercase ${textClassName}`}>
-            NEXOVIRA
+            {brandName || 'NEXOVIRA'}
           </span>
           {showTagline && (
             <span className={`tracking-normal leading-tight max-w-[280px] sm:max-w-xs ${taglineClassName}`}>
-              Innovation begins with vision. Smart living, better every day.
+              {tagline || 'Innovation begins with vision. Smart living, better every day.'}
             </span>
           )}
         </div>

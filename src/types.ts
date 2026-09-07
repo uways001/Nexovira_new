@@ -1121,7 +1121,12 @@ export interface BrandingSettings {
   companyName: string;
   tagline: string;
   primaryColor?: string;
+  secondaryColor?: string;
   accentColor?: string;
+  address?: string;
+  supportPhone?: string;
+  supportEmail?: string;
+  currency?: string;
   updatedAt: string;
   updatedBy?: string;
 }
