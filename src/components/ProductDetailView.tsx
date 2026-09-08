@@ -18,6 +18,7 @@ import {
   Bell
 } from 'lucide-react';
 import { WhatsAppSupportButton } from './WhatsAppSupportButton';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 import { EbookLightboxModal } from './EbookLightboxModal';
 import { SetPriceAlertModal } from './SetPriceAlertModal';
 
@@ -236,7 +237,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
             {/* Direct WhatsApp Order CTA */}
             <WhatsAppSupportButton
-              whatsappNumber="+2348129595134"
+              whatsappNumber={NEXOVIRA_CONTACT_CONFIG.whatsappNumber}
               defaultMessage={whatsappMsg}
               variant="inline"
             />

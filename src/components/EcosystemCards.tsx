@@ -134,42 +134,42 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
             <div
               key={card.id}
               onClick={() => onNavigate(card.id)}
-              className={`group cursor-pointer rounded-3xl border bg-gradient-to-b ${card.gradient} p-6 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col justify-between`}
+              className="group cursor-pointer rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm hover:shadow-md hover:border-cyan-500/40 dark:hover:border-cyan-500/40 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
             >
               {/* Background Subtle Image Overlay */}
-              <div className="absolute top-0 right-0 w-32 h-32 opacity-15 group-hover:opacity-25 transition-opacity rounded-bl-full overflow-hidden pointer-events-none">
+              <div className="absolute top-0 right-0 w-32 h-32 opacity-10 dark:opacity-15 group-hover:opacity-20 transition-opacity rounded-bl-full overflow-hidden pointer-events-none">
                 <img src={card.image} alt={card.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               </div>
 
               <div>
                 {/* Header Badge & Icon */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-2xl bg-slate-800/90 border border-slate-700/80 ${card.accentColor} shadow-md`}>
-                    <IconComp className="w-6 h-6" />
+                  <div className={`p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${card.accentColor} shadow-sm`}>
+                    <IconComp className="w-5 h-5" />
                   </div>
-                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${card.badgeColor}`}>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${card.badgeColor}`}>
                     {card.badge}
                   </span>
                 </div>
 
                 {/* Title & Subtitle */}
-                <h3 className="text-xl font-black text-white group-hover:text-cyan-300 transition-colors">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-xs text-slate-300 dark:text-slate-400 mt-2 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
                   {card.subtitle}
                 </p>
               </div>
 
               {/* Bottom CTA & Stats */}
-              <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-slate-400 font-semibold">
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-medium">
                   {card.stats}
                 </span>
 
-                <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${card.accentColor} group-hover:underline`}>
+                <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${card.accentColor} group-hover:translate-x-0.5 transition-transform`}>
                   <span>{card.cta}</span>
-                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </div>
             </div>

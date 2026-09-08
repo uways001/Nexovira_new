@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, MessageSquare, Mail, MapPin, Send, CheckCircle2, AlertCircle, Globe, Loader2, ShieldCheck } from 'lucide-react';
 import { WhatsAppSupportButton } from './WhatsAppSupportButton';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 import { submitContactMessageToFirestore } from '../lib/firestoreService';
 import { 
   detectMaliciousPayload, 
@@ -110,8 +111,8 @@ export const ContactViewContent: React.FC = () => {
                 <Phone className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
                 <div>
                   <div className="font-bold text-slate-300">Phone Hotline</div>
-                  <a href="tel:+2349110443054" className="text-white font-mono font-bold hover:text-cyan-400 text-sm">
-                    +234 911 044 3054
+                  <a href={NEXOVIRA_CONTACT_CONFIG.supportPhoneHref} className="text-white font-mono font-bold hover:text-cyan-400 text-sm">
+                    {NEXOVIRA_CONTACT_CONFIG.supportPhone}
                   </a>
                 </div>
               </div>
@@ -121,12 +122,12 @@ export const ContactViewContent: React.FC = () => {
                 <div>
                   <div className="font-bold text-slate-300">WhatsApp Desk</div>
                   <a 
-                    href="https://wa.me/2348129595134?text=Hello%20NEXOVIRA%20Support%2C%20I%20need%20assistance%20with..."
+                    href={`https://wa.me/${NEXOVIRA_CONTACT_CONFIG.whatsappWaMeNumber}?text=${encodeURIComponent(NEXOVIRA_CONTACT_CONFIG.defaultMessage)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-emerald-400 font-mono font-bold hover:underline text-sm block"
                   >
-                    +234 812 959 5134
+                    {NEXOVIRA_CONTACT_CONFIG.whatsappDisplay}
                   </a>
                 </div>
               </div>
@@ -135,8 +136,8 @@ export const ContactViewContent: React.FC = () => {
                 <Mail className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
                 <div>
                   <div className="font-bold text-slate-300">Email Support</div>
-                  <a href="mailto:nexovirasupport@gmail.com" className="text-slate-200 font-mono hover:text-cyan-400">
-                    nexovirasupport@gmail.com
+                  <a href={NEXOVIRA_CONTACT_CONFIG.supportEmailHref} className="text-slate-200 font-mono hover:text-cyan-400">
+                    {NEXOVIRA_CONTACT_CONFIG.supportEmail}
                   </a>
                 </div>
               </div>
@@ -161,7 +162,7 @@ export const ContactViewContent: React.FC = () => {
             </div>
 
             <div className="pt-2">
-              <WhatsAppSupportButton whatsappNumber="+2348129595134" variant="inline" />
+              <WhatsAppSupportButton whatsappNumber={NEXOVIRA_CONTACT_CONFIG.whatsappNumber} variant="inline" />
             </div>
           </div>
         </div>

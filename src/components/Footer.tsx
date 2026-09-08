@@ -4,6 +4,7 @@ import { ShieldCheck, Sparkles, MapPin, Phone, MessageSquare, Globe, CheckCircle
 import { CategoryId, CurrencyCode } from '../types';
 import { subscribeNewsletterToFirestore } from '../lib/firestoreService';
 import { useBranding } from '../context/BrandingContext';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 
 interface FooterProps {
   onSelectCategory: (cat: CategoryId | 'all') => void;
@@ -24,9 +25,11 @@ export const Footer: React.FC<FooterProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const cleanWhatsapp = (whatsappPhone || '2348129595134').replace(/[^0-9]/g, '');
+  const activeWhatsappNumber = whatsappPhone || NEXOVIRA_CONTACT_CONFIG.whatsappNumber;
+  const cleanWhatsapp = NEXOVIRA_CONTACT_CONFIG.sanitizeForWaMe(activeWhatsappNumber);
+  const displayWhatsapp = activeWhatsappNumber;
   const displayAddress = branding?.address || '14 Admiralty Way, Victoria Island, Lagos, Nigeria';
-  const displayPhone = storePhone || branding?.supportPhone || '+234 911 044 3054';
+  const displayPhone = storePhone || branding?.supportPhone || NEXOVIRA_CONTACT_CONFIG.supportPhone;
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -90,8 +93,13 @@ export const Footer: React.FC<FooterProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <a href={`https://wa.me/${cleanWhatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 font-mono text-emerald-400">
-                  WhatsApp: +{cleanWhatsapp}
+                <a 
+                  href={`https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(NEXOVIRA_CONTACT_CONFIG.defaultMessage)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-emerald-400 font-mono text-emerald-400"
+                >
+                  WhatsApp: {displayWhatsapp}
                 </a>
               </div>
             </div>

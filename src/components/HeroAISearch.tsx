@@ -218,33 +218,31 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
     : searchHistory;
 
   return (
-    <section className="relative overflow-hidden bg-[#000000] text-white pt-8 pb-14 sm:pt-12 sm:pb-16 lg:pt-16 lg:pb-20 border-b border-slate-800/80">
-      {/* Background Ambient Glows with official palette */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#01213D_0%,#000000_70%)]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-[#05A9F7]/10 blur-[130px] pointer-events-none" />
-      <div className="absolute top-1/3 right-0 w-80 h-80 bg-[#0682F4]/10 blur-[120px] pointer-events-none" />
+    <section className="relative overflow-hidden bg-slate-950 text-white pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-16 lg:pb-20 border-b border-slate-800/80">
+      {/* Background Soft Subtle Ambient Illumination */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-cyan-500/5 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-7 sm:space-y-8">
         
-        {/* Subtle Ecosystem Indicator & Support Link */}
-        <div className="flex flex-wrap items-center justify-center gap-2.5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#01213D]/90 border border-[#05A9F7]/30 text-[#4DDEEA] text-xs font-semibold tracking-wide shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-[#08E6F9]" />
-            <span>Connected AI Commerce & Technology Ecosystem</span>
+        {/* Subtle Category Pill Indicator */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold tracking-wide shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Smart Technology & Digital Services</span>
           </div>
-          <WhatsAppSupportButton whatsappNumber={whatsappPhone} variant="hero" />
         </div>
 
         {/* Main Headline & Supporting Text */}
         <div className="max-w-3xl mx-auto space-y-3">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.15]">
             What do you want to{' '}
-            <span className="bg-gradient-to-r from-[#05A9F7] via-[#06C3F8] to-[#08E6F9] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
               do today?
             </span>
           </h1>
 
-          <p className="text-[#CCD2D9] text-sm sm:text-base md:text-lg max-w-2xl mx-auto font-normal leading-relaxed pt-1">
+          <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto font-normal leading-relaxed pt-1">
             One intelligent place to discover products, services, learning and more.
           </p>
         </div>
@@ -253,16 +251,16 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
         <div className="max-w-2xl mx-auto relative" ref={searchContainerRef}>
           <form onSubmit={handleSearchSubmit} className="relative z-20">
             <div 
-              className={`relative flex items-center bg-[#01213D]/90 border-2 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 ${
+              className={`relative flex items-center bg-slate-900/90 border rounded-2xl p-1.5 sm:p-2 shadow-lg backdrop-blur-md transition-all duration-200 ${
                 isListening 
-                  ? 'border-[#08E6F9] ring-4 ring-[#08E6F9]/30 shadow-[0_0_30px_rgba(8,230,249,0.25)]' 
+                  ? 'border-cyan-400 ring-2 ring-cyan-400/30' 
                   : isInputFocused 
-                  ? 'border-[#05A9F7] ring-4 ring-[#05A9F7]/20 shadow-[0_0_25px_rgba(5,169,247,0.2)]' 
-                  : 'border-slate-700/80 hover:border-[#05A9F7]/60'
+                  ? 'border-cyan-500 ring-2 ring-cyan-500/20' 
+                  : 'border-slate-700/80 hover:border-slate-600'
               }`}
             >
-              <div className="p-2.5 sm:p-3 bg-[#05A9F7]/10 text-[#08E6F9] rounded-xl sm:rounded-2xl shrink-0 hidden sm:flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-[#08E6F9]" />
+              <div className="p-2.5 sm:p-3 bg-cyan-500/10 text-cyan-400 rounded-xl shrink-0 hidden sm:flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
               </div>
 
               <input
@@ -290,20 +288,20 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
               <button
                 type="button"
                 onClick={toggleVoiceSearch}
-                className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0 transition-all mr-1 flex items-center justify-center min-w-[42px] min-h-[42px] ${
+                className={`p-2.5 sm:p-3 rounded-xl shrink-0 transition-all mr-1 flex items-center justify-center min-w-[42px] min-h-[42px] ${
                   isListening 
-                    ? 'bg-[#0682F4] text-white animate-pulse shadow-lg shadow-[#0682F4]/50 scale-105' 
-                    : 'bg-slate-800/90 text-[#CCD2D9] hover:text-[#08E6F9] hover:bg-slate-700/80'
+                    ? 'bg-blue-600 text-white animate-pulse shadow-md shadow-blue-500/30' 
+                    : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
                 }`}
                 title={isListening ? 'Stop Voice Search' : 'Search using Voice Command'}
               >
                 {isListening ? <MicOff className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <Mic className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
 
-              {/* Search Action Button with Nexovira Blue-Cyan Gradient */}
+              {/* Search Action Button */}
               <button
                 type="submit"
-                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#0682F4] via-[#05A9F7] to-[#08E6F9] text-[#000000] font-black text-xs sm:text-sm shadow-md shadow-[#05A9F7]/25 hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 flex items-center gap-1.5 sm:gap-2 min-h-[42px]"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0 flex items-center gap-1.5 sm:gap-2 min-h-[42px] cursor-pointer"
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden sm:inline">Ask NEXOVIRA</span>
@@ -313,12 +311,12 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
           {/* Interactive Search History Dropdown on Focus */}
           {isInputFocused && filteredHistory.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-2 bg-[#01213D] border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-2xl z-30 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-150">
-              <div className="p-3 px-4 bg-[#000000]/60 border-b border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#CCD2D9]">
-                  <Clock className="w-3.5 h-3.5 text-[#08E6F9]" />
+            <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-xl backdrop-blur-md z-30 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-150">
+              <div className="p-3 px-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
                   <span>Recent Searches</span>
-                  <span className="text-[10px] font-mono bg-slate-800 text-[#08E6F9] px-1.5 py-0.2 rounded-full">
+                  <span className="text-[10px] font-mono bg-slate-800 text-cyan-400 px-1.5 py-0.2 rounded-full">
                     {filteredHistory.length}
                   </span>
                 </div>
@@ -371,9 +369,9 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
           {/* Voice Search Feedback Banner */}
           {speechFeedback && (
             <div className={`mt-2 p-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in ${
-              isListening ? 'bg-[#0682F4]/20 border border-[#0682F4]/40 text-[#4DDEEA]' : 'bg-[#01213D] border border-[#05A9F7]/30 text-[#4DDEEA]'
+              isListening ? 'bg-blue-900/40 border border-blue-500/40 text-blue-200' : 'bg-slate-900 border border-slate-700 text-slate-300'
             }`}>
-              {isListening && <span className="w-2 h-2 rounded-full bg-[#08E6F9] animate-ping" />}
+              {isListening && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />}
               <span>{speechFeedback}</span>
             </div>
           )}
@@ -387,7 +385,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
                   key={idx}
                   type="button"
                   onClick={() => handleExecuteSearch(item.query)}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#01213D]/60 hover:bg-[#01213D] border border-slate-700/80 hover:border-[#05A9F7]/60 text-xs text-[#CCD2D9] hover:text-white font-medium shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/40 text-xs text-slate-300 hover:text-white font-medium shadow-sm transition-all duration-150 cursor-pointer"
                 >
                   "{item.label}"
                 </button>
@@ -397,56 +395,56 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
         </div>
 
         {/* Quick Actions Section (Secondary Navigation) */}
-        <div className="max-w-3xl mx-auto pt-6 border-t border-slate-800/60">
+        <div className="max-w-3xl mx-auto pt-6 border-t border-slate-800/80">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
             QUICK ACTIONS
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-2.5">
             <button
               onClick={() => onNavigate('marketplace')}
-              className="p-2.5 rounded-xl bg-[#01213D]/40 hover:bg-[#01213D] border border-slate-800 hover:border-[#05A9F7]/50 text-xs font-medium text-[#CCD2D9] hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px]"
+              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
             >
-              <ShoppingBag className="w-4 h-4 text-[#08E6F9] group-hover:scale-110 transition-transform" />
+              <ShoppingBag className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Appliances</span>
             </button>
 
             <button
               onClick={() => onNavigate('ai')}
-              className="p-2.5 rounded-xl bg-[#01213D]/40 hover:bg-[#01213D] border border-slate-800 hover:border-[#05A9F7]/50 text-xs font-medium text-[#CCD2D9] hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px]"
+              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
             >
-              <Bot className="w-4 h-4 text-[#08E6F9] group-hover:scale-110 transition-transform" />
+              <Bot className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Talk to AI</span>
             </button>
 
             <button
               onClick={() => onNavigate('academy')}
-              className="p-2.5 rounded-xl bg-[#01213D]/40 hover:bg-[#01213D] border border-slate-800 hover:border-[#05A9F7]/50 text-xs font-medium text-[#CCD2D9] hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px]"
+              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
             >
-              <GraduationCap className="w-4 h-4 text-[#08E6F9] group-hover:scale-110 transition-transform" />
+              <GraduationCap className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Academy</span>
             </button>
 
             <button
               onClick={() => onNavigate('library')}
-              className="p-2.5 rounded-xl bg-[#01213D]/40 hover:bg-[#01213D] border border-slate-800 hover:border-[#05A9F7]/50 text-xs font-medium text-[#CCD2D9] hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px]"
+              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
             >
-              <BookOpen className="w-4 h-4 text-[#08E6F9] group-hover:scale-110 transition-transform" />
+              <BookOpen className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">E-books</span>
             </button>
 
             <button
               onClick={() => onNavigate('services')}
-              className="p-2.5 rounded-xl bg-[#01213D]/40 hover:bg-[#01213D] border border-slate-800 hover:border-[#05A9F7]/50 text-xs font-medium text-[#CCD2D9] hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px]"
+              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
             >
-              <Code2 className="w-4 h-4 text-[#08E6F9] group-hover:scale-110 transition-transform" />
+              <Code2 className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Tech Services</span>
             </button>
 
             <button
               onClick={() => onNavigate('affiliate')}
-              className="p-2.5 rounded-xl bg-[#01213D]/40 hover:bg-[#01213D] border border-slate-800 hover:border-[#05A9F7]/50 text-xs font-medium text-[#CCD2D9] hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px]"
+              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
             >
-              <Share2 className="w-4 h-4 text-[#08E6F9] group-hover:scale-110 transition-transform" />
+              <Share2 className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Affiliate</span>
             </button>
           </div>

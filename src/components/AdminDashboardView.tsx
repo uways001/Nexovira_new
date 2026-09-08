@@ -169,7 +169,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   const [storeSettings, setStoreSettings] = useState({
     exchangeRate: 1600,
     storePhone: '+234 911 044 3054',
-    whatsappPhone: '2348129595134',
+    whatsappPhone: '07025900156',
     contactEmail: 'nexovirasupport@gmail.com',
     storeAddress: '14 Admiralty Way, Victoria Island, Lagos, Nigeria',
     flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Lagos Delivery!'

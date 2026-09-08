@@ -16,6 +16,7 @@ import {
 import { formatCurrency, formatNativeCurrency, convertDirectly } from '../lib/currency';
 import { getLiveExchangeRate } from '../lib/exchangeRateService';
 import { useAuth } from '../context/AuthContext';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 import { NexoviraLogo } from './NexoviraLogo';
 import { 
   getAffiliateProfileFromFirestore, 
@@ -1220,7 +1221,7 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
                     </div>
                   </div>
                   <a
-                    href={`https://wa.me/2348129595134?text=${encodeURIComponent(`Hello NEXOVIRA Finance Desk, I am Affiliate ${profile.userName} (${profile.affiliateCode}). I have a query regarding my affiliate wallet payouts.`)}`}
+                    href={`https://wa.me/${NEXOVIRA_CONTACT_CONFIG.whatsappWaMeNumber}?text=${encodeURIComponent(`Hello NEXOVIRA Finance Desk, I am Affiliate ${profile.userName} (${profile.affiliateCode}). I have a query regarding my affiliate wallet payouts.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5"

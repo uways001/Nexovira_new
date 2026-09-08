@@ -13,6 +13,7 @@ import {
 } from '../lib/firestoreService';
 import { broadcastGlobalChange, subscribeToGlobalSyncEvents } from '../lib/globalSync';
 import defaultLogoImg from '../assets/Logo.jpeg';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 
 export interface BrandingContextType {
   logoUrl: string;
@@ -133,9 +134,9 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
   const activeBrandName = branding.companyName || 'NEXOVIRA';
   const activeTagline = branding.tagline || 'Innovation begins with vision. Smart living, better every day.';
   const activePrimaryColor = branding.primaryColor || '#0682F4';
-  const activeWhatsappPhone = websiteContent?.whatsappPhone || storeSettings?.whatsappPhone || '2348129595134';
-  const activeStorePhone = websiteContent?.supportPhone || storeSettings?.storePhone || '+234 911 044 3054';
-  const activeContactEmail = websiteContent?.supportEmail || storeSettings?.contactEmail || 'support@nexovira.com';
+  const activeWhatsappPhone = websiteContent?.whatsappPhone || storeSettings?.whatsappPhone || NEXOVIRA_CONTACT_CONFIG.officialWhatsAppNumber;
+  const activeStorePhone = websiteContent?.supportPhone || storeSettings?.storePhone || NEXOVIRA_CONTACT_CONFIG.supportPhone;
+  const activeContactEmail = websiteContent?.supportEmail || storeSettings?.contactEmail || NEXOVIRA_CONTACT_CONFIG.supportEmail;
 
   const value: BrandingContextType = {
     logoUrl: activeLogoUrl,
@@ -170,9 +171,9 @@ export const useBranding = (): BrandingContextType => {
       brandName: 'NEXOVIRA',
       tagline: 'Innovation begins with vision. Smart living, better every day.',
       primaryColor: '#0682F4',
-      whatsappPhone: '2348129595134',
-      storePhone: '+234 911 044 3054',
-      contactEmail: 'support@nexovira.com',
+      whatsappPhone: NEXOVIRA_CONTACT_CONFIG.officialWhatsAppNumber,
+      storePhone: NEXOVIRA_CONTACT_CONFIG.supportPhone,
+      contactEmail: NEXOVIRA_CONTACT_CONFIG.supportEmail,
       branding: null,
       websiteContent: null,
       storeSettings: null,

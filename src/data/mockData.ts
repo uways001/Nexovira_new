@@ -12,6 +12,7 @@ import {
   GlobalBrandSettings, 
   HomepageSection 
 } from '../types';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 
 export const CATEGORIES: Category[] = [
   { id: 'refrigerators', name: 'Refrigerators & Freezers', group: 'appliances', icon: 'Refrigerator', itemCount: 0, description: 'Smart French door, side-by-side, inverter, and chest freezers.' },
@@ -119,8 +120,8 @@ export const INITIAL_LEDGER: FinancialLedgerItem[] = [];
 export const INITIAL_BRAND_SETTINGS: GlobalBrandSettings = {
   brandName: 'NEXOVIRA',
   tagline: 'Innovation begins with vision. Smart living, better every day.',
-  whatsappPhone: '+2348006392832',
-  contactEmail: 'support@nexovira.com',
+  whatsappPhone: NEXOVIRA_CONTACT_CONFIG.officialWhatsAppNumber,
+  contactEmail: NEXOVIRA_CONTACT_CONFIG.supportEmail,
   defaultCurrency: 'NGN',
   ownerProfile: {
     name: 'NEXOVIRA Executive Owner',

@@ -1376,7 +1376,7 @@ export async function getStoreSettingsFromFirestore(): Promise<{
   const defaultSettings = {
     exchangeRate: getLiveExchangeRate(),
     storePhone: '+234 911 044 3054',
-    whatsappPhone: '2348129595134',
+    whatsappPhone: '07025900156',
     contactEmail: 'nexovirasupport@gmail.com',
     storeAddress: '14 Admiralty Way, Victoria Island, Lagos, Nigeria',
     flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Lagos Delivery!'
@@ -5367,7 +5367,7 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContentSettings = {
   aboutUsText: 'Nexovira Academy empowers students and professionals across Nigeria with industry-certified training, practical project experience, and guaranteed job placement pathways.',
   supportEmail: 'support@nexovira.com',
   supportPhone: '+234 911 044 3054',
-  whatsappPhone: '2348129595134',
+  whatsappPhone: '07025900156',
   officeAddress: '14 Admiralty Way, Lekki Phase 1, Lagos, Nigeria',
   updatedAt: new Date().toISOString()
 };
