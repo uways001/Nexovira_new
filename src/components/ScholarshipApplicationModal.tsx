@@ -36,6 +36,7 @@ import {
 } from '../lib/firestoreService';
 import { safeFetchJson, safeJsonParse } from '../lib/safeFetch';
 import { openPaystackCheckout } from '../lib/paystackClient';
+import { formatErrorMessage } from '../lib/errorUtils';
 
 interface ScholarshipApplicationModalProps {
   isOpen: boolean;
@@ -73,6 +74,9 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
   const [paymentMethod] = useState<'paystack'>('paystack');
   const [isVerifyingPayment, setIsVerifyingPayment] = useState<boolean>(false);
   const [paymentError, setPaymentError] = useState<string>('');
+  const [pendingAuthUrl, setPendingAuthUrl] = useState<string>('');
+  const [pendingRef, setPendingRef] = useState<string>('');
+  const [pendingOrderId, setPendingOrderId] = useState<string>('');
   const [verifiedPaymentRef, setVerifiedPaymentRef] = useState<string>('');
   const [verifiedPaymentRecord, setVerifiedPaymentRecord] = useState<any>(null);
   const [createdApplicationId, setCreatedApplicationId] = useState<string>('');
@@ -200,6 +204,12 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
       const publicKey = initData?.publicKey || (initRes.data as any)?.publicKey;
       const authorization_url = initData?.authorization_url || (initRes.data as any)?.authorization_url;
 
+      if (authorization_url) {
+        setPendingAuthUrl(authorization_url);
+      }
+      setPendingRef(reference);
+      setPendingOrderId(tempOrderId);
+
       // Step B: Open Paystack payment modal with compliant callback
       await openPaystackCheckout({
         publicKey,
@@ -219,13 +229,18 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
         },
         onClose: () => {
           setIsVerifyingPayment(false);
-          setPaymentError('Payment window was closed. Your card was not debited. You can click to retry.');
+          setPaymentError('Payment window was closed before completion. If your payment went through or you wish to pay in a new tab, use the options below.');
         }
       });
     } catch (err: any) {
-      console.error('Payment initialization error:', err);
+      console.error('[Scholarship Paystack Init Error Details]:', {
+        err,
+        type: typeof err,
+        payerEmail,
+        fee
+      });
       setIsVerifyingPayment(false);
-      setPaymentError(err.message || 'Payment initialization failed. Please try again.');
+      setPaymentError(formatErrorMessage(err, 'Payment initialization failed. Please try again.'));
     }
   };
 
@@ -336,8 +351,8 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
       // Unlock form!
       setCurrentStep('unlocked_form');
     } catch (err: any) {
-      console.error('Finalize scholarship payment error:', err);
-      setPaymentError(err.message || 'Payment verification failed.');
+      console.error('[Scholarship Paystack Finalize Error Details]:', err);
+      setPaymentError(formatErrorMessage(err, 'Payment verification failed. If your bank debited you, please click Resume Registration.'));
     } finally {
       setIsVerifyingPayment(false);
     }
@@ -761,6 +776,44 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
               <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{paymentError}</span>
+              </div>
+            )}
+
+            {/* Direct Paystack Checkout Fallback Card (Active Session) */}
+            {pendingAuthUrl && (
+              <div className="p-4 rounded-xl bg-[#0682F4]/15 border border-[#0682F4]/40 text-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <ExternalLink className="w-4 h-4 text-[#06C3F8]" />
+                    Direct Paystack Checkout Option
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-semibold px-2 py-0.5 rounded bg-emerald-500/20">
+                    Live Session Active
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  If the inline popup was blocked by your browser or popup blocker, you can open Paystack's official secure payment page directly:
+                </p>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                  <a
+                    href={pendingAuthUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 rounded-lg bg-[#0682F4] hover:bg-[#0682F4]/90 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-[#0682F4]/20"
+                  >
+                    <span>Open Paystack in New Tab (₦{fee.toLocaleString()})</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => finalizeScholarshipPayment(pendingRef, pendingOrderId)}
+                    disabled={isVerifyingPayment}
+                    className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>I Have Paid — Verify Payment</span>
+                  </button>
+                </div>
               </div>
             )}
 

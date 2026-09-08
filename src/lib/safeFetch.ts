@@ -1,3 +1,5 @@
+import { formatErrorMessage } from './errorUtils';
+
 /**
  * Safe Fetch & JSON Parsing Utilities
  * 
@@ -65,18 +67,25 @@ export async function safeFetchJson<T = any>(
 
     try {
       const parsed = JSON.parse(trimmed) as T;
+      let errorMsg: string | undefined = undefined;
+      if (!res.ok) {
+        errorMsg = formatErrorMessage(
+          (parsed as any)?.error ?? (parsed as any)?.message ?? parsed,
+          `Request failed with status ${status}`
+        );
+      }
       return {
         ok: res.ok,
         status,
         data: parsed,
-        error: !res.ok ? ((parsed as any)?.error || (parsed as any)?.message || `Request failed with status ${status}`) : undefined
+        error: errorMsg
       };
     } catch (parseError: any) {
       return {
         ok: false,
         status,
         data: null,
-        error: `Failed to parse response as JSON: ${parseError.message}`,
+        error: `Failed to parse response as JSON: ${formatErrorMessage(parseError)}`,
         rawText: trimmed.slice(0, 200)
       };
     }
@@ -85,7 +94,7 @@ export async function safeFetchJson<T = any>(
       ok: false,
       status: 0,
       data: null,
-      error: netErr?.message || 'Network connection error.'
+      error: formatErrorMessage(netErr, 'Network connection error.')
     };
   }
 }

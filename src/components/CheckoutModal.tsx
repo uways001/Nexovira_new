@@ -14,6 +14,7 @@ import { calculateOrderFinancials } from '../lib/affiliateEngine';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson } from '../lib/safeFetch';
 import { openPaystackCheckout } from '../lib/paystackClient';
+import { formatErrorMessage } from '../lib/errorUtils';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -134,10 +135,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         }
       });
     } catch (err: any) {
-      console.error('Paystack initialization error:', err);
+      console.error('[CheckoutModal Paystack Init Error]:', err);
       setIsProcessing(false);
       setProcessingStatus('');
-      setPaymentError(err.message || 'Payment processing failed. Please try again.');
+      setPaymentError(formatErrorMessage(err, 'Payment processing failed. Please try again.'));
     }
   };
 
@@ -263,8 +264,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       onOrderSuccess(newOrder);
       setStep(4);
     } catch (err: any) {
-      console.error('Order finalization error:', err);
-      setPaymentError(err.message || 'Payment was received but order record failed. Please contact support with reference: ' + paystackReference);
+      console.error('[CheckoutModal Order Finalization Error]:', err);
+      setPaymentError(formatErrorMessage(err, 'Payment was received but order record failed. Please contact support with reference: ' + paystackReference));
     } finally {
       setIsProcessing(false);
       setProcessingStatus('');
