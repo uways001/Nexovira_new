@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/payment/callback",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/callback",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/scholarship",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/academy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

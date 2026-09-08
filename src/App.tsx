@@ -96,7 +96,15 @@ export default function App() {
       if (path === '/signup') return 'signup';
       if (path === '/book-service' || path === '/services/nigeria' || path === '/services-nigeria') return 'book-service';
       if (path === '/services' || path.startsWith('/service/')) return 'services';
-      if (path === '/academy' || path.startsWith('/course/')) return 'academy';
+      if (
+        path === '/academy' || 
+        path.startsWith('/course/') || 
+        path === '/scholarship' || 
+        path === '/scholarships' || 
+        path === '/payment/callback' || 
+        path === '/callback' ||
+        path === '/payment-callback'
+      ) return 'academy';
       if (path === '/library' || path.startsWith('/ebook/')) return 'library';
       if (path === '/ai') return 'ai';
       if (path === '/about') return 'about';
@@ -119,7 +127,15 @@ export default function App() {
       else if (path === '/signup') setActiveView('signup');
       else if (path === '/book-service' || path === '/services/nigeria' || path === '/services-nigeria') setActiveView('book-service');
       else if (path === '/services' || path.startsWith('/service/')) setActiveView('services');
-      else if (path === '/academy' || path.startsWith('/course/')) setActiveView('academy');
+      else if (
+        path === '/academy' || 
+        path.startsWith('/course/') || 
+        path === '/scholarship' || 
+        path === '/scholarships' || 
+        path === '/payment/callback' || 
+        path === '/callback' ||
+        path === '/payment-callback'
+      ) setActiveView('academy');
       else if (path === '/library' || path.startsWith('/ebook/')) setActiveView('library');
       else if (path === '/ai') setActiveView('ai');
       else if (path === '/about') setActiveView('about');

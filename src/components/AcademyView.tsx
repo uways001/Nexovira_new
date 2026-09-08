@@ -106,6 +106,26 @@ export const AcademyView: React.FC<AcademyViewProps> = ({ currentCurrency }) => 
     };
   }, [user?.uid, isAdmin]);
 
+  // Check URL parameters for scholarship callbacks, redirects or direct links
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname.toLowerCase();
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasPaymentRef = urlParams.has('reference') || urlParams.has('trxref') || urlParams.has('paystack_reference');
+    const isScholarshipRoute = 
+      path === '/scholarship' || 
+      path === '/scholarships' || 
+      path === '/payment/callback' || 
+      path === '/callback' || 
+      path === '/payment-callback' ||
+      urlParams.get('openScholarship') === 'true' ||
+      hasPaymentRef;
+
+    if (isScholarshipRoute) {
+      setIsApplicationModalOpen(true);
+    }
+  }, []);
+
   // Categories extracted dynamically from courses
   const categories = useMemo(() => {
     const set = new Set<string>();

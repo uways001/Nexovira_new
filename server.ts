@@ -419,7 +419,7 @@ app.get('/api/v1/paystack/config', (req, res) => {
 
 app.post('/api/v1/paystack/initialize', async (req, res) => {
   try {
-    const { email, amount, refCode, orderId, metadata, channels, reference: customRef } = req.body;
+    const { email, amount, refCode, orderId, metadata, channels, reference: customRef, callbackUrl } = req.body;
     
     if (!email || !email.includes('@')) {
       return res.status(400).json({ status: false, error: 'Valid customer email is required.' });
@@ -431,10 +431,17 @@ app.post('/api/v1/paystack/initialize', async (req, res) => {
     const reference = customRef?.trim() || `PSTK_ORD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
     const amountInKobo = Math.round(Number(amount) * 100);
 
+    // Resolve accurate callback URL
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'nexovira.com.ng';
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const origin = req.headers.origin || `${protocol}://${host}`;
+    const resolvedCallback = callbackUrl || `${origin}/payment/callback`;
+
     const initResult = await initializePaystackTransaction({
       email,
       amountInKobo,
       reference,
+      callbackUrl: resolvedCallback,
       metadata: {
         orderId: orderId || reference,
         refCode,
@@ -468,6 +475,74 @@ app.post('/api/v1/paystack/initialize', async (req, res) => {
   } catch (err: any) {
     console.error('[Paystack Init API Error]:', err);
     res.status(500).json({ status: false, error: err?.message || 'Paystack initialization failed.' });
+  }
+});
+
+// GET Verification Route for callbacks, redirects and query-based checks
+app.get(['/api/v1/paystack/verify/:reference', '/api/v1/paystack/verify'], async (req, res) => {
+  try {
+    const reference = req.params.reference || (req.query.reference as string) || (req.query.trxref as string);
+    const orderId = (req.query.orderId as string) || undefined;
+
+    if (!reference) {
+      return res.status(400).json({ status: false, verified: false, error: 'Transaction reference is required.' });
+    }
+
+    const verifyResult = await verifyPaystackTransaction(reference);
+
+    if (!verifyResult.success || !verifyResult.verified) {
+      return res.status(400).json({
+        status: false,
+        verified: false,
+        paymentStatus: verifyResult.status,
+        error: verifyResult.error || 'Paystack transaction could not be verified or was not successful.',
+        data: verifyResult
+      });
+    }
+
+    // Record verified transaction in Firestore for server-authoritative audit
+    try {
+      initFirebaseAdminApp();
+      const firestore = getFirestore();
+      await firestore.collection('paystack_transactions').doc(verifyResult.reference).set({
+        reference: verifyResult.reference,
+        status: verifyResult.status,
+        amount: verifyResult.amountNGN,
+        amountKobo: verifyResult.amount,
+        currency: verifyResult.currency,
+        paidAt: verifyResult.paidAt || new Date().toISOString(),
+        channel: verifyResult.channel || 'card',
+        gatewayResponse: verifyResult.gatewayResponse || '',
+        customer: verifyResult.customer || null,
+        metadata: verifyResult.metadata || null,
+        orderId: orderId || null,
+        verifiedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (auditErr) {
+      console.warn('[Firestore Paystack Audit Warning]:', auditErr);
+    }
+
+    res.json({
+      status: true,
+      verified: true,
+      message: 'Paystack Payment Verified Server-Side',
+      data: {
+        reference: verifyResult.reference,
+        status: verifyResult.status,
+        amount: verifyResult.amountNGN,
+        amountKobo: verifyResult.amount,
+        currency: verifyResult.currency,
+        paid_at: verifyResult.paidAt,
+        channel: verifyResult.channel,
+        gateway_response: verifyResult.gatewayResponse,
+        customer: verifyResult.customer,
+        metadata: verifyResult.metadata,
+        orderId
+      }
+    });
+  } catch (err: any) {
+    console.error('[Paystack GET Verify API Error]:', err);
+    res.status(500).json({ status: false, verified: false, error: err?.message || 'Server verification failed.' });
   }
 });
 

@@ -35,7 +35,7 @@ import {
   lookupScholarshipApplicationByRefOrEmail
 } from '../lib/firestoreService';
 import { safeFetchJson, safeJsonParse } from '../lib/safeFetch';
-import { openPaystackCheckout } from '../lib/paystackClient';
+import { openPaystackCheckout, DEFAULT_PAYSTACK_PUBLIC_KEY } from '../lib/paystackClient';
 import { formatErrorMessage } from '../lib/errorUtils';
 
 interface ScholarshipApplicationModalProps {
@@ -142,6 +142,35 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
           setCurrentStep('unlocked_form');
         }
       }
+
+      // Check if user returned from Paystack checkout redirect (via query params ?reference=... or ?trxref=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlRef = urlParams.get('reference') || urlParams.get('trxref') || urlParams.get('paystack_reference');
+      if (urlRef && !verifiedPaymentRef) {
+        let pendingContext: any = null;
+        try {
+          const raw = localStorage.getItem('nexovira_pending_paystack_ref');
+          if (raw) pendingContext = JSON.parse(raw);
+        } catch {}
+
+        if (pendingContext?.courseId) {
+          setActiveCourseId(pendingContext.courseId);
+        }
+        if (pendingContext?.payerEmail) {
+          setPayerEmail(pendingContext.payerEmail);
+          setEmail(pendingContext.payerEmail);
+        }
+        if (pendingContext?.payerPhone) {
+          setPayerPhone(pendingContext.payerPhone);
+          setPhone(pendingContext.payerPhone);
+        }
+        if (pendingContext?.payerName) {
+          setPayerName(pendingContext.payerName);
+          setFullName(pendingContext.payerName);
+        }
+
+        void finalizeScholarshipPayment(urlRef, pendingContext?.orderId || urlRef);
+      }
     } catch (e) {}
   }, [isOpen, selectedCourse, userProfile]);
 
@@ -171,13 +200,29 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
 
     try {
       const tempOrderId = `SCH_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const currentOrigin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://www.nexovira.com.ng';
+      const callbackUrl = `${currentOrigin}/payment/callback`;
+
+      // Save pending context in localStorage so redirects or interruptions can resume automatically
+      try {
+        localStorage.setItem('nexovira_pending_paystack_ref', JSON.stringify({
+          orderId: tempOrderId,
+          courseId: currentCourse.id,
+          courseTitle: currentCourse.title,
+          payerEmail: payerEmail.trim(),
+          payerPhone: payerPhone.trim(),
+          payerName: payerName.trim(),
+          fee
+        }));
+      } catch {}
 
       // Step A: Call secure backend Paystack endpoint
       const initRes = await safeFetchJson<{
-        authorization_url: string;
-        access_code: string;
-        reference: string;
-        publicKey: string;
+        authorization_url?: string;
+        access_code?: string;
+        reference?: string;
+        publicKey?: string;
+        fallbackMode?: boolean;
       }>('/api/v1/paystack/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -185,6 +230,7 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
           email: payerEmail.trim(),
           amount: fee,
           orderId: tempOrderId,
+          callbackUrl,
           metadata: {
             courseId: currentCourse.id,
             courseTitle: currentCourse.title,
@@ -195,14 +241,18 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
         })
       });
 
-      if (!initRes.ok || !initRes.data) {
-        throw new Error(initRes.error || 'Failed to initialize Paystack session.');
-      }
+      let reference = tempOrderId;
+      let publicKey = DEFAULT_PAYSTACK_PUBLIC_KEY;
+      let authorization_url: string | undefined = undefined;
 
-      const initData = (initRes.data as any)?.data || initRes.data;
-      const reference = initData?.reference || (initRes.data as any)?.reference || tempOrderId;
-      const publicKey = initData?.publicKey || (initRes.data as any)?.publicKey;
-      const authorization_url = initData?.authorization_url || (initRes.data as any)?.authorization_url;
+      if (initRes.ok && initRes.data) {
+        const initData = (initRes.data as any)?.data || initRes.data;
+        reference = initData?.reference || (initRes.data as any)?.reference || tempOrderId;
+        publicKey = initData?.publicKey || (initRes.data as any)?.publicKey || DEFAULT_PAYSTACK_PUBLIC_KEY;
+        authorization_url = initData?.authorization_url || (initRes.data as any)?.authorization_url;
+      } else {
+        console.warn('[Paystack Backend Init notice]:', initRes.error, '- Proceeding with Paystack Pop client gateway.');
+      }
 
       if (authorization_url) {
         setPendingAuthUrl(authorization_url);
@@ -347,6 +397,15 @@ export const ScholarshipApplicationModal: React.FC<ScholarshipApplicationModalPr
         verifiedAt: paymentRecord.paidAt
       };
       localStorage.setItem('nexovira_pending_scholarship_form', JSON.stringify(pendingData));
+
+      // Clean up URL query parameters so page refresh doesn't repeat verification
+      try {
+        if (typeof window !== 'undefined' && (window.location.search || window.location.pathname.includes('callback'))) {
+          const cleanPath = window.location.pathname.replace('/payment/callback', '/academy').replace('/callback', '/academy');
+          window.history.replaceState({}, '', cleanPath || '/academy');
+        }
+        localStorage.removeItem('nexovira_pending_paystack_ref');
+      } catch {}
 
       // Unlock form!
       setCurrentStep('unlocked_form');
