@@ -241,13 +241,13 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
-              type="button"
-              onClick={() => onOpenAI(searchQuery.trim() || undefined)}
-              className="mr-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
-              title="Open NEXOVIRA AI Assistant"
+              type="submit"
+              className="mr-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer shadow-sm"
+              title="Search NEXOVIRA"
+              aria-label="Search NEXOVIRA"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Ask AI</span>
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Search</span>
             </button>
           </div>
 
@@ -278,16 +278,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
-
-          <a
-            href="/ai"
-            onClick={(e) => { e.preventDefault(); onNavigate('/ai'); }}
-            className="relative group px-2.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-xs shadow-sm hover:shadow hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
-            title="Open NEXOVIRA AI Workspace"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-200" />
-            <span className="hidden md:inline">AI Workspace</span>
-          </a>
 
           {/* Price Alerts Notification Dropdown */}
           <NotificationDropdown
@@ -391,29 +381,14 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </a>
 
-            <div className="flex items-center">
-              <a
-                href="/services"
-                onClick={(e) => { e.preventDefault(); onNavigate('/services'); }}
-                className={navLinkClass(activeView === 'services' ? 'services' : '', 'bg-blue-500/10 text-blue-500 border-blue-500/30')}
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                <span>Tech Services</span>
-              </a>
-              <button
-                type="button"
-                onClick={() => onNavigate('/book-service')}
-                className={`ml-1 text-[11px] px-2.5 py-1 rounded-lg border font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                  activeView === 'book-service'
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                    : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/20'
-                }`}
-                title="Book a Service with verified specialists"
-              >
-                <Briefcase className="w-3 h-3" />
-                <span>Book a Service</span>
-              </button>
-            </div>
+            <a
+              href="/services"
+              onClick={(e) => { e.preventDefault(); onNavigate('/services'); }}
+              className={navLinkClass(activeView === 'services' || activeView === 'book-service' ? 'services' : '', 'bg-blue-500/10 text-blue-500 border-blue-500/30')}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              <span>Tech Services</span>
+            </a>
 
             <a
               href="/academy"

@@ -78,10 +78,20 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
     return message;
   };
 
+  const isEmailValid = (val: string) => {
+    return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/.test(val.trim());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setDomainNotice(null);
+
+    if (!email.trim() || !isEmailValid(email)) {
+      setError('Please enter a valid, complete email address (e.g. name@example.com).');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -274,15 +284,19 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
           Google Account
         </button>
 
-        <p className="mt-8 text-center text-slate-400 text-sm">
-          Don't have an account?{' '}
+        <div className="mt-8 pt-6 border-t border-slate-800 text-center space-y-3">
+          <p className="text-slate-400 text-sm">
+            Don't have a NEXOVIRA account yet?
+          </p>
           <button
+            type="button"
             onClick={() => onNavigate('/signup')}
-            className="text-cyan-400 font-semibold hover:underline inline-flex items-center gap-1"
+            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
           >
-            Create an Account <ArrowRight className="w-3.5 h-3.5" />
+            <span>Create New Account</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
-        </p>
+        </div>
       </div>
 
       {/* Forgot Password Modal */}

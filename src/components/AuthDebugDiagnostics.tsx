@@ -8,10 +8,16 @@ interface AuthDebugDiagnosticsProps {
 }
 
 export const AuthDebugDiagnostics: React.FC<AuthDebugDiagnosticsProps> = ({ activeView }) => {
-  // Never render in production builds
-  if (!import.meta.env.DEV) {
-    return null;
-  }
+  // Never render for normal visitors or public production UI
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const isExplicitDev = params.get('debug_auth') === '1' || localStorage.getItem('nexovira_dev_auth_diag') === 'true';
+      setShowDiagnostics(Boolean(isExplicitDev && import.meta.env.DEV));
+    }
+  }, []);
 
   const { user, userProfile, isAdmin, isSeller, isAffiliate, loading, loginAsPresetUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -19,6 +25,7 @@ export const AuthDebugDiagnostics: React.FC<AuthDebugDiagnosticsProps> = ({ acti
   const [switchingRole, setSwitchingRole] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!showDiagnostics) return;
     if (user?.uid) {
       getAffiliateProfileFromFirestore(user.uid)
         .then(aff => setHasAffiliateDoc(!!aff))
@@ -26,7 +33,11 @@ export const AuthDebugDiagnostics: React.FC<AuthDebugDiagnosticsProps> = ({ acti
     } else {
       setHasAffiliateDoc(false);
     }
-  }, [user?.uid]);
+  }, [user?.uid, showDiagnostics]);
+
+  if (!showDiagnostics) {
+    return null;
+  }
 
   const handleSwitch = async (role: 'admin' | 'seller' | 'affiliate' | 'customer') => {
     setSwitchingRole(role);

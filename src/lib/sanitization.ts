@@ -179,19 +179,29 @@ export function sanitizeEmail(email: unknown): { isValid: boolean; sanitizedEmai
 }
 
 /**
- * Sanitizes phone numbers, allowing strictly standard international dial characters.
+ * Sanitizes phone numbers, allowing strictly standard dial characters and rejecting alphabetic characters.
  */
 export function sanitizePhone(phone: unknown): { isValid: boolean; sanitizedPhone: string; error?: string } {
   if (typeof phone !== 'string') {
     return { isValid: false, sanitizedPhone: '', error: 'Phone must be a valid text string.' };
   }
 
+  const raw = phone.trim();
+  if (!raw) {
+    return { isValid: false, sanitizedPhone: '', error: 'Phone number is required.' };
+  }
+
+  // Reject alphabetic characters explicitly
+  if (/[a-zA-Z]/.test(raw)) {
+    return { isValid: false, sanitizedPhone: '', error: 'Phone number cannot contain letters or alphabetic characters.' };
+  }
+
   // Allow only digits, +, (, ), -, and space
-  let clean = phone.trim().replace(/[^\d+()\s-]/g, '');
+  const clean = raw.replace(/[^\d+()\s-]/g, '');
   const digitsOnly = clean.replace(/\D/g, '');
 
-  if (digitsOnly.length < 7 || digitsOnly.length > 18) {
-    return { isValid: false, sanitizedPhone: '', error: 'Phone number must contain between 7 and 18 digits.' };
+  if (digitsOnly.length < 7 || digitsOnly.length > 16) {
+    return { isValid: false, sanitizedPhone: '', error: 'Phone number must contain between 7 and 16 digits (e.g. 08012345678 or +2348012345678).' };
   }
 
   return { isValid: true, sanitizedPhone: clean };

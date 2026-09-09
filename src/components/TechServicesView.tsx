@@ -936,11 +936,12 @@ export const TechServicesView: React.FC<TechServicesViewProps> = ({
           </div>
         )}
 
-        {/* TAB: BOOK A SERVICE (On-Site & Domestic Hub Nigeria) */}
+        {/* TAB: BOOK A SERVICE */}
         {activeTab === 'book-service' && (
           <div className="space-y-6 animate-fadeIn">
             <NigeriaServicesView
               onNavigateHome={onNavigateHome}
+              onNavigateToTechServices={() => setActiveTab('overview')}
               onOpenAdminServices={onNavigateToAdminDashboard}
               isAdmin={userProfile?.role === 'admin' || userProfile?.role === 'super_admin'}
             />

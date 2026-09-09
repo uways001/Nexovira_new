@@ -54,11 +54,41 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
   // Public Role Selection State: Customer, Seller, Affiliate, Tech Expert
   const [selectedRole, setSelectedRole] = useState<'customer' | 'seller' | 'affiliate' | 'expert'>('customer');
 
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
   const [error, setError] = useState('');
   const [domainNotice, setDomainNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [registeredSuccess, setRegisteredSuccess] = useState(false);
   const [copiedDomain, setCopiedDomain] = useState(false);
+
+  // Field validation checks
+  const isEmailValid = (val: string) => {
+    return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/.test(val.trim());
+  };
+
+  const nameError = touched.name && name.trim().length > 0 && name.trim().length < 2
+    ? 'Full name must be at least 2 characters long.'
+    : '';
+
+  const emailError = touched.email && email.trim().length > 0 && !isEmailValid(email)
+    ? 'Please enter a valid, complete email address (e.g. name@domain.com).'
+    : '';
+
+  const phoneHasLetters = /[a-zA-Z]/.test(phone);
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneError = touched.phone && phone.trim().length > 0 && (phoneHasLetters || phoneDigits.length < 7 || phoneDigits.length > 16)
+    ? (phoneHasLetters ? 'Phone number cannot contain alphabetic characters.' : 'Phone must be between 7 and 16 digits (e.g. 08012345678 or +2348012345678).')
+    : '';
+
+  const passwordError = touched.password && password.length > 0 && password.length < 8
+    ? 'Password must be at least 8 characters long.'
+    : '';
+
+  const confirmError = (touched.confirmPassword || touched.password) && confirmPassword.length > 0 && password !== confirmPassword
+    ? 'Passwords do not match.'
+    : '';
 
   const formatAuthError = (err: any) => {
     const message = err?.message || String(err);
@@ -80,6 +110,7 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
     e.preventDefault();
     setError('');
     setDomainNotice(null);
+    setTouched({ name: true, email: true, phone: true, password: true, confirmPassword: true });
 
     // 1. Security Threat Inspection for Injections (XSS, SQLi, NoSQLi, Null Bytes)
     const nameThreat = detectMaliciousPayload(name);
@@ -118,15 +149,17 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
       return;
     }
 
-    let sanitizedPhoneVal = '';
-    if (phone.trim()) {
-      const phoneResult = sanitizePhone(phone);
-      if (!phoneResult.isValid) {
-        setError(phoneResult.error || 'Please enter a valid phone number.');
-        return;
-      }
-      sanitizedPhoneVal = phoneResult.sanitizedPhone;
+    if (!phone.trim()) {
+      setError('Please enter a valid phone number (e.g. 08012345678 or +2348012345678).');
+      return;
     }
+
+    const phoneResult = sanitizePhone(phone);
+    if (!phoneResult.isValid) {
+      setError(phoneResult.error || 'Please enter a valid phone number.');
+      return;
+    }
+    const sanitizedPhoneVal = phoneResult.sanitizedPhone;
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters long.');
@@ -368,61 +401,121 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Full Name</label>
+            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5 flex items-center justify-between">
+              <span>Full Name <span className="text-cyan-400">*</span></span>
+              {touched.name && !nameError && name.trim().length >= 2 && (
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Valid</span>
+              )}
+            </label>
             <div className="relative">
               <UserIcon className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
               <input
                 type="text"
                 required
                 value={name}
+                onBlur={() => markTouched('name')}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Chief Emeka Okafor"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                placeholder="e.g. Samuel Adeleke"
+                className={`w-full bg-slate-950 border rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none text-sm transition-colors ${
+                  nameError ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500'
+                }`}
               />
             </div>
+            {nameError && (
+              <p className="text-xs text-rose-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{nameError}</span>
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Email Address</label>
+            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5 flex items-center justify-between">
+              <span>Email Address <span className="text-cyan-400">*</span></span>
+              {touched.email && !emailError && email.trim().length > 0 && (
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Valid</span>
+              )}
+            </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
               <input
                 type="email"
                 required
                 value={email}
+                onBlur={() => markTouched('email')}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                className={`w-full bg-slate-950 border rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none text-sm transition-colors ${
+                  emailError ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500'
+                }`}
               />
             </div>
+            {emailError && (
+              <p className="text-xs text-rose-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{emailError}</span>
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Phone Number</label>
+            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5 flex items-center justify-between">
+              <span>Phone Number <span className="text-cyan-400">*</span></span>
+              {touched.phone && !phoneError && phone.trim().length >= 7 && (
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Valid</span>
+              )}
+            </label>
             <div className="relative">
               <Phone className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
               <input
                 type="tel"
                 required
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+234 812 000 0000"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                onBlur={() => markTouched('phone')}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Reject arbitrary alphabetic input
+                  if (!/[a-zA-Z]/.test(val)) {
+                    setPhone(val);
+                  }
+                }}
+                placeholder="+234 812 000 0000 or 08012345678"
+                className={`w-full bg-slate-950 border rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none text-sm transition-colors ${
+                  phoneError ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500'
+                }`}
               />
             </div>
+            {phoneError ? (
+              <p className="text-xs text-rose-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{phoneError}</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-1">
+                Supports Nigerian formats (08012345678, +23480...) and international numbers.
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Password (Min 8 Chars)</label>
+            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5 flex items-center justify-between">
+              <span>Password <span className="text-cyan-400">*</span> <span className="text-[11px] font-normal lowercase text-slate-500">(min 8 characters)</span></span>
+              {touched.password && !passwordError && password.length >= 8 && (
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Secure</span>
+              )}
+            </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
+                onBlur={() => markTouched('password')}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                className={`w-full bg-slate-950 border rounded-xl pl-11 pr-11 py-2.5 text-white placeholder-slate-600 focus:outline-none text-sm transition-colors ${
+                  passwordError ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500'
+                }`}
               />
               <button
                 type="button"
@@ -433,19 +526,33 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {passwordError && (
+              <p className="text-xs text-rose-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{passwordError}</span>
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Confirm Password</label>
+            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5 flex items-center justify-between">
+              <span>Confirm Password <span className="text-cyan-400">*</span></span>
+              {confirmPassword.length > 0 && password === confirmPassword && (
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Passwords match</span>
+              )}
+            </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
                 required
                 value={confirmPassword}
+                onBlur={() => markTouched('confirmPassword')}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                className={`w-full bg-slate-950 border rounded-xl pl-11 pr-11 py-2.5 text-white placeholder-slate-600 focus:outline-none text-sm transition-colors ${
+                  confirmError ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500'
+                }`}
               />
               <button
                 type="button"
@@ -456,6 +563,12 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {confirmError && (
+              <p className="text-xs text-rose-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{confirmError}</span>
+              </p>
+            )}
           </div>
 
           <button

@@ -33,12 +33,14 @@ import { ServiceRequestTrackerModal } from './ServiceRequestTrackerModal';
 
 interface NigeriaServicesViewProps {
   onNavigateHome?: () => void;
+  onNavigateToTechServices?: () => void;
   onOpenAdminServices?: () => void;
   isAdmin?: boolean;
 }
 
 export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
   onNavigateHome,
+  onNavigateToTechServices,
   onOpenAdminServices,
   isAdmin = false,
 }) => {
@@ -183,8 +185,24 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
                   onClick={onNavigateHome}
                   className="hover:text-blue-600 dark:hover:text-blue-400 font-semibold"
                 >
-                  Ecosystem Home
+                  Home
                 </button>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </>
+            )}
+            {onNavigateToTechServices ? (
+              <>
+                <button
+                  onClick={onNavigateToTechServices}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Tech & Digital Services
+                </button>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </>
+            ) : (
+              <>
+                <span className="text-slate-700 dark:text-slate-300">Tech & Digital Services</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </>
             )}
@@ -199,6 +217,16 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
 
           {/* Hub Status Badge & Quick Actions */}
           <div className="flex items-center gap-3">
+            {onNavigateToTechServices && (
+              <button
+                onClick={onNavigateToTechServices}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] transition-colors"
+                title="Return to Tech & Digital Services"
+              >
+                <span>← Back to Tech Services</span>
+              </button>
+            )}
+
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-bold text-[11px]">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
               <span>Managed Specialist Hub</span>
@@ -360,7 +388,7 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
             {isLoading ? (
               <div className="py-20 text-center space-y-3">
                 <RefreshCw className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
-                <p className="text-xs text-slate-500">Loading approved services in Nigeria...</p>
+                <p className="text-xs text-slate-500">Loading approved professional services...</p>
               </div>
             ) : filteredServices.length === 0 ? (
               <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">
@@ -403,9 +431,9 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
                         {service.category}
                       </div>
 
-                      <div className="absolute top-3 right-3 bg-emerald-950/80 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-bold text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                        <span>🇳🇬</span>
-                        <span>Nigeria Hub</span>
+                      <div className="absolute top-3 right-3 bg-blue-950/80 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-bold text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3 text-blue-400" />
+                        <span>Verified Specialist</span>
                       </div>
 
                       {/* Admin Delete Action */}
@@ -497,7 +525,7 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
               <div className="space-y-1">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span>Vetted Talent Network in Nigeria</span>
+                  <span>Vetted Specialist Talent Network</span>
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
                   Every specialist undergoes identity verification, past work inspection, and client milestone accountability. Before any project starts, Nexovira Management reviews the project scope and sets protected terms.
@@ -644,13 +672,13 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
           <div className="space-y-2 max-w-2xl text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-xs border border-blue-500/20">
               <Globe2 className="w-3.5 h-3.5" />
-              <span>Expanding African Digital Ecosystem</span>
+              <span>Enterprise & Digital Services Escrow</span>
             </div>
             <h3 className="text-xl font-black text-slate-900 dark:text-white">
               Why Book via Nexovira Services?
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              We eliminate freelance uncertainty. Nexovira coordinates project briefs, locks milestones in escrow, validates code and copy deliverables, and guarantees full resolution before funds are released. Currently serving Nigeria, with expansion across Africa underway.
+              We eliminate freelance uncertainty. Nexovira coordinates project briefs, locks milestones in escrow, validates code and copy deliverables, and guarantees full satisfaction before funds are released to vetted specialists.
             </p>
           </div>
 
@@ -727,7 +755,7 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              Are you sure you want to remove this service from the Nigeria Services Hub? Customers will no longer be able to browse or request it.
+              Are you sure you want to remove this service from the Services Catalog? Customers will no longer be able to browse or request it.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
