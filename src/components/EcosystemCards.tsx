@@ -24,47 +24,47 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
     {
       id: 'marketplace' as ActiveEcosystemView,
       title: 'NEXOVIRA Marketplace',
-      subtitle: 'Shop appliances, electronics & smart home tech',
-      badge: 'Verified Stock',
-      badgeColor: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+      subtitle: 'High-efficiency inverter appliances & smart home hardware',
+      badge: 'COMING SOON',
+      badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       icon: ShoppingBag,
-      gradient: 'from-slate-900 via-slate-900 to-cyan-950/40 border-slate-800 hover:border-cyan-500/60',
-      accentColor: 'text-cyan-400',
-      cta: 'Explore Marketplace',
+      gradient: 'from-slate-900 via-slate-900 to-amber-950/40 border-slate-800 hover:border-amber-500/60',
+      accentColor: 'text-amber-400',
+      cta: 'Preview Upcoming Catalog',
       image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
-      stats: '1,200+ Products • 10-Yr Warranty'
+      stats: 'Inverters, Clean Energy Hardware & Smart Living'
     },
     {
       id: 'services' as ActiveEcosystemView,
       title: 'Tech & Digital Services',
-      subtitle: 'Build, grow & transform your digital world',
-      badge: 'Managed Services',
+      subtitle: 'Software engineering, cloud systems & managed tech services',
+      badge: 'ACTIVE / AVAILABLE',
       badgeColor: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
       icon: Code2,
       gradient: 'from-slate-900 via-slate-900 to-cyan-950/40 border-slate-800 hover:border-cyan-500/60',
       accentColor: 'text-cyan-400',
       cta: 'Explore Services',
       image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80',
-      stats: 'AI, Web, Cloud, Design & DevOps'
+      stats: 'AI, Web, Cloud, Cybersecurity & Managed Booking'
     },
     {
       id: 'academy' as ActiveEcosystemView,
       title: 'NEXOVIRA Academy',
-      subtitle: 'Learn skills. Build your future.',
-      badge: 'Coming Soon',
-      badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      subtitle: 'Practical technology tracks & ₦4,500 scholarship tuition subsidies',
+      badge: 'ACTIVE / ENROLLING',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
       icon: GraduationCap,
-      gradient: 'from-slate-900 via-slate-900 to-amber-950/40 border-slate-800 hover:border-amber-500/60',
-      accentColor: 'text-amber-400',
-      cta: 'Start Learning',
+      gradient: 'from-slate-900 via-slate-900 to-emerald-950/40 border-slate-800 hover:border-emerald-500/60',
+      accentColor: 'text-emerald-400',
+      cta: 'View Available Courses',
       image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
-      stats: 'Web Dev, AI, Marketing & Business'
+      stats: 'Web Dev, AI, Cloud Engineering & Verified Certs'
     },
     {
       id: 'library' as ActiveEcosystemView,
       title: 'Digital Library',
       subtitle: 'Books, guides, resources & digital assets',
-      badge: 'Instant Download',
+      badge: 'ACTIVE / AVAILABLE',
       badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
       icon: BookOpen,
       gradient: 'from-slate-900 via-slate-900 to-emerald-950/40 border-slate-800 hover:border-emerald-500/60',
@@ -77,7 +77,7 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
       id: 'ai' as ActiveEcosystemView,
       title: 'NEXOVIRA AI Workspace',
       subtitle: 'Ask. Create. Learn. Solve.',
-      badge: 'Powered by Gemini 3.6',
+      badge: 'ACTIVE / AVAILABLE',
       badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
       icon: Sparkles,
       gradient: 'from-slate-900 via-slate-900 to-purple-950/40 border-slate-800 hover:border-purple-500/60',
@@ -90,7 +90,7 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
       id: 'affiliate' as ActiveEcosystemView,
       title: 'Affiliate & Earn',
       subtitle: 'Share. Refer. Earn commissions.',
-      badge: 'Up to 25% Rewards',
+      badge: 'ACTIVE / AVAILABLE',
       badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       icon: Share2,
       gradient: 'from-slate-900 via-slate-900 to-rose-950/40 border-slate-800 hover:border-rose-500/60',
@@ -120,9 +120,10 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
         <button
           onClick={() => onNavigate('presentation')}
           className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 shrink-0 border border-cyan-400/30"
+          title="Architectural Overview"
         >
           <Sparkles className="w-4 h-4 text-cyan-200" />
-          <span>Launch Vision Deck (12 Slides)</span>
+          <span>Explore Platform Architecture</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -177,18 +178,18 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
         })}
       </div>
 
-      {/* Featured Book a Service (Nigeria Hub) Callout Banner */}
+      {/* Featured Book a Service Callout Banner */}
       <div className="mt-8 rounded-3xl bg-gradient-to-r from-blue-950 via-slate-900 to-slate-950 border border-blue-500/30 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
         <div className="space-y-2 relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-            <span>🇳🇬</span>
-            <span>Nexovira Services Nigeria • Managed Booking Hub</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-500/30">
+            <Briefcase className="w-3.5 h-3.5 text-blue-400" />
+            <span>Nexovira Managed Services • Verified Specialists</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-white">
-            Need Expert Support? Book Vetted Specialists in Nigeria
+            Need Specialist Tech Support? Book Vetted Professionals
           </h3>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Browse qualified specialists in writing, affiliate growth, technology development, and digital solutions. Every project brief is reviewed and coordinated by Nexovira Management with milestone guarantees.
+            Connect with qualified specialists across software development, cloud systems, and technical services under our managed milestone guarantees.
           </p>
         </div>
 
@@ -198,7 +199,7 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) =>
             className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
           >
             <Briefcase className="w-4 h-4" />
-            <span>Book a Service (Nigeria)</span>
+            <span>Book a Service</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

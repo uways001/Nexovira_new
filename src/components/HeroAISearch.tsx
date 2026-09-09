@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { ActiveEcosystemView, CurrencyCode } from '../types';
 import { WhatsAppSupportButton } from './WhatsAppSupportButton';
+import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 import { 
   getSearchHistory, 
   saveSearchQuery, 
@@ -38,7 +39,7 @@ interface HeroAISearchProps {
 export const HeroAISearch: React.FC<HeroAISearchProps> = ({
   onOpenAI,
   onNavigate,
-  whatsappPhone = '+2348006392832',
+  whatsappPhone = NEXOVIRA_CONTACT_CONFIG.officialWhatsAppNumber,
 }) => {
   const [inputQuery, setInputQuery] = useState('');
   const [isListening, setIsListening] = useState(false);

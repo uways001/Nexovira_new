@@ -563,10 +563,10 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
               await logout();
               onNavigate && onNavigate('/signin');
             }}
-            className="self-start md:self-center px-4 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 z-10"
+            className="self-start md:self-center px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shrink-0 z-10"
             title="Sign Out of Affiliate Portal"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 text-slate-400" />
             <span>Sign Out</span>
           </button>
         )}

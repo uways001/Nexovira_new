@@ -563,10 +563,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
               await logout();
               onNavigate && onNavigate('/signin');
             }}
-            className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs rounded-xl border border-rose-500/30 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
             title="Sign Out of Admin Account"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5 text-slate-400" />
             <span>Sign Out</span>
           </button>
         </div>

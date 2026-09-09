@@ -943,8 +943,8 @@ export default function App() {
         }}
       />
 
-      {/* Live Auth State Inspector Diagnostics */}
-      <AuthDebugDiagnostics activeView={activeView} />
+      {/* Live Auth State Inspector Diagnostics (Dev Only) */}
+      {import.meta.env.DEV && <AuthDebugDiagnostics activeView={activeView} />}
 
     </div>
   );

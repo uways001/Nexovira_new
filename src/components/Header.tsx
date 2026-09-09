@@ -242,9 +242,9 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               type="button"
-              onClick={() => onOpenAI(searchQuery || 'Help me search NEXOVIRA appliances')}
-              className="mr-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold text-xs flex items-center gap-1.5 transition-colors shrink-0"
-              title="Search with NEXOVIRA AI Assistant"
+              onClick={() => onOpenAI(searchQuery.trim() || undefined)}
+              className="mr-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-semibold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
+              title="Open NEXOVIRA AI Assistant"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Ask AI</span>
@@ -341,12 +341,12 @@ export const Header: React.FC<HeaderProps> = ({
                   await logout();
                   onNavigate('/signin');
                 }}
-                className="p-2 sm:px-2.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/10 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold border border-transparent hover:border-rose-500/30 cursor-pointer"
+                className="p-2 sm:px-2.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-800 cursor-pointer"
                 title="Sign Out"
                 aria-label="Sign Out"
               >
-                <LogOut className="w-4 h-4 text-rose-400" />
-                <span className="hidden xl:inline text-rose-400">Sign Out</span>
+                <LogOut className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                <span className="hidden xl:inline">Sign Out</span>
               </button>
             </div>
           ) : (
@@ -386,6 +386,9 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>Marketplace</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30">
+                Soon
+              </span>
             </a>
 
             <div className="flex items-center">
@@ -405,11 +408,10 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
                     : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/20'
                 }`}
-                title="Book an On-Site or Domestic Service in Nigeria (under Tech Services)"
+                title="Book a Service with verified specialists"
               >
                 <Briefcase className="w-3 h-3" />
                 <span>Book a Service</span>
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 py-0.2 rounded font-black">🇳🇬</span>
               </button>
             </div>
 
@@ -546,10 +548,10 @@ export const Header: React.FC<HeaderProps> = ({
                   setMobileMenuOpen(false);
                   onNavigate('/signin');
                 }}
-                className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
                 title="Sign Out of Account"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -587,7 +589,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <Code2 className="w-4 h-4 text-blue-400" />
                   <span>Tech Services Ecosystem</span>
                 </a>
-                <span className="text-[10px] text-slate-400">Hub</span>
+                <span className="text-[10px] text-slate-400 font-normal">Services</span>
               </div>
               <a 
                 href="/book-service" 
@@ -596,14 +598,15 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-3.5 h-3.5 text-white" />
-                  <span>Book a Service (On-Site Specialists)</span>
+                  <span>Book a Service</span>
                 </div>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-black">🇳🇬 Hub →</span>
+                <span className="text-[10px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded font-bold">Verified →</span>
               </a>
             </div>
 
-            <a href="/marketplace" onClick={(e) => { e.preventDefault(); onNavigate('/marketplace'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-cyan-500" /> Marketplace
+            <a href="/marketplace" onClick={(e) => { e.preventDefault(); onNavigate('/marketplace'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center justify-between">
+              <span className="flex items-center gap-2"><ShoppingBag className="w-4 h-4 text-cyan-500" /> Marketplace</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">Soon</span>
             </a>
             <a href="/academy" onClick={(e) => { e.preventDefault(); onNavigate('/academy'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-amber-500" /> Academy
@@ -619,7 +622,7 @@ export const Header: React.FC<HeaderProps> = ({
             </a>
             <a href="/presentation" onClick={(e) => { e.preventDefault(); onNavigate('/presentation'); setMobileMenuOpen(false); }} className="p-3 bg-cyan-500/10 dark:bg-cyan-950/40 text-cyan-400 border border-cyan-500/30 rounded-xl text-left flex items-center gap-2 col-span-2">
               <Layers className="w-4 h-4 text-cyan-400 animate-pulse" />
-              <span>NEXOVIRA Ecosystem Deck (Vision • 12 Slides)</span>
+              <span>NEXOVIRA Platform Architecture Overview</span>
             </a>
             <a href="/about" onClick={(e) => { e.preventDefault(); onNavigate('/about'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
               <Info className="w-4 h-4 text-slate-400" /> About Us

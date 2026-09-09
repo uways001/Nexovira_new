@@ -267,8 +267,7 @@ export const TechServicesView: React.FC<TechServicesViewProps> = ({
                 }`}
               >
                 <Briefcase className="w-3.5 h-3.5" />
-                <span>Book a Service (On-Site &amp; Domestic Hub)</span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-bold">🇳🇬</span>
+                <span>Book a Service</span>
               </button>
 
               <button

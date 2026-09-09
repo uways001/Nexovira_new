@@ -193,16 +193,16 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
             </span>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-blue-600 dark:text-blue-400 font-bold">
-              Nigeria Hub
+              Verified Specialists
             </span>
           </div>
 
-          {/* Hub Country Badge & Quick Actions */}
+          {/* Hub Status Badge & Quick Actions */}
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 font-bold text-[11px]">
-              <span className="text-sm">🇳🇬</span>
-              <span>Nigeria Service Hub</span>
-              <span className="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded font-mono">Active</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-bold text-[11px]">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
+              <span>Managed Specialist Hub</span>
+              <span className="text-[10px] bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Active</span>
             </div>
 
             <button
@@ -233,35 +233,35 @@ export const NigeriaServicesView: React.FC<NigeriaServicesViewProps> = ({
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-black uppercase tracking-wider backdrop-blur-sm animate-fadeIn">
             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>Nexovira Services Nigeria • Managed Booking</span>
+            <span>Nexovira Managed Services • Verified Specialists</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            Connect with Qualified Experts in Nigeria.
+            Connect with Qualified Tech &amp; Digital Specialists
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-            Nexovira Services connects customers with qualified professionals through a managed, transparent, and technology-enabled service-booking experience. Every project brief is reviewed and coordinated by Nexovira Management.
+            Nexovira Managed Services connects organizations with verified specialists through a transparent, technology-enabled booking workflow with structured milestones, transparent briefs, and end-to-end management.
           </p>
 
           {/* 3 Steps Flow Highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-left">
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 font-black flex items-center justify-center text-xs mb-2">1</div>
-              <h4 className="font-bold text-xs text-white">Select Your Service</h4>
-              <p className="text-[11px] text-slate-300 mt-1">Writing, affiliate growth, technology development, digital solutions, or custom briefs.</p>
+              <h4 className="font-bold text-xs text-white">Select or Describe Service</h4>
+              <p className="text-[11px] text-slate-300 mt-1">Software engineering, cloud systems, managed IT, writing, technical solutions, or custom briefs.</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 font-black flex items-center justify-center text-xs mb-2">2</div>
-              <h4 className="font-bold text-xs text-white">Discuss with Management</h4>
-              <p className="text-[11px] text-slate-300 mt-1">Our team reviews your project specifications, scope, budget, and timeline requirements.</p>
+              <h4 className="font-bold text-xs text-white">Scope &amp; Transparent Brief</h4>
+              <p className="text-[11px] text-slate-300 mt-1">Our management team reviews your project specifications, scope, deliverables, and timeline requirements.</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-xs mb-2">3</div>
-              <h4 className="font-bold text-xs text-white">Assigned Approved Specialist</h4>
-              <p className="text-[11px] text-slate-300 mt-1">Matched with a vetted specialist in Nigeria with milestone guarantees and transparent tracking.</p>
+              <h4 className="font-bold text-xs text-white">Managed Milestones &amp; Delivery</h4>
+              <p className="text-[11px] text-slate-300 mt-1">Matched with a vetted specialist with milestone guarantees and transparent project tracking.</p>
             </div>
           </div>
 

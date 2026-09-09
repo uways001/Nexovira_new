@@ -8,6 +8,11 @@ interface AuthDebugDiagnosticsProps {
 }
 
 export const AuthDebugDiagnostics: React.FC<AuthDebugDiagnosticsProps> = ({ activeView }) => {
+  // Never render in production builds
+  if (!import.meta.env.DEV) {
+    return null;
+  }
+
   const { user, userProfile, isAdmin, isSeller, isAffiliate, loading, loginAsPresetUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hasAffiliateDoc, setHasAffiliateDoc] = useState<boolean | null>(null);

@@ -488,10 +488,10 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
                 await logout();
                 onNavigate && onNavigate('/signin');
               }}
-              className="px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
+              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
               title="Sign Out of Merchant Store"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 text-slate-400" />
               <span>Sign Out</span>
             </button>
           </div>
