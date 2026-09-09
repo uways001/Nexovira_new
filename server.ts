@@ -228,12 +228,7 @@ let aiClient: GoogleGenAI | null = null;
 function getAIClient(): GoogleGenAI {
   if (!aiClient) {
     aiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY || 'AI_KEY_PLACEHOLDER',
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
+      apiKey: process.env.GEMINI_API_KEY || 'AI_KEY_PLACEHOLDER'
     });
   }
   return aiClient;
@@ -612,7 +607,7 @@ app.post('/api/v1/paystack/verify', async (req, res) => {
 });
 
 // 1. Health Status
-app.get('/api/v1/health', (req, res) => {
+app.get(['/api/health', '/api/v1/health'], (req, res) => {
   res.json({ 
     status: 'ok', 
     ecosystem: 'NEXOVIRA AI Digital Commerce & Knowledge Platform', 
@@ -944,10 +939,12 @@ app.post('/api/v1/orders', (req, res) => {
 // 4. Intelligent NEXOVIRA AI Ecosystem Chatbot Endpoint (Customer Advisory Grounded strictly in available products)
 app.post('/api/v1/ai/chat', async (req, res) => {
   try {
-    const { prompt, availableProducts: clientProducts, currency = 'NGN' } = req.body;
-    if (!prompt) {
+    const rawPrompt = req.body.prompt || req.body.message;
+    const { availableProducts: clientProducts, currency = 'NGN' } = req.body;
+    if (!rawPrompt || typeof rawPrompt !== 'string' || !rawPrompt.trim()) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
+    const prompt = rawPrompt.trim();
 
     // STRICT INVENTORY POLICY: Filter strictly to products that have stock > 0
     const sourceProducts = Array.isArray(clientProducts) && clientProducts.length > 0 ? clientProducts : PRODUCTS;
@@ -985,10 +982,18 @@ ${JSON.stringify(availableInStockProducts.map((p: any) => ({
 
 Provide direct, polite, highly competent advice to the customer's query.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: `${systemPrompt}\n\nCustomer Inquired: ${prompt}`,
-    });
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: `${systemPrompt}\n\nCustomer Inquired: ${prompt}`,
+      });
+    } catch {
+      response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: `${systemPrompt}\n\nCustomer Inquired: ${prompt}`,
+      });
+    }
 
     const aiText = response.text || 'I analyzed our verified inventory and retrieved these in-stock options for your needs:';
     
@@ -1058,14 +1063,14 @@ If the provided review list is empty or contains no real feedback, return the JS
     let responseText = '';
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-flash-lite',
         contents,
       });
       responseText = response.text || '';
     } catch (modelErr) {
-      // Fallback to gemini-3.6-flash if alias requires
+      // Fallback to gemini-3.8-flash if needed
       const fallbackResponse = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.8-flash',
         contents,
       });
       responseText = fallbackResponse.text || '';
@@ -1103,10 +1108,18 @@ app.post('/api/v1/ai/admin', async (req, res) => {
     const { query } = req.body;
     const ai = getAIClient();
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: `You are NEXOVIRA Admin AI for the Executive Owner in Victoria Island, Lagos, Nigeria. Answer concisely: "${query}". Context: GMV is $1,842,900 across 142 verified stores, 6 digital ecosystems active.`,
-    });
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: `You are NEXOVIRA Admin AI for the Executive Owner in Victoria Island, Lagos, Nigeria. Answer concisely: "${query}". Context: GMV is $1,842,900 across 142 verified stores, 6 digital ecosystems active.`,
+      });
+    } catch {
+      response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: `You are NEXOVIRA Admin AI for the Executive Owner in Victoria Island, Lagos, Nigeria. Answer concisely: "${query}". Context: GMV is $1,842,900 across 142 verified stores, 6 digital ecosystems active.`,
+      });
+    }
 
     res.json({ answer: response.text });
   } catch (err) {
@@ -1128,9 +1141,11 @@ app.post('/api/v1/tech-services/ai-analyze-request', async (req, res) => {
 
     try {
       const ai = getAIClient();
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: `You are the NEXOVIRA AI Technical Architect. 
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite',
+          contents: `You are the NEXOVIRA AI Technical Architect. 
 Your role is to understand a client's project idea, problem, or service requirement, and translate it into a structured technical scoping recommendation for the Nexovira Managed Services team.
 
 IMPORTANT BUSINESS PRINCIPLE:
@@ -1159,15 +1174,52 @@ Respond ONLY with a valid JSON object matching this schema:
     }
   ]
 }`,
-        config: {
-          responseMimeType: 'application/json'
-        }
-      });
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+      } catch {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: `You are the NEXOVIRA AI Technical Architect. 
+Your role is to understand a client's project idea, problem, or service requirement, and translate it into a structured technical scoping recommendation for the Nexovira Managed Services team.
+
+IMPORTANT BUSINESS PRINCIPLE:
+Nexovira operates as a managed professional services ecosystem (Customer -> Nexovira -> Expert -> Completion). 
+DO NOT quote specific monetary prices, exact completion dates, or legal guarantees.
+
+Analyze the user's project prompt:
+"${cleanPrompt}"
+
+Respond ONLY with a valid JSON object matching this schema:
+{
+  "summary": "Crisp 1-2 sentence high-level summary of what the client wants to build or achieve",
+  "suggestedCategory": "One of: Artificial Intelligence | Web & Software Development | Mobile Development | Cloud & DevOps | Cybersecurity | UI/UX & Product Design | Graphics & Branding | Data & Analytics | Digital Marketing | Writing & Content",
+  "recommendedExpertise": ["Array of 2 to 5 relevant technical/creative skill areas, e.g. Frontend Development, UI/UX Design, Payment Gateway Integration"],
+  "possibleRequirements": ["Array of 3 to 6 tangible functional requirements, e.g. Responsive User Interface, Product Catalog, Secure Checkout & Payments, Admin Management Dashboard"],
+  "projectComplexity": "Low" | "Medium" | "High" | "Enterprise",
+  "suggestedProjectType": "One-time Project" | "Short-term Project" | "Long-term Project" | "Consultation" | "Ongoing Support",
+  "suggestedScope": "Small" | "Medium" | "Large" | "Enterprise",
+  "clarifyingQuestions": [
+    "2 to 3 courteous, clarifying questions that would help refine this project scope before assigning an expert"
+  ],
+  "recommendations": [
+    {
+      "area": "e.g. Architecture / Mobile / Security / Payments",
+      "advice": "1 brief sentence explaining a strategic recommendation"
+    }
+  ]
+}`,
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+      }
 
       const parsed = JSON.parse(response.text || '{}');
       return res.json({
         success: true,
-        source: 'gemini-3.8-flash',
+        source: 'gemini-3.1-flash-lite',
         data: parsed
       });
     } catch (aiErr) {
@@ -1297,13 +1349,24 @@ Respond ONLY with a valid JSON object matching:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: promptText,
-        config: {
-          responseMimeType: 'application/json'
-        }
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite',
+          contents: promptText,
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+      } catch {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: promptText,
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+      }
 
       const parsed = JSON.parse(response.text || '{}');
       const matchesList = Array.isArray(parsed) ? parsed : (parsed.matches || []);
