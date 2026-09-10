@@ -643,7 +643,7 @@ export default function App() {
 
             {/* Six Ecosystem Visual Cards */}
             {homepageSections.find((s) => s.type === 'ecosystem-cards')?.enabled && (
-              <EcosystemCards onNavigate={setActiveView} />
+              <EcosystemCards onNavigate={setActiveView} productCount={allProducts.length} />
             )}
 
             {/* Category Grid */}

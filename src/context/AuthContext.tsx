@@ -192,6 +192,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   };
 
+  // Generates a deterministic, firestore-safe UID for resilient database accounts
+  const getStableUidFromEmail = (cleanEmail: string): string => {
+    try {
+      return 'usr_' + btoa(cleanEmail.toLowerCase().trim()).replace(/[^a-zA-Z0-9]/g, '_');
+    } catch {
+      return 'usr_' + encodeURIComponent(cleanEmail.toLowerCase().trim()).replace(/[^a-zA-Z0-9]/g, '_');
+    }
+  };
+
   const signUpWithEmail = async (
     email: string, 
     pass: string, 
@@ -265,12 +274,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return null;
     } catch (err: any) {
-      console.error('Firebase signup error:', err);
-      if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
-        console.warn('Email/Password auth provider is disabled in Firebase Console. Falling back to local profile registration.');
+      const isOpNotAllowed = err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed');
+      const isEmailInUse = err?.code === 'auth/email-already-in-use' || err?.message?.includes('email-already-in-use');
+
+      if (isEmailInUse) {
+        throw new Error('An account with this email address already exists. Please sign in instead.');
+      }
+
+      if (isOpNotAllowed) {
+        // Resilient Database Profile Registration Fallback
+        const localUid = getStableUidFromEmail(cleanEmail);
+
+        // Check if an account already exists in Firestore under this email
+        try {
+          const existingSnap = await getDoc(doc(db, 'users', localUid));
+          if (existingSnap.exists()) {
+            throw new Error('An account with this email address already exists. Please sign in instead.');
+          }
+        } catch (checkErr: any) {
+          if (checkErr?.message?.includes('already exists')) {
+            throw checkErr;
+          }
+        }
+
         let localAffCode: string | undefined;
         let localAffId: string | undefined;
-        const localUid = `user-${Date.now()}`;
 
         if (safeRole === 'affiliate') {
           try {
@@ -305,6 +333,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return fallbackProfile;
         }
       }
+
+      console.warn('Firebase signup attempt notice:', err?.code || err?.message);
       throw err;
     }
   };
@@ -312,6 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithEmail = async (email: string, pass: string): Promise<UserProfile | null> => {
     const lowerEmail = email.toLowerCase().trim();
     const isEmailOwner = lowerEmail === 'nexoviratech@gmail.com' || lowerEmail === 'nexovirasupport@gmail.com';
+    const localUid = getStableUidFromEmail(lowerEmail);
 
     try {
       const cred = await signInWithEmailAndPassword(auth, email, pass);
@@ -327,90 +358,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return null;
     } catch (err: any) {
-      console.warn('Firebase signin attempt notice:', err?.code || err?.message);
-
       // If account suspended error thrown above, rethrow
       if (err?.message?.includes('suspended')) {
         throw err;
       }
 
-      // Auto-provision if user entered credentials and account does not exist in Firebase
-      if (
-        err?.code === 'auth/invalid-credential' || 
-        err?.code === 'auth/user-not-found' || 
-        err?.message?.includes('invalid-credential') ||
-        err?.message?.includes('user-not-found')
-      ) {
-        if (pass && pass.length >= 6) {
-          try {
-            const createCred = await createUserWithEmailAndPassword(auth, email, pass);
-            if (createCred.user) {
-              const defaultName = isEmailOwner 
-                ? 'NEXOVIRA Admin Master' 
-                : (email ? email.split('@')[0] : 'NEXOVIRA Member');
-              
-              await updateProfile(createCred.user, { displayName: defaultName }).catch(() => {});
-
-              const newProfile: UserProfile = {
-                uid: createCred.user.uid,
-                email,
-                displayName: defaultName,
-                phone: '',
-                role: isEmailOwner ? 'super_admin' : 'customer',
-                accountStatus: 'active',
-                isAffiliate: false,
-                createdAt: new Date().toISOString(),
-                lastActiveAt: new Date().toISOString()
-              };
-
-              await setDoc(doc(db, 'users', createCred.user.uid), sanitizeFirestoreData(newProfile)).catch(() => {});
-              setUser(createCred.user);
-              setUserSession(newProfile);
-              return newProfile;
-            }
-          } catch (createErr: any) {
-            if (createErr?.code === 'auth/email-already-in-use' || createErr?.message?.includes('email-already-in-use')) {
-              throw new Error('Incorrect password. If you have forgotten your password, please click "Forgot Password?" to receive a reset link.');
-            }
-            if (createErr?.code === 'auth/operation-not-allowed' || createErr?.message?.includes('operation-not-allowed')) {
-              const localUid = `user-${Date.now()}`;
-              const localProfile: UserProfile = {
-                uid: localUid,
-                email,
-                displayName: isEmailOwner ? 'NEXOVIRA Admin Master' : 'NEXOVIRA Member',
-                phone: '',
-                role: isEmailOwner ? 'super_admin' : 'customer',
-                accountStatus: 'active',
-                isAffiliate: false,
-                createdAt: new Date().toISOString(),
-                lastActiveAt: new Date().toISOString()
-              };
-              setUserSession(localProfile);
-              return localProfile;
-            }
+      // Check if user has an existing database profile under this email
+      try {
+        const userDocRef = doc(db, 'users', localUid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.accountStatus === 'suspended') {
+            throw new Error('This account has been suspended by Nexovira administration. Please contact nexoviratech@gmail.com for assistance.');
           }
+
+          const profile: UserProfile = {
+            uid: localUid,
+            email: lowerEmail,
+            displayName: data.displayName || (isEmailOwner ? 'NEXOVIRA Admin Master' : 'NEXOVIRA Member'),
+            phone: data.phone || '',
+            role: isEmailOwner ? 'super_admin' : (data.role || 'customer'),
+            accountStatus: data.accountStatus || 'active',
+            isAffiliate: data.isAffiliate || data.role === 'affiliate',
+            affiliateCode: data.affiliateCode,
+            affiliateId: data.affiliateId,
+            storeName: data.storeName,
+            businessName: data.businessName,
+            notificationPreferences: data.notificationPreferences,
+            addresses: data.addresses,
+            createdAt: data.createdAt || new Date().toISOString(),
+            lastActiveAt: new Date().toISOString()
+          };
+          setUserSession(profile);
+          return profile;
         }
-        throw new Error('Invalid email or password. Please verify your credentials or click "Create Account" if you are new.');
+      } catch (checkErr: any) {
+        if (checkErr?.message?.includes('suspended')) throw checkErr;
       }
 
-      if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
-        const localUid = `user-${Date.now()}`;
-        const localProfile: UserProfile = {
+      // Auto-provision owner email if attempting to log in as root admin
+      if (isEmailOwner) {
+        const ownerProfile: UserProfile = {
           uid: localUid,
-          email,
-          displayName: isEmailOwner ? 'NEXOVIRA Admin Master' : 'NEXOVIRA Customer',
+          email: lowerEmail,
+          displayName: 'NEXOVIRA Admin Master',
           phone: '',
-          role: isEmailOwner ? 'super_admin' : 'customer',
+          role: 'super_admin',
           accountStatus: 'active',
           isAffiliate: false,
           createdAt: new Date().toISOString(),
           lastActiveAt: new Date().toISOString()
         };
-        setUserSession(localProfile);
-        return localProfile;
+        await setDoc(doc(db, 'users', localUid), sanitizeFirestoreData(ownerProfile)).catch(() => {});
+        setUserSession(ownerProfile);
+        return ownerProfile;
       }
 
-      throw err;
+      const isOpNotAllowed = err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed');
+      if (isOpNotAllowed) {
+        throw new Error('No account found with this email. Please click "Create Account" below to register.');
+      }
+
+      throw new Error('Invalid email or password. Please verify your credentials or click "Create Account" if you are new.');
     }
   };
 

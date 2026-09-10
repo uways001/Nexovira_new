@@ -635,13 +635,30 @@ app.post('/api/v1/newsletter/subscribe', (req, res) => {
 // 3. Product Catalog & Management Endpoints (Row-Level Security & Automated seller_id Assignment)
 let inMemoryProducts = [...PRODUCTS];
 
-app.get('/api/v1/products', (req, res) => {
+app.get(['/api/v1/products', '/api/products'], (req, res) => {
   const sellerIdQuery = (req.query.seller_id as string) || (req.query.sellerId as string);
+  const categoryIdQuery = (req.query.category_id as string) || (req.query.categoryId as string) || (req.query.category as string);
+  let results = inMemoryProducts;
   if (sellerIdQuery) {
-    const filtered = inMemoryProducts.filter(p => p.sellerId === sellerIdQuery || (p as any).seller_id === sellerIdQuery);
-    return res.json({ success: true, products: filtered });
+    results = results.filter(p => p.sellerId === sellerIdQuery || (p as any).seller_id === sellerIdQuery);
   }
-  res.json({ success: true, products: inMemoryProducts });
+  if (categoryIdQuery && categoryIdQuery !== 'all') {
+    results = results.filter(p => p.categoryId === categoryIdQuery);
+  }
+  res.json({ success: true, products: results, count: results.length });
+});
+
+app.get(['/api/v1/products/:id', '/api/products/:id'], (req, res) => {
+  const productId = req.params.id;
+  const product = inMemoryProducts.find(p => p.id === productId);
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      error: 'Product Not Found',
+      message: `Product with ID "${productId}" does not exist.`
+    });
+  }
+  res.json({ success: true, product });
 });
 
 // RESTful Route Isolation for Admin Product Management

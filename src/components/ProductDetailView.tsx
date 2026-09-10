@@ -49,6 +49,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const isDigital = Boolean(product.isDigital || product.productType === 'digital_ebook');
 
   const handleAdd = (e: React.MouseEvent) => {
+    if (product.stock <= 0) return;
     onAddToCart(product, quantity, e);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -156,7 +157,12 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             </div>
 
             <span className="text-slate-500 dark:text-slate-400 font-medium">
-              Stock Status: <span className="text-emerald-500 font-bold">{product.stock > 0 ? `${product.stock} Units Available in Lagos` : 'Out of Stock'}</span>
+              Stock Status:{' '}
+              {product.stock > 0 ? (
+                <span className="text-emerald-500 font-bold">{product.stock} Units Available</span>
+              ) : (
+                <span className="text-rose-500 font-bold">Out of Stock</span>
+              )}
             </span>
 
             {product.warranty && (
@@ -179,7 +185,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               )}
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              Includes VAT & Official Lagos Hub Manufacturer Warranty Protection.
+              {product.warranty ? `Warranty: ${product.warranty}. ` : ''}Standard dispatch from verified seller inventory.
             </div>
           </div>
 
@@ -198,42 +204,48 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
           {/* Quantity & CTA Row */}
           <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-950">
+            {product.stock > 0 ? (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-950">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-2 text-slate-500 hover:text-white font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="px-4 py-2 font-mono font-bold text-sm text-slate-900 dark:text-white">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    className="px-3 py-2 text-slate-500 hover:text-white font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-2 text-slate-500 hover:text-white font-bold"
+                  onClick={handleAdd}
+                  className="flex-1 py-3 px-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-sm rounded-xl hover:shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  -
+                  <ShoppingCart className="w-4 h-4" />
+                  <span>{added ? 'Added to Cart!' : 'Add to Cart'}</span>
                 </button>
-                <span className="px-4 py-2 font-mono font-bold text-sm text-slate-900 dark:text-white">{quantity}</span>
+
+                {/* Set Price Alert Button */}
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-3 py-2 text-slate-500 hover:text-white font-bold"
+                  type="button"
+                  onClick={() => setShowPriceAlertModal(true)}
+                  className="py-3 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 font-extrabold text-xs flex items-center gap-1.5 transition-all"
+                  title="Set Target Price Drop Alert"
                 >
-                  +
+                  <Bell className="w-4 h-4" />
+                  <span className="hidden sm:inline">Price Alert</span>
                 </button>
               </div>
-
-              <button
-                onClick={handleAdd}
-                className="flex-1 py-3 px-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-sm rounded-xl hover:shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <span>{added ? 'Added to Cart!' : 'Add to Cart'}</span>
-              </button>
-
-              {/* Set Price Alert Button */}
-              <button
-                type="button"
-                onClick={() => setShowPriceAlertModal(true)}
-                className="py-3 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 font-extrabold text-xs flex items-center gap-1.5 transition-all"
-                title="Set Target Price Drop Alert"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">Price Alert</span>
-              </button>
-            </div>
+            ) : (
+              <div className="p-4 bg-slate-100 dark:bg-slate-800 text-rose-500 dark:text-rose-400 font-bold text-sm rounded-xl text-center border border-slate-200 dark:border-slate-700">
+                This item is currently out of stock and unavailable for purchase.
+              </div>
+            )}
 
             {/* Direct WhatsApp Order CTA */}
             <WhatsAppSupportButton

@@ -40,22 +40,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Badges & Media Container */}
       <div className="relative aspect-4/3 w-full bg-slate-100 dark:bg-slate-950 overflow-hidden">
         <img
-          src={product.images[0]}
+          src={product.images?.[0] || 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600&auto=format&fit=crop&q=80'}
           alt={product.title}
           referrerPolicy="no-referrer"
           loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600&auto=format&fit=crop&q=80';
+          }}
+          className={`w-full h-full object-cover transition-transform duration-500 ${product.stock <= 0 ? 'opacity-60 grayscale-[40%]' : 'group-hover:scale-105'}`}
         />
 
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10 items-start">
-          {(product.isDigital || product.productType === 'digital_ebook') && (
+          {product.stock <= 0 ? (
+            <span className="bg-rose-600 text-white font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-md">
+              Out of Stock
+            </span>
+          ) : (product.isDigital || product.productType === 'digital_ebook') ? (
             <span className="bg-purple-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-md flex items-center gap-1">
               <BookOpen className="w-3 h-3 fill-current" />
               DIGITAL E-BOOK
             </span>
-          )}
-          {product.isFlashDeal && (
+          ) : null}
+          {product.stock > 0 && product.isFlashDeal && (
             <span className="bg-red-600 text-white font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-md flex items-center gap-1">
               <Zap className="w-3 h-3 fill-current" />
               Flash Deal
@@ -157,8 +164,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.title}
           </h3>
 
-          {/* Ratings & Reviews Count */}
-          <div className="flex items-center gap-1.5 mt-2">
+          {/* Ratings, Stock & Warranty */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
             <div className="flex items-center text-amber-400">
               <Star className="w-3.5 h-3.5 fill-amber-400" />
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 ml-1">
@@ -168,8 +175,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ({product.reviewCount ?? 0})
               </span>
             </div>
-            <span className="text-slate-400 text-[11px]">• Authentic Warranty</span>
+
+            <span className="text-slate-300 dark:text-slate-700 text-xs">•</span>
+
+            {product.stock > 0 ? (
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                {product.stock} in stock
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                Out of stock
+              </span>
+            )}
+
+            {product.warranty && (
+              <>
+                <span className="text-slate-300 dark:text-slate-700 text-xs">•</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] truncate max-w-[120px]" title={product.warranty}>
+                  {product.warranty}
+                </span>
+              </>
+            )}
           </div>
+
+          {product.sellerName && (
+            <div className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 truncate">
+              Sold by <span className="font-medium text-slate-600 dark:text-slate-300">{product.sellerName}</span>
+            </div>
+          )}
 
           {/* Key Specification snippet */}
           <div className="mt-2 flex flex-wrap gap-1">
@@ -204,13 +237,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Action Button Row */}
           <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={(e) => onAddToCart(product, e)}
-              className="w-full py-2 px-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 dark:hover:bg-cyan-500 dark:hover:text-slate-950 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <ShoppingCart className="w-3.5 h-3.5 text-cyan-400 group-hover:text-slate-950" />
-              <span>Add Cart</span>
-            </button>
+            {product.stock > 0 ? (
+              <button
+                onClick={(e) => onAddToCart(product, e)}
+                className="w-full py-2 px-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 dark:hover:bg-cyan-500 dark:hover:text-slate-950 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+              >
+                <ShoppingCart className="w-3.5 h-3.5 text-cyan-400 group-hover:text-slate-950" />
+                <span>Add Cart</span>
+              </button>
+            ) : (
+              <button
+                disabled
+                onClick={(e) => e.stopPropagation()}
+                className="w-full py-2 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed border border-slate-200 dark:border-slate-800"
+              >
+                <span>Out of Stock</span>
+              </button>
+            )}
 
             <button
               onClick={(e) => onAskAI(product, e)}

@@ -365,9 +365,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <span className="text-slate-400 group-hover:text-cyan-500 font-normal ml-1">({totalReviewsCount} {totalReviewsCount === 1 ? 'review' : 'verified reviews'})</span>
                 </button>
                 <span className="text-slate-300 dark:text-slate-700">|</span>
-                <span className="font-semibold text-emerald-500">
-                  In Stock ({product.stock} units left)
-                </span>
+                {product.stock > 0 ? (
+                  <span className="font-semibold text-emerald-500">
+                    In Stock ({product.stock} units available)
+                  </span>
+                ) : (
+                  <span className="font-bold text-rose-500">
+                    Out of Stock
+                  </span>
+                )}
               </div>
 
               {/* Digital E-book Notice Banner */}
@@ -914,34 +920,42 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             {/* Bottom Actions */}
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-3">
-              {/* Quantity Selector */}
-              <div className="flex items-center border border-slate-300 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-2 font-bold text-slate-600 dark:text-slate-300 hover:text-cyan-500"
-                >
-                  -
-                </button>
-                <span className="px-3 text-sm font-bold">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-3 py-2 font-bold text-slate-600 dark:text-slate-300 hover:text-cyan-500"
-                >
-                  +
-                </button>
-              </div>
+              {product.stock > 0 ? (
+                <>
+                  {/* Quantity Selector */}
+                  <div className="flex items-center border border-slate-300 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="px-3 py-2 font-bold text-slate-600 dark:text-slate-300 hover:text-cyan-500"
+                    >
+                      -
+                    </button>
+                    <span className="px-3 text-sm font-bold">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      className="px-3 py-2 font-bold text-slate-600 dark:text-slate-300 hover:text-cyan-500"
+                    >
+                      +
+                    </button>
+                  </div>
 
-              {/* Add to Cart */}
-              <button
-                onClick={() => {
-                  onAddToCart(product, quantity);
-                  onClose();
-                }}
-                className="flex-1 w-full sm:w-auto py-3 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-bold text-sm rounded-xl hover:bg-cyan-600 dark:hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 shadow-lg"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <span>Add To Cart ({formatCurrency(product.price * quantity, currency)})</span>
-              </button>
+                  {/* Add to Cart */}
+                  <button
+                    onClick={() => {
+                      onAddToCart(product, quantity);
+                      onClose();
+                    }}
+                    className="flex-1 w-full sm:w-auto py-3 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-bold text-sm rounded-xl hover:bg-cyan-600 dark:hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>Add To Cart ({formatCurrency(product.price * quantity, currency)})</span>
+                  </button>
+                </>
+              ) : (
+                <div className="flex-1 w-full py-3 px-6 bg-slate-100 dark:bg-slate-800 text-rose-500 dark:text-rose-400 font-bold text-sm rounded-xl flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700">
+                  <span>Currently Unavailable / Out of Stock</span>
+                </div>
+              )}
 
               {/* Compare Button */}
               <button

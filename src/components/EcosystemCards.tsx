@@ -17,22 +17,25 @@ import {
 
 interface EcosystemCardsProps {
   onNavigate: (view: ActiveEcosystemView) => void;
+  productCount?: number;
 }
 
-export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate }) => {
+export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, productCount = 0 }) => {
   const cards = [
     {
       id: 'marketplace' as ActiveEcosystemView,
       title: 'NEXOVIRA Marketplace',
       subtitle: 'High-efficiency inverter appliances & smart home hardware',
-      badge: 'COMING SOON',
-      badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      badge: productCount > 0 ? 'CATALOG LIVE' : 'COMING SOON',
+      badgeColor: productCount > 0 
+        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' 
+        : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       icon: ShoppingBag,
       gradient: 'from-slate-900 via-slate-900 to-amber-950/40 border-slate-800 hover:border-amber-500/60',
       accentColor: 'text-amber-400',
-      cta: 'Preview Upcoming Catalog',
+      cta: productCount > 0 ? 'Explore Marketplace' : 'Preview Upcoming Catalog',
       image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
-      stats: 'Inverters, Clean Energy Hardware & Smart Living'
+      stats: productCount > 0 ? `${productCount} Verified Products in Catalog` : 'Inverters, Clean Energy Hardware & Smart Living'
     },
     {
       id: 'services' as ActiveEcosystemView,

@@ -1,17 +1,25 @@
 import React from 'react';
-import { Sparkles, ShieldCheck, ArrowRight, Zap, RefreshCw, Cpu, Award } from 'lucide-react';
+import { Sparkles, ShieldCheck, ArrowRight, Zap, RefreshCw, Cpu, Award, Store, Layers } from 'lucide-react';
+import { Product } from '../types';
 
 interface HeroProps {
   onOpenAI: (query?: string) => void;
   onExploreMarketplace: () => void;
+  featuredProduct?: Product | null;
+  productCount?: number;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) => {
+export const Hero: React.FC<HeroProps> = ({
+  onOpenAI,
+  onExploreMarketplace,
+  featuredProduct,
+  productCount = 0
+}) => {
   const samplePrompts = [
     'I need an air conditioner for a medium-sized room',
-    'Find me a smart refrigerator under $1,500',
+    'Find me energy-efficient inverter appliances',
     'Which washing machine is best for a family of 6?',
-    'Show me the best 4K OLED gaming TV',
+    'Show me smart electronics and home equipment',
     'Emergency solar generator for home power backup'
   ];
 
@@ -30,7 +38,11 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) =>
             {/* Trust Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-semibold text-xs tracking-wide">
               <ShieldCheck className="w-4 h-4 text-cyan-400" />
-              <span>Grounded Commerce AI • Official Brand Warranty Guaranteed</span>
+              <span>
+                {productCount > 0
+                  ? `Live Catalog • ${productCount} Verified Items Available`
+                  : 'Grounded Commerce AI • Smart Tech & Appliance Ecosystem'}
+              </span>
             </div>
 
             {/* Main Title */}
@@ -46,7 +58,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) =>
               "Innovation begins with vision. Smart living, better every day."
             </p>
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl font-normal leading-relaxed">
-              The modern marketplace for appliances, smart home equipment, electronics, and consumer tech — powered by intelligent, grounded natural-language discovery.
+              The modern marketplace for appliances, smart home equipment, electronics, certified tech engineering, and digital learning — powered by intelligent, grounded natural-language discovery.
             </p>
 
             {/* Natural Language Prompt Interactive Box */}
@@ -74,7 +86,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) =>
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                 <button
                   onClick={() => onOpenAI()}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 fill-current" />
                   <span>Ask NEXOVIRA AI Assistant</span>
@@ -82,7 +94,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) =>
 
                 <button
                   onClick={onExploreMarketplace}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Explore Marketplace</span>
                   <ArrowRight className="w-4 h-4" />
@@ -90,19 +102,19 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) =>
               </div>
             </div>
 
-            {/* Quick Stats Banner */}
+            {/* Authentic Platform Pillars Banner */}
             <div className="pt-4 grid grid-cols-3 gap-4 border-t border-slate-800/80 text-left">
               <div>
-                <div className="text-xl sm:text-2xl font-black text-white">100% Verified</div>
-                <div className="text-xs text-slate-400">Direct Brand Stores</div>
+                <div className="text-xl sm:text-2xl font-black text-white">Direct Sellers</div>
+                <div className="text-xs text-slate-400">Vetted Local Merchants</div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-cyan-400">Zero Hallucination</div>
-                <div className="text-xs text-slate-400">Real Prices & Stock</div>
+                <div className="text-xl sm:text-2xl font-black text-cyan-400">Real-Time</div>
+                <div className="text-xs text-slate-400">Database-Backed Stock</div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-white">10-Yr Warranty</div>
-                <div className="text-xs text-slate-400">On Major Inverters</div>
+                <div className="text-xl sm:text-2xl font-black text-white">Full Services</div>
+                <div className="text-xs text-slate-400">Tech & Engineering Hub</div>
               </div>
             </div>
           </div>
@@ -111,42 +123,73 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAI, onExploreMarketplace }) =>
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md rounded-3xl p-1 bg-gradient-to-b from-cyan-500/30 via-slate-800 to-slate-900 shadow-2xl shadow-cyan-500/10">
               <div className="bg-slate-950 rounded-[22px] overflow-hidden p-4 space-y-4">
-                {/* Visual Header */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-                    <span className="text-xs font-bold text-slate-200">Featured AI Recommendation</span>
-                  </div>
-                  <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded">
-                    Match: 99.4%
-                  </span>
-                </div>
+                {featuredProduct ? (
+                  <>
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                        <span className="text-xs font-bold text-slate-200">Featured Inventory</span>
+                      </div>
+                      <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded">
+                        {featuredProduct.brand}
+                      </span>
+                    </div>
 
-                {/* Hero Showcase Image */}
-                <div className="relative aspect-16/10 rounded-xl overflow-hidden bg-slate-900">
-                  <img
-                    src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&auto=format&fit=crop&q=80"
-                    alt="NEXOVIRA Pro-Cool AC"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <div className="text-xs font-bold text-white">NEXOVIRA Pro-Cool 2.0 HP Inverter AC</div>
-                    <div className="text-[11px] text-cyan-300 font-semibold">$680 (Save $170) • A+++ Energy Rating</div>
-                  </div>
-                </div>
+                    <div className="relative aspect-16/10 rounded-xl overflow-hidden bg-slate-900">
+                      <img
+                        src={featuredProduct.images?.[0] || 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&auto=format&fit=crop&q=80'}
+                        alt={featuredProduct.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <div className="text-xs font-bold text-white truncate">{featuredProduct.title}</div>
+                        <div className="text-[11px] text-cyan-300 font-semibold">
+                          {featuredProduct.stock > 0 ? `${featuredProduct.stock} Available in Stock` : 'Out of Stock'}
+                        </div>
+                      </div>
+                    </div>
 
-                {/* AI Grounded Insight Box */}
-                <div className="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-3 text-xs space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
-                    <Cpu className="w-3.5 h-3.5" />
-                    <span>Why NEXOVIRA AI Selected This:</span>
-                  </div>
-                  <p className="text-slate-300 leading-relaxed text-[11px]">
-                    Ideal for 35m² medium-large rooms. Dual inverter compressor cuts power consumption by 70% in eco mode. Verified 10-year compressor warranty.
-                  </p>
-                </div>
+                    <div className="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-3 text-xs space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                        <Cpu className="w-3.5 h-3.5" />
+                        <span>Verified Database Entry:</span>
+                      </div>
+                      <p className="text-slate-300 leading-relaxed text-[11px] line-clamp-2">
+                        {featuredProduct.description || 'Verified product catalog entry in NEXOVIRA marketplace.'}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-xs font-bold text-slate-200">Catalog Pre-Launch</span>
+                      </div>
+                      <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded">
+                        Merchant Onboarding
+                      </span>
+                    </div>
+
+                    <div className="relative aspect-16/10 rounded-xl overflow-hidden bg-slate-900 flex flex-col items-center justify-center p-6 text-center border border-slate-800">
+                      <Store className="w-10 h-10 text-cyan-400 mb-2" />
+                      <div className="text-sm font-bold text-white">Merchant Catalog Opening</div>
+                      <div className="text-xs text-slate-400 mt-1">Verified appliance & electronics inventory preparing for launch</div>
+                    </div>
+
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Connected NEXOVIRA Hub:</span>
+                      </div>
+                      <p className="text-slate-300 leading-relaxed text-[11px]">
+                        Certified engineering repairs, academy masterclasses, and digital resources are active. Appliance merchants are onboarding daily.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
