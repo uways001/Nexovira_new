@@ -150,8 +150,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-800 flex flex-wrap gap-4 justify-between items-center text-xs text-slate-400">
-          <span>Official Domain: <a href="https://nexovira.name.ng" className="text-cyan-400 hover:underline font-mono">nexovira.name.ng</a></span>
+        <div className="pt-4 border-t border-slate-800 flex justify-end items-center text-xs text-slate-400">
           <button
             onClick={() => onNavigate('/marketplace')}
             className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-extrabold rounded-xl hover:bg-cyan-400 transition-colors"

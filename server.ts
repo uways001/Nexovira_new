@@ -237,18 +237,22 @@ function getAIClient(): GoogleGenAI {
 // SEO Static Resources: Robots.txt & Sitemap.xml
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.get('host') || 'localhost:3000';
   res.send(`User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /account
 
-Sitemap: https://nexovira.name.ng/sitemap.xml
+Sitemap: ${protocol}://${host}/sitemap.xml
 `);
 });
 
 app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml');
-  const baseUrl = 'https://nexovira.name.ng';
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.get('host') || 'localhost:3000';
+  const baseUrl = `${protocol}://${host}`;
   const today = new Date().toISOString().split('T')[0];
 
   const staticRoutes = [
@@ -614,7 +618,7 @@ app.get(['/api/health', '/api/v1/health'], (req, res) => {
     ownerLocation: 'Victoria Island, Lagos, Nigeria',
     phone: '+234 911 044 3054',
     whatsapp: '+234 812 959 5134',
-    domain: 'nexovira.name.ng',
+    domain: req.get('host') || 'localhost',
     timestamp: new Date().toISOString() 
   });
 });
@@ -1703,10 +1707,18 @@ app.post('/api/v1/ai/seller', async (req, res) => {
       ? `Generate an engaging, professional e-book description (under 50 words) for a digital technical guide titled "${title}" written by ${author || 'Nexovira Academy'}. Highlight core technical skills and practical value.`
       : `Generate a high-converting, premium product description (under 50 words) for "${brand || 'NEXOVIRA'}" ${title}. Highlight reliability, energy efficiency, and peace of mind for Nigerian customers.`;
 
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt
-    });
+    let response;
+    try {
+      response = await client.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: prompt
+      });
+    } catch {
+      response = await client.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt
+      });
+    }
 
     const description = response.text?.trim() || '';
     res.json({ success: true, description });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, MessageSquare, Mail, MapPin, Send, CheckCircle2, AlertCircle, Globe, Loader2, ShieldCheck } from 'lucide-react';
+import { Phone, MessageSquare, Mail, MapPin, Send, CheckCircle2, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { WhatsAppSupportButton } from './WhatsAppSupportButton';
 import { NEXOVIRA_CONTACT_CONFIG } from '../config/contactConfig';
 import { submitContactMessageToFirestore } from '../lib/firestoreService';
@@ -147,16 +147,6 @@ export const ContactViewContent: React.FC = () => {
                 <div>
                   <div className="font-bold text-slate-300">Lagos Operating Hub</div>
                   <div className="text-slate-400">14 Admiralty Way, Victoria Island, Lagos, Nigeria</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pt-2 border-t border-slate-800">
-                <Globe className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-bold text-slate-300">Official Portal Domain</div>
-                  <a href="https://nexovira.name.ng" className="text-cyan-400 font-mono font-bold hover:underline">
-                    nexovira.name.ng
-                  </a>
                 </div>
               </div>
             </div>

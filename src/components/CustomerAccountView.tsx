@@ -247,7 +247,9 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     return allCatalogProducts.filter(p => wishlistIds.includes(p.id));
   }, [allCatalogProducts, wishlistIds]);
 
-  const primaryLink = `https://nexovira.name.ng/marketplace?ref=${effectiveUid || 'NEXO-USER'}`;
+  const primaryLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}/marketplace?ref=${effectiveUid || 'NEXO-USER'}` 
+    : `/marketplace?ref=${effectiveUid || 'NEXO-USER'}`;
 
   // Extract all purchased digital e-books from user orders
   const purchasedEbooks = React.useMemo(() => {

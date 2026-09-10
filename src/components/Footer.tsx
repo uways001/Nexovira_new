@@ -232,7 +232,7 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Bottom Copyright & Legal */}
         <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            © {new Date().getFullYear()} NEXOVIRA Marketplace Inc. Founded by Abdullah Oderinde & Musa Uways. All rights reserved. Official Domain: <a href="https://nexovira.name.ng" className="text-slate-400 hover:text-cyan-400 font-mono">nexovira.name.ng</a>
+            © {new Date().getFullYear()} NEXOVIRA Marketplace Inc. Founded by Abdullah Oderinde & Musa Uways. All rights reserved.
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
