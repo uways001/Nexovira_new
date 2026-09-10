@@ -17,6 +17,21 @@ import {
   buildExpertApplicationEmailHtml,
   buildScholarshipApplicationEmailHtml
 } from './server/emailNotifier';
+import {
+  safeLogger,
+  redactSensitiveData,
+  createRateLimiter,
+  authRateLimiter,
+  aiRateLimiter,
+  paymentRateLimiter,
+  newsletterRateLimiter,
+  contactRateLimiter,
+  authenticateToken,
+  optionalAuth,
+  requireRole,
+  isValidEmail,
+  isPositiveNumber
+} from './server/securityMiddleware';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -69,6 +84,16 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Pre-process all /api requests: enforce JSON Content-Type and safe request logging
+app.use('/api', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  const startTime = Date.now();
+  res.on('finish', () => {
+    safeLogger.info(`${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - startTime}ms)`);
+  });
+  next();
+});
 
 // Ensure public/uploads directory exists for durable persistent asset storage
 const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
@@ -416,15 +441,25 @@ app.get('/api/v1/paystack/config', (req, res) => {
   });
 });
 
-app.post('/api/v1/paystack/initialize', async (req, res) => {
+app.post('/api/v1/paystack/initialize', paymentRateLimiter, async (req, res) => {
   try {
-    const { email, amount, refCode, orderId, metadata, channels, reference: customRef, callbackUrl } = req.body;
+    const { email, amount, refCode, orderId, metadata, channels, reference: customRef, callbackUrl } = req.body || {};
     
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ status: false, error: 'Valid customer email is required.' });
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ 
+        success: false,
+        status: false, 
+        error: 'Validation Error',
+        message: 'A valid customer email is required.' 
+      });
     }
-    if (!amount || Number(amount) <= 0) {
-      return res.status(400).json({ status: false, error: 'Valid payment amount is required.' });
+    if (!amount || !isPositiveNumber(amount)) {
+      return res.status(400).json({ 
+        success: false,
+        status: false, 
+        error: 'Validation Error',
+        message: 'A valid positive payment amount is required.' 
+      });
     }
 
     const reference = customRef?.trim() || `PSTK_ORD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
@@ -451,6 +486,7 @@ app.post('/api/v1/paystack/initialize', async (req, res) => {
 
     if (!initResult.success) {
       return res.status(400).json({
+        success: false,
         status: false,
         error: initResult.error || 'Failed to initialize Paystack transaction.'
       });
@@ -458,6 +494,7 @@ app.post('/api/v1/paystack/initialize', async (req, res) => {
 
     const pubKey = getPaystackPublicKey();
     res.json({
+      success: true,
       status: true,
       message: initResult.message || 'Paystack transaction initialized successfully',
       authorization_url: initResult.authorizationUrl,
@@ -472,25 +509,32 @@ app.post('/api/v1/paystack/initialize', async (req, res) => {
       }
     });
   } catch (err: any) {
-    console.error('[Paystack Init API Error]:', err);
-    res.status(500).json({ status: false, error: err?.message || 'Paystack initialization failed.' });
+    safeLogger.error('[Paystack Init API Error]:', err);
+    res.status(500).json({ success: false, status: false, error: 'Paystack initialization failed.' });
   }
 });
 
 // GET Verification Route for callbacks, redirects and query-based checks
-app.get(['/api/v1/paystack/verify/:reference', '/api/v1/paystack/verify'], async (req, res) => {
+app.get(['/api/v1/paystack/verify/:reference', '/api/v1/paystack/verify'], paymentRateLimiter, async (req, res) => {
   try {
     const reference = req.params.reference || (req.query.reference as string) || (req.query.trxref as string);
     const orderId = (req.query.orderId as string) || undefined;
 
-    if (!reference) {
-      return res.status(400).json({ status: false, verified: false, error: 'Transaction reference is required.' });
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        status: false, 
+        verified: false, 
+        error: 'Validation Error',
+        message: 'Transaction reference is required.' 
+      });
     }
 
-    const verifyResult = await verifyPaystackTransaction(reference);
+    const verifyResult = await verifyPaystackTransaction(reference.trim());
 
     if (!verifyResult.success || !verifyResult.verified) {
-      return res.status(400).json({
+      return res.status(422).json({
+        success: false,
         status: false,
         verified: false,
         paymentStatus: verifyResult.status,
@@ -518,10 +562,11 @@ app.get(['/api/v1/paystack/verify/:reference', '/api/v1/paystack/verify'], async
         verifiedAt: new Date().toISOString()
       }, { merge: true });
     } catch (auditErr) {
-      console.warn('[Firestore Paystack Audit Warning]:', auditErr);
+      safeLogger.warn('[Firestore Paystack Audit Warning]:', auditErr);
     }
 
     res.json({
+      success: true,
       status: true,
       verified: true,
       message: 'Paystack Payment Verified Server-Side',
@@ -540,22 +585,29 @@ app.get(['/api/v1/paystack/verify/:reference', '/api/v1/paystack/verify'], async
       }
     });
   } catch (err: any) {
-    console.error('[Paystack GET Verify API Error]:', err);
-    res.status(500).json({ status: false, verified: false, error: err?.message || 'Server verification failed.' });
+    safeLogger.error('[Paystack GET Verify API Error]:', err);
+    res.status(500).json({ success: false, status: false, verified: false, error: 'Server verification failed.' });
   }
 });
 
-app.post('/api/v1/paystack/verify', async (req, res) => {
+app.post('/api/v1/paystack/verify', paymentRateLimiter, async (req, res) => {
   try {
-    const { reference, orderId } = req.body;
-    if (!reference) {
-      return res.status(400).json({ status: false, verified: false, error: 'Transaction reference is required.' });
+    const { reference, orderId } = req.body || {};
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        status: false, 
+        verified: false, 
+        error: 'Validation Error',
+        message: 'Transaction reference is required.' 
+      });
     }
 
-    const verifyResult = await verifyPaystackTransaction(reference);
+    const verifyResult = await verifyPaystackTransaction(reference.trim());
 
     if (!verifyResult.success || !verifyResult.verified) {
-      return res.status(400).json({
+      return res.status(422).json({
+        success: false,
         status: false,
         verified: false,
         paymentStatus: verifyResult.status,
@@ -583,10 +635,11 @@ app.post('/api/v1/paystack/verify', async (req, res) => {
         verifiedAt: new Date().toISOString()
       }, { merge: true });
     } catch (auditErr) {
-      console.warn('[Firestore Paystack Audit Warning]:', auditErr);
+      safeLogger.warn('[Firestore Paystack Audit Warning]:', auditErr);
     }
 
     res.json({
+      success: true,
       status: true,
       verified: true,
       message: 'Paystack Payment Verified Server-Side',
@@ -605,8 +658,8 @@ app.post('/api/v1/paystack/verify', async (req, res) => {
       }
     });
   } catch (err: any) {
-    console.error('[Paystack Verify API Error]:', err);
-    res.status(500).json({ status: false, verified: false, error: err?.message || 'Server verification failed.' });
+    safeLogger.error('[Paystack POST Verify API Error]:', err);
+    res.status(500).json({ success: false, status: false, verified: false, error: 'Server verification failed.' });
   }
 });
 
@@ -624,12 +677,37 @@ app.get(['/api/health', '/api/v1/health'], (req, res) => {
 });
 
 // 2. Newsletter Subscription Endpoint
-app.post('/api/v1/newsletter/subscribe', (req, res) => {
-  const { email } = req.body;
-  if (!email || !email.includes('@')) {
-    return res.status(400).json({ error: 'Valid email address is required.' });
+app.post('/api/v1/newsletter/subscribe', newsletterRateLimiter, (req, res) => {
+  const { email } = req.body || {};
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Validation Error', 
+      message: 'Valid email address is required.' 
+    });
   }
   res.json({ success: true, message: 'Thank you for subscribing to NEXOVIRA flash deal alerts!' });
+});
+
+// 2b. Contact & Support Endpoint
+app.post(['/api/v1/contact', '/api/contact'], contactRateLimiter, (req, res) => {
+  const { name, email, subject, message } = req.body || {};
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Validation Error', 
+      message: 'A valid email address is required.' 
+    });
+  }
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Validation Error', 
+      message: 'Message text is required.' 
+    });
+  }
+  safeLogger.info(`Contact message received from ${name || 'User'} (${email}): ${subject || 'Inquiry'}`);
+  res.json({ success: true, message: 'Message received. NEXOVIRA Support will follow up promptly.' });
 });
 
 // 3. Product Catalog & Management Endpoints (Row-Level Security & Automated seller_id Assignment)
@@ -662,15 +740,50 @@ app.get(['/api/v1/products/:id', '/api/products/:id'], (req, res) => {
 });
 
 // RESTful Route Isolation for Admin Product Management
-// 3a. GET /api/v1/admin/products/:id/edit - Retrieve existing product for editing (with full archive metadata)
-app.get('/api/v1/admin/products/:id/edit', (req, res) => {
+// 3-Admin. GET /api/v1/admin/products - List all products for Admin / Seller management (Protected)
+app.get('/api/v1/admin/products', authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+  const user = req.user!;
+  const sellerIdQuery = (req.query.seller_id as string) || (req.query.sellerId as string);
+  const categoryIdQuery = (req.query.category_id as string) || (req.query.categoryId as string) || (req.query.category as string);
+
+  let results = inMemoryProducts;
+  if (!user.isAdmin) {
+    results = results.filter(p => p.sellerId === user.id || (p as any).seller_id === user.id);
+  } else if (sellerIdQuery) {
+    results = results.filter(p => p.sellerId === sellerIdQuery || (p as any).seller_id === sellerIdQuery);
+  }
+
+  if (categoryIdQuery && categoryIdQuery !== 'all') {
+    results = results.filter(p => p.categoryId === categoryIdQuery);
+  }
+
+  res.json({
+    success: true,
+    count: results.length,
+    products: results
+  });
+});
+
+// 3a. GET /api/v1/admin/products/:id & edit - Retrieve product with metadata (Protected)
+app.get(['/api/v1/admin/products/:id/edit', '/api/v1/admin/products/:id'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
   const productId = req.params.id;
   const product = inMemoryProducts.find(p => p.id === productId);
 
   if (!product) {
     return res.status(404).json({
-      error: 'Product Not Found',
+      success: false,
+      error: 'Not Found',
       message: `Product with ID "${productId}" does not exist in inventory catalog.`
+    });
+  }
+
+  const user = req.user!;
+  const existingSellerId = (product as any).seller_id || product.sellerId;
+  if (!user.isAdmin && existingSellerId !== user.id) {
+    return res.status(403).json({
+      success: false,
+      error: 'Forbidden',
+      message: `You are not authorized to access product owned by "${existingSellerId}".`
     });
   }
 
@@ -688,56 +801,40 @@ app.get('/api/v1/admin/products/:id/edit', (req, res) => {
   });
 });
 
-// 3b. GET /api/v1/admin/products/:id - Alias endpoint for fetching single product
-app.get('/api/v1/admin/products/:id', (req, res) => {
+// 3b. PUT /api/v1/admin/products/:id - Strictly isolated endpoint to UPDATE/MODIFY an existing product (Protected)
+app.put('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 'seller'), (req, res) => {
   const productId = req.params.id;
-  const product = inMemoryProducts.find(p => p.id === productId);
-
-  if (!product) {
-    return res.status(404).json({
-      error: 'Product Not Found',
-      message: `Product with ID "${productId}" does not exist.`
-    });
-  }
-
-  res.json({ success: true, product });
-});
-
-// 3c. PUT /api/v1/admin/products/:id - Strictly isolated endpoint to UPDATE/MODIFY an existing product
-app.put('/api/v1/admin/products/:id', (req, res) => {
-  const productId = req.params.id;
-  const authHeader = req.headers.authorization;
-  const customUserId = (req.headers['x-user-id'] as string) || req.body.authenticated_user_id || req.body.authUserId;
-  const userRole = (req.headers['x-user-role'] as string) || req.body.userRole || 'seller';
-  const userEmail = (req.headers['x-user-email'] as string) || req.body.userEmail || '';
-
-  const isAdmin = userRole === 'admin' || userEmail === 'nexovirasupport@gmail.com' || userEmail === 'admin@nexovira.com';
-  
-  let authenticatedUserId = customUserId;
-  if (!authenticatedUserId && authHeader && authHeader.startsWith('Bearer ')) {
-    authenticatedUserId = authHeader.replace('Bearer ', '').trim();
-  }
-
   const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+
   if (existingProductIndex < 0) {
     return res.status(404).json({
-      error: 'Product Not Found',
+      success: false,
+      error: 'Not Found',
       message: `Cannot update: Product with ID "${productId}" does not exist. Use POST /api/v1/admin/products to create new inventory.`
     });
   }
 
+  const user = req.user!;
   const existingProduct = inMemoryProducts[existingProductIndex];
   const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
 
-  // Authorization check
-  if (!isAdmin && authenticatedUserId && authenticatedUserId !== existingSellerId) {
+  if (!user.isAdmin && user.id !== existingSellerId) {
     return res.status(403).json({
-      error: 'Forbidden (403 Unauthorized)',
-      message: `Row-Level Security violation: authenticated_user.id "${authenticatedUserId}" does not match product.seller_id "${existingSellerId}".`
+      success: false,
+      error: 'Forbidden',
+      message: `Row-Level Security violation: authenticated user id "${user.id}" does not match product seller id "${existingSellerId}".`
     });
   }
 
   const updatePayload = req.body.product || req.body;
+  if (updatePayload.price !== undefined && !isPositiveNumber(updatePayload.price)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation Error',
+      message: 'A valid positive price is required.'
+    });
+  }
+
   const updatedProduct = {
     ...existingProduct,
     ...updatePayload,
@@ -756,19 +853,31 @@ app.put('/api/v1/admin/products/:id', (req, res) => {
   });
 });
 
-// 3d. PATCH /api/v1/admin/products/:id - Isolated endpoint for partial updates to existing product
-app.patch('/api/v1/admin/products/:id', (req, res) => {
+// 3c. PATCH /api/v1/admin/products/:id - Partial updates to existing product (Protected)
+app.patch('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 'seller'), (req, res) => {
   const productId = req.params.id;
   const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
 
   if (existingProductIndex < 0) {
     return res.status(404).json({
-      error: 'Product Not Found',
+      success: false,
+      error: 'Not Found',
       message: `Cannot patch: Product with ID "${productId}" does not exist.`
     });
   }
 
+  const user = req.user!;
   const existingProduct = inMemoryProducts[existingProductIndex];
+  const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
+
+  if (!user.isAdmin && user.id !== existingSellerId) {
+    return res.status(403).json({
+      success: false,
+      error: 'Forbidden',
+      message: `Row-Level Security violation: authenticated user id "${user.id}" does not match product seller id "${existingSellerId}".`
+    });
+  }
+
   const updatePayload = req.body.product || req.body;
   const updatedProduct = {
     ...existingProduct,
@@ -788,30 +897,49 @@ app.patch('/api/v1/admin/products/:id', (req, res) => {
   });
 });
 
-// 3e. POST /api/v1/admin/products - Strictly isolated endpoint to CREATE a new product
-app.post('/api/v1/admin/products', (req, res) => {
-  const productData = req.body.product || req.body;
-  const candidateId = productData.id;
+// 3d. POST /api/v1/admin/products & /api/v1/products - Create a new product (Protected)
+app.post(['/api/v1/admin/products', '/api/v1/products'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+  const user = req.user!;
+  const productData = req.body.product || req.body || {};
 
+  if (!productData.title || typeof productData.title !== 'string' || !productData.title.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation Error',
+      message: 'Product title is required and must be a non-empty string.'
+    });
+  }
+
+  if (!isPositiveNumber(productData.price)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation Error',
+      message: 'A valid positive price is required.'
+    });
+  }
+
+  const candidateId = productData.id;
   if (candidateId) {
     const exists = inMemoryProducts.some(p => p.id === candidateId);
     if (exists) {
       return res.status(409).json({
-        error: 'Conflict (409)',
+        success: false,
+        error: 'Conflict',
         message: `A product with ID "${candidateId}" already exists. You must use PUT /api/v1/admin/products/${candidateId} to modify existing inventory.`
       });
     }
   }
 
+  const assignedSellerId = user.isAdmin ? (productData.sellerId || productData.seller_id || user.id) : user.id;
   const newId = candidateId || `prod-admin-${Date.now()}`;
   const newProduct = {
     ...productData,
     id: newId,
-    sellerId: productData.sellerId || 'nexovira-official',
-    seller_id: productData.seller_id || 'nexovira-official',
-    sellerName: productData.sellerName || 'NEXOVIRA Official',
+    sellerId: assignedSellerId,
+    seller_id: assignedSellerId,
+    sellerName: productData.sellerName || (user.isAdmin ? 'NEXOVIRA Official' : user.name || 'NEXOVIRA Verified Merchant'),
     sellerVerified: true,
-    price: Number(productData.price || 100),
+    price: Number(productData.price),
     currency: productData.currency || 'USD',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -827,101 +955,28 @@ app.post('/api/v1/admin/products', (req, res) => {
   });
 });
 
-app.post('/api/v1/products', (req, res) => {
-  const authHeader = req.headers.authorization;
-  const customUserId = (req.headers['x-user-id'] as string) || req.body.authenticated_user_id || req.body.authUserId;
-  const userRole = (req.headers['x-user-role'] as string) || req.body.userRole || 'seller';
-  const userEmail = (req.headers['x-user-email'] as string) || req.body.userEmail || '';
-
-  const isAdmin = userRole === 'admin' || userEmail === 'nexovirasupport@gmail.com' || userEmail === 'admin@nexovira.com';
-  
-  // Resolve authenticated user ID
-  let authenticatedUserId = customUserId;
-  if (!authenticatedUserId && authHeader && authHeader.startsWith('Bearer ')) {
-    authenticatedUserId = authHeader.replace('Bearer ', '').trim();
-  }
-
-  if (!authenticatedUserId && !isAdmin) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Authentication required: You must be logged in to create or modify products.'
-    });
-  }
-
-  const productData = req.body.product || req.body;
-  const productId = productData.id || `prod-${Date.now()}`;
-  const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
-
-  if (existingProductIndex >= 0) {
-    // MODIFICATION / UPDATE: Row-Level Security Verification
-    const existingProduct = inMemoryProducts[existingProductIndex];
-    const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
-
-    if (!isAdmin && authenticatedUserId !== existingSellerId) {
-      return res.status(403).json({
-        error: 'Forbidden (403 Unauthorized)',
-        message: `Row-Level Security violation: authenticated_user.id "${authenticatedUserId}" does not match product.seller_id "${existingSellerId}". Modification rejected.`
-      });
-    }
-
-    const updatedProduct = {
-      ...existingProduct,
-      ...productData,
-      id: productId,
-      sellerId: isAdmin ? (productData.seller_id || productData.sellerId || existingSellerId) : existingSellerId,
-      seller_id: isAdmin ? (productData.seller_id || productData.sellerId || existingSellerId) : existingSellerId,
-      updatedAt: new Date().toISOString()
-    };
-
-    inMemoryProducts[existingProductIndex] = updatedProduct;
-    return res.json({ success: true, message: 'Product updated successfully', product: updatedProduct });
-  } else {
-    // CREATION: Automatically assign seller_id = authenticated_user.id
-    const assignedSellerId = isAdmin ? (productData.seller_id || productData.sellerId || authenticatedUserId || 'admin-store') : authenticatedUserId;
-
-    const newProduct = {
-      ...productData,
-      id: productId,
-      sellerId: assignedSellerId,
-      seller_id: assignedSellerId,
-      sellerName: productData.sellerName || 'NEXOVIRA Verified Merchant',
-      sellerVerified: true,
-      price: Number(productData.price || 100),
-      currency: productData.currency || 'USD',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    inMemoryProducts.unshift(newProduct);
-    return res.status(201).json({ success: true, message: 'Product created successfully with seller_id automatically assigned', product: newProduct });
-  }
-});
-
-app.delete('/api/v1/products/:id', (req, res) => {
+// 3e. DELETE /api/v1/admin/products/:id & /api/v1/products/:id - Delete product (Protected)
+app.delete(['/api/v1/admin/products/:id', '/api/v1/products/:id'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
   const productId = req.params.id;
-  const customUserId = (req.headers['x-user-id'] as string) || req.query.authenticated_user_id || req.query.authUserId;
-  const userRole = (req.headers['x-user-role'] as string) || req.query.userRole || 'seller';
-  const userEmail = (req.headers['x-user-email'] as string) || req.query.userEmail || '';
-  const isAdmin = userRole === 'admin' || userEmail === 'nexovirasupport@gmail.com';
-
-  let authenticatedUserId = customUserId;
-  const authHeader = req.headers.authorization;
-  if (!authenticatedUserId && authHeader && authHeader.startsWith('Bearer ')) {
-    authenticatedUserId = authHeader.replace('Bearer ', '').trim();
-  }
+  const user = req.user!;
 
   const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
   if (existingProductIndex < 0) {
-    return res.status(404).json({ error: 'Product not found' });
+    return res.status(404).json({ 
+      success: false, 
+      error: 'Not Found', 
+      message: `Product with ID "${productId}" not found.` 
+    });
   }
 
   const existingProduct = inMemoryProducts[existingProductIndex];
   const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
 
-  if (!isAdmin && authenticatedUserId !== existingSellerId) {
+  if (!user.isAdmin && user.id !== existingSellerId) {
     return res.status(403).json({
-      error: 'Forbidden (403 Unauthorized)',
-      message: `Row-Level Security violation: authenticated_user.id "${authenticatedUserId}" does not match product.seller_id "${existingSellerId}". Deletion rejected.`
+      success: false,
+      error: 'Forbidden',
+      message: `Row-Level Security violation: user id "${user.id}" does not match product seller id "${existingSellerId}". Deletion rejected.`
     });
   }
 
@@ -958,12 +1013,16 @@ app.post('/api/v1/orders', (req, res) => {
 });
 
 // 4. Intelligent NEXOVIRA AI Ecosystem Chatbot Endpoint (Customer Advisory Grounded strictly in available products)
-app.post('/api/v1/ai/chat', async (req, res) => {
+app.post('/api/v1/ai/chat', aiRateLimiter, async (req, res) => {
   try {
     const rawPrompt = req.body.prompt || req.body.message;
-    const { availableProducts: clientProducts, currency = 'NGN' } = req.body;
+    const { availableProducts: clientProducts, currency = 'NGN' } = req.body || {};
     if (!rawPrompt || typeof rawPrompt !== 'string' || !rawPrompt.trim()) {
-      return res.status(400).json({ error: 'Prompt is required' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Validation Error',
+        message: 'Prompt or message is required and must be a non-empty string.' 
+      });
     }
     const prompt = rawPrompt.trim();
 
@@ -1033,6 +1092,7 @@ Provide direct, polite, highly competent advice to the customer's query.`;
     }
 
     res.json({
+      success: true,
       replyText: aiText,
       intent: 'PRODUCT',
       suggestedProducts: relevantProducts,
@@ -1046,9 +1106,10 @@ Provide direct, polite, highly competent advice to the customer's query.`;
       ]
     });
   } catch (error) {
-    console.error('Gemini AI API Error:', error);
+    safeLogger.error('Gemini AI API Error in /api/v1/ai/chat:', error);
     const availableInStock = PRODUCTS.filter(p => (p.stock ?? 0) > 0);
     res.json({
+      success: true,
       replyText: 'I reviewed our verified in-stock catalog. Here are the available products matching your inquiry:',
       suggestedProducts: availableInStock.slice(0, 2),
       suggestedServices: [],
@@ -1150,12 +1211,120 @@ app.post('/api/v1/ai/admin', async (req, res) => {
   }
 });
 
-// 5.2. Tech & Digital Services: AI Request Analysis & Understanding
-app.post('/api/v1/tech-services/ai-analyze-request', async (req, res) => {
+// 5.1b. Tech & Digital Services: Client Project Request Ingestion & Tracking
+let inMemoryTechRequests: any[] = [];
+
+app.post('/api/v1/tech-services/request', contactRateLimiter, async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const body = req.body || {};
+    const projectData = body.projectData || body;
+    
+    const email = projectData.email || projectData.customerEmail;
+    const fullName = projectData.fullName || projectData.customerName || projectData.name;
+    const title = projectData.projectTitle || projectData.serviceTitle || projectData.title;
+    const description = projectData.projectDescription || projectData.description || projectData.details;
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        message: 'A valid customer email address is required.'
+      });
+    }
+
+    if (!title && !description) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        message: 'A project title or project description is required.'
+      });
+    }
+
+    const referenceNumber = projectData.referenceNumber || `NX-REQ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newRequest = {
+      id: referenceNumber,
+      referenceNumber,
+      fullName: fullName || 'Valued Client',
+      email,
+      phone: projectData.phone || projectData.customerPhone || '',
+      projectTitle: title || 'Custom Tech Service Request',
+      serviceCategory: projectData.serviceCategory || 'General Tech & Digital Services',
+      projectType: projectData.projectType || 'Standard',
+      projectScope: projectData.projectScope || 'Medium',
+      budgetExpectation: projectData.budgetExpectation || 'Standard',
+      timeline: projectData.timeline || 'Flexible',
+      projectDescription: description || '',
+      requiredExpertise: projectData.requiredExpertise || [],
+      status: 'pending_review',
+      createdAt: new Date().toISOString()
+    };
+
+    inMemoryTechRequests.unshift(newRequest);
+
+    // Safe background email notification (never leaks secrets)
+    try {
+      const emailContent = buildProjectRequestEmailHtml({
+        referenceNumber,
+        customerName: newRequest.fullName,
+        customerEmail: email,
+        customerPhone: newRequest.phone,
+        serviceTitle: newRequest.projectTitle,
+        serviceCategory: newRequest.serviceCategory,
+        projectComplexity: newRequest.projectScope,
+        projectType: newRequest.projectType,
+        projectScope: newRequest.projectScope,
+        budgetExpectation: newRequest.budgetExpectation,
+        timeline: newRequest.timeline,
+        projectDescription: newRequest.projectDescription,
+        requiredExpertise: newRequest.requiredExpertise
+      });
+
+      await sendEmailNotification({
+        to: 'nexoviratech@gmail.com',
+        subject: emailContent.subject || `[New Tech Project Request] ${newRequest.projectTitle} - Ref: ${referenceNumber}`,
+        html: emailContent.html,
+        text: emailContent.text
+      });
+    } catch (notifyErr) {
+      safeLogger.warn('Tech request email notification skipped or failed:', notifyErr);
+    }
+
+    res.status(201).json({
+      success: true,
+      requestId: referenceNumber,
+      referenceNumber,
+      message: 'Project request submitted successfully to Nexovira Tech & Digital Services.',
+      adminEmail: 'nexoviratech@gmail.com',
+      data: newRequest
+    });
+  } catch (err: any) {
+    safeLogger.error('Error handling /api/v1/tech-services/request:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Failed to submit tech service request.'
+    });
+  }
+});
+
+app.get('/api/v1/tech-services/request', (req, res) => {
+  res.json({
+    success: true,
+    count: inMemoryTechRequests.length,
+    requests: inMemoryTechRequests
+  });
+});
+
+// 5.2. Tech & Digital Services: AI Request Analysis & Understanding
+app.post('/api/v1/tech-services/ai-analyze-request', aiRateLimiter, async (req, res) => {
+  try {
+    const { prompt } = req.body || {};
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ error: 'Project description or prompt is required.' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation Error', 
+        message: 'Project description or prompt is required and must be a non-empty string.' 
+      });
     }
 
     const cleanPrompt = prompt.trim();
@@ -1319,13 +1488,17 @@ Respond ONLY with a valid JSON object matching this schema:
 });
 
 // 5.3. Tech & Digital Services: AI Expert Matcher (Admin Co-pilot)
-app.post('/api/v1/tech-services/ai-match-experts', async (req, res) => {
+app.post('/api/v1/tech-services/ai-match-experts', aiRateLimiter, async (req, res) => {
   try {
-    const rawReq = req.body.projectRequest || req.body.serviceRequest || req.body.request;
-    const availableExperts = req.body.availableExperts;
+    const rawReq = req.body?.projectRequest || req.body?.serviceRequest || req.body?.request;
+    const availableExperts = req.body?.availableExperts;
 
     if (!rawReq || !availableExperts || !Array.isArray(availableExperts)) {
-      return res.status(400).json({ error: 'Project request and available experts array are required.' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation Error', 
+        message: 'Project request and available experts array are required.' 
+      });
     }
 
     const projectRequest = rawReq;
@@ -1455,16 +1628,25 @@ Respond ONLY with a valid JSON object matching:
       });
     }
   } catch (err: any) {
-    res.status(500).json({ error: err?.message || 'Failed to match experts.' });
+    safeLogger.error('Failed to match experts:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal Server Error', 
+      message: err?.message || 'Failed to match experts.' 
+    });
   }
 });
 
 // 5.4. Tech & Digital Services: Email Notification to Management (nexoviratech@gmail.com)
-app.post('/api/v1/tech-services/notify-management', async (req, res) => {
+app.post('/api/v1/tech-services/notify-management', contactRateLimiter, async (req, res) => {
   try {
-    const { type, payload } = req.body;
+    const { type, payload } = req.body || {};
     if (!type || !payload) {
-      return res.status(400).json({ error: 'Notification type and payload are required.' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation Error', 
+        message: 'Notification type and payload are required.' 
+      });
     }
 
     const adminEmail = process.env.NEXOVIRA_ADMIN_EMAIL || 'nexoviratech@gmail.com';
@@ -1749,33 +1931,40 @@ app.post('/api/v1/ai/seller', async (req, res) => {
 });
 
 // 5.5. Security Telemetry & Error Audit Endpoint
-app.post('/api/v1/security/client-error', (req, res) => {
+app.post('/api/v1/security/client-error', authRateLimiter, (req, res) => {
   try {
-    const { type, incidentId, report, details } = req.body;
+    const { type, incidentId, report, details } = req.body || {};
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    console.warn(`🔒 [NEXOVIRA SECURITY AUDIT] Event: ${type || 'CLIENT_INCIDENT'} | IP: ${clientIp} | Incident ID: ${incidentId || 'N/A'}`);
-    if (details) {
-      console.warn('Threat Details:', JSON.stringify(details));
+    
+    // Sanitize and redact to ensure tokens, passwords, and payment credentials are never logged
+    const safeDetails = redactSensitiveData(details);
+    const safeReport = redactSensitiveData(report);
+
+    safeLogger.warn(`[NEXOVIRA CLIENT SECURITY EVENT] Type: ${type || 'CLIENT_INCIDENT'} | IP: ${clientIp} | Incident ID: ${incidentId || 'N/A'}`);
+    if (safeDetails) {
+      safeLogger.warn(`Telemetry Details: ${JSON.stringify(safeDetails)}`);
     }
-    if (report) {
-      console.warn('Crash Report:', JSON.stringify(report));
+    if (safeReport) {
+      safeLogger.warn(`Crash Report: ${JSON.stringify(safeReport)}`);
     }
-    res.json({ status: 'logged', received: true });
+
+    res.json({ success: true, status: 'logged', received: true });
   } catch (e) {
-    res.json({ status: 'ignored' });
+    res.json({ success: true, status: 'ignored' });
   }
 });
 
 // 6. Real Nigerian Bank Verification Endpoints (Backend Server-Authoritative)
 
 // A. Check active verification provider configuration status
-app.get('/api/v1/bank/provider-status', (req, res) => {
+app.get('/api/v1/bank/provider-status', authRateLimiter, (req, res) => {
   try {
     const provider = getActiveBankVerificationProvider();
     const isConfigured = provider.isConfigured();
     const missing = provider.getMissingCredentials();
 
     res.json({
+      success: true,
       configured: isConfigured,
       provider: provider.name,
       missingCredentials: missing,
@@ -1784,9 +1973,12 @@ app.get('/api/v1/bank/provider-status', (req, res) => {
         : `Bank verification service is offline. Missing required server credential(s): ${missing.join(', ')}. Set these environment variables in Settings.`
     });
   } catch (err: any) {
+    safeLogger.error('Error checking bank verification provider status:', err);
     res.status(500).json({
+      success: false,
       configured: false,
       provider: 'unknown',
+      error: 'Internal Server Error',
       message: err?.message || 'Error checking bank verification provider status.'
     });
   }
