@@ -52,6 +52,8 @@ import { PrivacyView } from './components/PrivacyView';
 import { TermsView } from './components/TermsView';
 import { ContactView } from './components/ContactView';
 import { EcosystemPresentationView } from './components/EcosystemPresentationView';
+import { NotFoundView } from './components/NotFoundView';
+import { SEOHead } from './components/SEOHead';
 import { AuthDebugDiagnostics } from './components/AuthDebugDiagnostics';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
@@ -148,71 +150,72 @@ const ForbiddenDashboardView: React.FC<ForbiddenDashboardViewProps> = ({ require
   );
 };
 
+function parseRoute(pathname: string): { 
+  view: ActiveEcosystemView; 
+  categoryId?: CategoryId; 
+  productId?: string; 
+} {
+  const clean = pathname.toLowerCase().split('?')[0].split('#')[0];
+  if (clean === '' || clean === '/') return { view: 'home' };
+  if (clean === '/marketplace') return { view: 'marketplace' };
+  if (clean.startsWith('/category/')) {
+    const cat = clean.replace('/category/', '') as CategoryId;
+    return { view: 'marketplace', categoryId: cat };
+  }
+  if (clean.startsWith('/product/')) {
+    const pId = pathname.split('/product/')[1]?.split('?')[0]?.split('#')[0];
+    return { view: 'marketplace', productId: pId };
+  }
+  if (clean === '/book-service' || clean === '/services/nigeria' || clean === '/services-nigeria') return { view: 'book-service' };
+  if (clean === '/services' || clean.startsWith('/service/')) return { view: 'services' };
+  if (
+    clean === '/academy' || 
+    clean.startsWith('/course/') || 
+    clean === '/scholarship' || 
+    clean === '/scholarships' || 
+    clean === '/payment/callback' || 
+    clean === '/callback' ||
+    clean === '/payment-callback'
+  ) return { view: 'academy' };
+  if (clean === '/library' || clean.startsWith('/ebook/')) return { view: 'library' };
+  if (clean === '/ai') return { view: 'ai' };
+  if (clean === '/dashboard/customer' || clean === '/account') return { view: 'dashboard-customer' };
+  if (clean === '/dashboard/seller' || clean === '/seller') return { view: 'dashboard-seller' };
+  if (clean === '/dashboard/affiliate' || clean === '/affiliate') return { view: 'dashboard-affiliate' };
+  if (clean === '/dashboard/verified-expert' || clean === '/expert') return { view: 'dashboard-verified-expert' };
+  if (clean === '/admin') return { view: 'admin' };
+  if (clean === '/signin') return { view: 'signin' };
+  if (clean === '/signup') return { view: 'signup' };
+  if (clean === '/about') return { view: 'about' };
+  if (clean === '/privacy') return { view: 'privacy' };
+  if (clean === '/terms') return { view: 'terms' };
+  if (clean === '/contact') return { view: 'contact' };
+  if (clean === '/presentation' || clean === '/deck' || clean === '/vision' || clean === '/ecosystem') return { view: 'presentation' };
+  return { view: '404' };
+}
+
 export default function App() {
   const { user, userProfile, isAdmin, isSeller } = useAuth();
 
   // Navigation & Ecosystem State
   const [activeView, setActiveView] = useState<ActiveEcosystemView>(() => {
     if (typeof window !== 'undefined') {
-      const path = window.location.pathname.toLowerCase();
-      if (path === '/dashboard/customer' || path === '/account') return 'dashboard-customer';
-      if (path === '/dashboard/seller' || path === '/seller') return 'dashboard-seller';
-      if (path === '/dashboard/affiliate' || path === '/affiliate') return 'dashboard-affiliate';
-      if (path === '/dashboard/verified-expert' || path === '/expert') return 'dashboard-verified-expert';
-      if (path === '/admin') return 'admin';
-      if (path === '/signin') return 'signin';
-      if (path === '/signup') return 'signup';
-      if (path === '/book-service' || path === '/services/nigeria' || path === '/services-nigeria') return 'book-service';
-      if (path === '/services' || path.startsWith('/service/')) return 'services';
-      if (
-        path === '/academy' || 
-        path.startsWith('/course/') || 
-        path === '/scholarship' || 
-        path === '/scholarships' || 
-        path === '/payment/callback' || 
-        path === '/callback' ||
-        path === '/payment-callback'
-      ) return 'academy';
-      if (path === '/library' || path.startsWith('/ebook/')) return 'library';
-      if (path === '/ai') return 'ai';
-      if (path === '/about') return 'about';
-      if (path === '/privacy') return 'privacy';
-      if (path === '/terms') return 'terms';
-      if (path === '/contact') return 'contact';
-      if (path === '/presentation' || path === '/deck' || path === '/vision' || path === '/ecosystem') return 'presentation';
+      return parseRoute(window.location.pathname).view;
     }
     return 'home';
   });
 
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname.toLowerCase();
-      if (path === '/dashboard/customer' || path === '/account') setActiveView('dashboard-customer');
-      else if (path === '/dashboard/seller' || path === '/seller') setActiveView('dashboard-seller');
-      else if (path === '/dashboard/affiliate' || path === '/affiliate') setActiveView('dashboard-affiliate');
-      else if (path === '/dashboard/verified-expert' || path === '/expert') setActiveView('dashboard-verified-expert');
-      else if (path === '/admin') setActiveView('admin');
-      else if (path === '/signin') setActiveView('signin');
-      else if (path === '/signup') setActiveView('signup');
-      else if (path === '/book-service' || path === '/services/nigeria' || path === '/services-nigeria') setActiveView('book-service');
-      else if (path === '/services' || path.startsWith('/service/')) setActiveView('services');
-      else if (
-        path === '/academy' || 
-        path.startsWith('/course/') || 
-        path === '/scholarship' || 
-        path === '/scholarships' || 
-        path === '/payment/callback' || 
-        path === '/callback' ||
-        path === '/payment-callback'
-      ) setActiveView('academy');
-      else if (path === '/library' || path.startsWith('/ebook/')) setActiveView('library');
-      else if (path === '/ai') setActiveView('ai');
-      else if (path === '/about') setActiveView('about');
-      else if (path === '/privacy') setActiveView('privacy');
-      else if (path === '/terms') setActiveView('terms');
-      else if (path === '/contact') setActiveView('contact');
-      else if (path === '/presentation' || path === '/deck' || path === '/vision' || path === '/ecosystem') setActiveView('presentation');
-      else setActiveView('home');
+      const parsed = parseRoute(window.location.pathname);
+      if (parsed.categoryId) {
+        setSelectedCategory(parsed.categoryId);
+      }
+      if (parsed.productId) {
+        const found = allProducts.find(p => p.id === parsed.productId);
+        if (found) setSelectedProduct(found);
+      }
+      setActiveView(parsed.view);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -442,51 +445,16 @@ export default function App() {
   // Route Navigation Handler
   const handleNavigate = (path: string) => {
     window.history.pushState({}, '', path);
-    const cleanPath = path.toLowerCase();
-    if (cleanPath.startsWith('/category/')) {
-      const cat = cleanPath.replace('/category/', '');
-      setSelectedCategory(cat as CategoryId);
-      setActiveView('marketplace');
-    } else if (cleanPath.startsWith('/product/')) {
-      const pId = path.split('/product/')[1];
-      const found = allProducts.find(p => p.id === pId);
-      if (found) setSelectedProduct(found);
-      setActiveView('marketplace');
-    } else if (cleanPath === '/book-service' || cleanPath === '/services/nigeria' || cleanPath === '/services-nigeria') {
-      setActiveView('book-service');
-    } else if (cleanPath === '/services' || cleanPath.startsWith('/service/')) {
-      setActiveView('services');
-    } else if (cleanPath === '/academy' || cleanPath.startsWith('/course/')) {
-      setActiveView('academy');
-    } else if (cleanPath === '/library' || cleanPath.startsWith('/ebook/')) {
-      setActiveView('library');
-    } else if (cleanPath === '/ai') {
-      setActiveView('ai');
-    } else if (cleanPath === '/dashboard/customer' || cleanPath === '/account') {
-      setActiveView('dashboard-customer');
-    } else if (cleanPath === '/dashboard/seller' || cleanPath === '/seller') {
-      setActiveView('dashboard-seller');
-    } else if (cleanPath === '/dashboard/affiliate' || cleanPath === '/affiliate') {
-      setActiveView('dashboard-affiliate');
-    } else if (cleanPath === '/dashboard/verified-expert' || cleanPath === '/expert') {
-      setActiveView('dashboard-verified-expert');
-    } else if (cleanPath === '/admin') {
-      setActiveView('admin');
-    } else if (cleanPath === '/signin') {
-      setActiveView('signin');
-    } else if (cleanPath === '/signup') {
-      setActiveView('signup');
-    } else if (cleanPath === '/about') {
-      setActiveView('about');
-    } else if (cleanPath === '/privacy') {
-      setActiveView('privacy');
-    } else if (cleanPath === '/terms') {
-      setActiveView('terms');
-    } else if (cleanPath === '/contact') {
-      setActiveView('contact');
-    } else {
-      setActiveView('marketplace');
+    const parsed = parseRoute(path);
+    if (parsed.categoryId) {
+      setSelectedCategory(parsed.categoryId);
     }
+    if (parsed.productId) {
+      const found = allProducts.find(p => p.id === parsed.productId);
+      if (found) setSelectedProduct(found);
+    }
+    setActiveView(parsed.view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Cart Actions
@@ -560,6 +528,13 @@ export default function App() {
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${theme === 'dark' ? 'bg-[#0B0F17] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       
+      {/* Dynamic SEO Meta & Schema Head */}
+      <SEOHead 
+        currentPath={typeof window !== 'undefined' ? window.location.pathname : '/'} 
+        selectedProduct={selectedProduct} 
+        products={allProducts} 
+      />
+
       {/* Global Header */}
       <Header
         activeView={activeView}
@@ -664,6 +639,8 @@ export default function App() {
           <TermsView />
         ) : activeView === 'contact' ? (
           <ContactView />
+        ) : activeView === '404' ? (
+          <NotFoundView onNavigate={handleNavigate} />
         ) : activeView === 'presentation' ? (
           <EcosystemPresentationView onNavigate={handleNavigate} onOpenMarketplace={() => handleNavigate('/marketplace')} />
         ) : (

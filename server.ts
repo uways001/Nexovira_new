@@ -45,6 +45,12 @@ import {
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { getFirestore } from 'firebase-admin/firestore';
+import { 
+  generateRobotsTxt, 
+  generateSitemapXml, 
+  getRouteSEOMetadata, 
+  CANONICAL_SITE_URL 
+} from './src/lib/seoConfig';
 
 // Initialize Firebase Admin lazily for durable server-side storage & transaction persistence
 const FIREBASE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || 'gen-lang-client-0797653089.firebasestorage.app';
@@ -271,72 +277,22 @@ function getAIClient(): GoogleGenAI {
 
 // SEO Static Resources: Robots.txt & Sitemap.xml
 app.get('/robots.txt', (req, res) => {
-  res.type('text/plain');
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
   const host = req.get('host') || 'localhost:3000';
-  res.send(`User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /account
-
-Sitemap: ${protocol}://${host}/sitemap.xml
-`);
+  const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+  const baseUrl = host.includes('localhost') ? CANONICAL_SITE_URL : `${protocol}://${host}`;
+  res.send(generateRobotsTxt(baseUrl));
 });
 
 app.get('/sitemap.xml', (req, res) => {
-  res.type('application/xml');
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
   const host = req.get('host') || 'localhost:3000';
-  const baseUrl = `${protocol}://${host}`;
-  const today = new Date().toISOString().split('T')[0];
-
-  const staticRoutes = [
-    '',
-    '/marketplace',
-    '/category/refrigerators',
-    '/category/air-conditioners',
-    '/category/washing-machines',
-    '/category/microwaves',
-    '/category/cookers',
-    '/category/blenders',
-    '/category/tvs',
-    '/category/audio',
-    '/category/laptops',
-    '/category/accessories',
-    '/services',
-    '/academy',
-    '/library',
-    '/ai',
-    '/affiliate',
-    '/about',
-    '/privacy',
-    '/terms',
-    '/contact',
-  ];
-
-  const productUrls = PRODUCTS.map(p => `/product/${p.id}`);
-
-  const allUrls = [
-    ...staticRoutes.map(route => `
-  <url>
-    <loc>${baseUrl}${route}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${route === '' ? 'daily' : 'weekly'}</changefreq>
-    <priority>${route === '' ? '1.0' : '0.8'}</priority>
-  </url>`),
-    ...productUrls.map(url => `
-  <url>
-    <loc>${baseUrl}${url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>`)
-  ].join('');
-
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemapindex.org/schemas/sitemap/0.9">
-${allUrls}
-</urlset>`);
+  const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+  const baseUrl = host.includes('localhost') ? CANONICAL_SITE_URL : `${protocol}://${host}`;
+  const products = (typeof inMemoryProducts !== 'undefined' && inMemoryProducts.length > 0) ? inMemoryProducts : PRODUCTS;
+  res.send(generateSitemapXml(baseUrl, products));
 });
 
 // REST API Endpoints
@@ -2237,21 +2193,128 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   next(err);
 });
 
+// SEO HTML Rendering and Crawlability Helper
+function renderPageHtml(req: express.Request, res: express.Response, template: string) {
+  const host = req.get('host') || 'localhost:3000';
+  const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+  const baseUrl = host.includes('localhost') ? CANONICAL_SITE_URL : `${protocol}://${host}`;
+  const products = (typeof inMemoryProducts !== 'undefined' && inMemoryProducts.length > 0) ? inMemoryProducts : PRODUCTS;
+
+  const seo = getRouteSEOMetadata(req.path, baseUrl, products);
+
+  let html = template;
+
+  // 1. Replace <title>
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${seo.title}</title>`);
+
+  // 2. Meta description
+  if (html.includes('name="description"')) {
+    html = html.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, `<meta name="description" content="${seo.description}" />`);
+  } else {
+    html = html.replace('</head>', `  <meta name="description" content="${seo.description}" />\n</head>`);
+  }
+
+  // 3. Meta robots
+  if (html.includes('name="robots"')) {
+    html = html.replace(/<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/i, `<meta name="robots" content="${seo.robots}" />`);
+  } else {
+    html = html.replace('</head>', `  <meta name="robots" content="${seo.robots}" />\n</head>`);
+  }
+
+  // 4. Canonical link
+  if (html.includes('rel="canonical"')) {
+    html = html.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${seo.canonicalUrl}" />`);
+  } else {
+    html = html.replace('</head>', `  <link rel="canonical" href="${seo.canonicalUrl}" />\n</head>`);
+  }
+
+  // 5. OpenGraph & Twitter tags
+  const socialTags = `
+    <!-- Route-Specific Social & OpenGraph Meta -->
+    <meta property="og:title" content="${seo.title}" />
+    <meta property="og:description" content="${seo.description}" />
+    <meta property="og:url" content="${seo.canonicalUrl}" />
+    <meta property="og:image" content="${seo.ogImage}" />
+    <meta property="og:type" content="${seo.ogType}" />
+    <meta property="og:site_name" content="NEXOVIRA Ecosystem Nigeria" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${seo.title}" />
+    <meta name="twitter:description" content="${seo.description}" />
+    <meta name="twitter:image" content="${seo.ogImage}" />
+  `;
+  html = html.replace(/<meta\s+property="og:[^"]*"\s+content="[^"]*"\s*\/?>/gi, '');
+  html = html.replace(/<meta\s+name="twitter:[^"]*"\s+content="[^"]*"\s*\/?>/gi, '');
+  html = html.replace('</head>', `${socialTags}\n</head>`);
+
+  // 6. JSON-LD Structured Data Schema
+  if (seo.jsonLdSchemas && seo.jsonLdSchemas.length > 0) {
+    const jsonLdContent = JSON.stringify(
+      seo.jsonLdSchemas.length === 1 ? seo.jsonLdSchemas[0] : seo.jsonLdSchemas
+    );
+    const jsonLdTag = `\n    <script type="application/ld+json" id="nexovira-server-jsonld">${jsonLdContent}</script>\n`;
+    html = html.replace('</head>', `${jsonLdTag}</head>`);
+  }
+
+  // 7. Crawlable semantic HTML injected into <div id="root">
+  if (seo.semanticHtml) {
+    html = html.replace(
+      /<div id="root">[\s\S]*?<\/div>/i,
+      `<div id="root"><div id="seo-rendered-content" class="seo-ssr-wrapper">${seo.semanticHtml}</div></div>`
+    );
+  }
+
+  res.status(seo.statusCode)
+    .setHeader('Content-Type', 'text/html; charset=utf-8')
+    .send(html);
+}
+
 // Start Full-Stack Express Server with Vite Integration
 async function startServer() {
+  let vite: any = null;
+
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
+    vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'spa',
+      appType: 'custom',
     });
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    app.use(express.static(distPath, { index: false }));
   }
+
+  // Server-Side Rendered SEO Page Handler (Catches all frontend HTML routes)
+  app.get('*', async (req, res, next) => {
+    // Skip API, assets, uploads, and non-html file requests
+    if (
+      req.path.startsWith('/api/') ||
+      req.path.startsWith('/uploads/') ||
+      req.path.startsWith('/assets/') ||
+      (req.path.includes('.') && !req.path.endsWith('.html'))
+    ) {
+      return next();
+    }
+
+    try {
+      if (process.env.NODE_ENV !== 'production' && vite) {
+        const templatePath = path.resolve(process.cwd(), 'index.html');
+        let template = fs.readFileSync(templatePath, 'utf-8');
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+        renderPageHtml(req, res, template);
+      } else {
+        const distPath = path.join(process.cwd(), 'dist');
+        const templatePath = path.join(distPath, 'index.html');
+        const fallbackPath = path.resolve(process.cwd(), 'index.html');
+        const template = fs.existsSync(templatePath) 
+          ? fs.readFileSync(templatePath, 'utf-8') 
+          : fs.readFileSync(fallbackPath, 'utf-8');
+        renderPageHtml(req, res, template);
+      }
+    } catch (err) {
+      console.error('[SSR/SEO Render Error]:', err);
+      next(err);
+    }
+  });
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`NEXOVIRA Platform Server running on http://0.0.0.0:${PORT}`);

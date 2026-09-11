@@ -992,7 +992,8 @@ export type ActiveEcosystemView =
   | 'privacy'
   | 'terms'
   | 'contact'
-  | 'presentation';
+  | 'presentation'
+  | '404';
 
 export type BankVerificationStatus = 
   | 'unverified' 

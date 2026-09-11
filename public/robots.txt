@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard/
+Disallow: /account
+Disallow: /seller
+Disallow: /expert
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment/
+Disallow: /api/
+
+Sitemap: https://ais-dev-w4x4rqu6lcepucql6laucs-235870753092.europe-west1.run.app/sitemap.xml
