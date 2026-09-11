@@ -458,13 +458,16 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
           <div className="flex items-center gap-4">
             <NexoviraLogo size={64} showText={false} imgClassName="rounded-2xl" />
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black">{currentStore.name}</h1>
-                <span className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> Verified Merchant
-                </span>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-black">Seller Dashboard</h1>
+                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> Verified Merchant
+                  </span>
+                </div>
+                <div className="text-sm font-bold text-slate-200">{currentStore.name}</div>
+                <p className="text-xs text-slate-300">{currentStore.description}</p>
               </div>
-              <p className="text-xs text-slate-300 mt-1">{currentStore.description}</p>
             </div>
           </div>
 

@@ -41,13 +41,13 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
     if (role === 'super_admin' || role === 'admin' || role === 'management' || role === 'content_editor') {
       onNavigate('/admin');
     } else if (role === 'seller') {
-      onNavigate('/seller');
+      onNavigate('/dashboard/seller');
     } else if (role === 'affiliate') {
-      onNavigate('/affiliate');
-    } else if (role === 'expert') {
-      onNavigate('/services');
+      onNavigate('/dashboard/affiliate');
+    } else if (role === 'verified_expert_pending' || role === 'verified_expert_approved' || role === 'verified_expert_rejected' || role === 'expert') {
+      onNavigate('/dashboard/verified-expert');
     } else {
-      onNavigate(onSuccessRedirect || '/account');
+      onNavigate('/dashboard/customer');
     }
   };
 

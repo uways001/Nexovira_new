@@ -204,7 +204,10 @@ export type UserRole =
   | 'seller' 
   | 'affiliate' 
   | 'customer' 
-  | 'expert';
+  | 'expert'
+  | 'verified_expert_pending'
+  | 'verified_expert_approved'
+  | 'verified_expert_rejected';
 
 export type UserAccountStatus = 
   | 'pending' 
@@ -212,6 +215,19 @@ export type UserAccountStatus =
   | 'suspended' 
   | 'rejected' 
   | 'deactivated';
+
+export interface RoleAuditLog {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  action: 'ROLE_ASSIGNED_SIGNUP' | 'ROLE_CHANGED_ADMIN' | 'STATUS_CHANGED_ADMIN' | 'ROLE_ESCALATION_BLOCKED';
+  previousRole?: UserRole | string;
+  assignedRole: UserRole | string;
+  performedBy: string;
+  reason?: string;
+  ip?: string;
+  timestamp: string;
+}
 
 export type ServiceRequestStatus = 
   | 'New'
@@ -900,6 +916,7 @@ export interface UserProfile {
   phone?: string;
   role: UserRole;
   accountStatus: UserAccountStatus;
+  emailVerified?: boolean;
   isAffiliate?: boolean;
   affiliateCode?: string;
   affiliateId?: string;
@@ -908,6 +925,7 @@ export interface UserProfile {
   notificationPreferences?: WishlistNotificationPreferences;
   addresses?: Array<{ id: string; fullName: string; street: string; city: string; country: string; phone: string; default: boolean }>;
   createdAt: string;
+  updatedAt?: string;
   lastActiveAt?: string;
   internalNotes?: string;
 }
@@ -964,6 +982,10 @@ export type ActiveEcosystemView =
   | 'seller' 
   | 'admin' 
   | 'account'
+  | 'dashboard-customer'
+  | 'dashboard-seller'
+  | 'dashboard-affiliate'
+  | 'dashboard-verified-expert'
   | 'signin'
   | 'signup'
   | 'about'

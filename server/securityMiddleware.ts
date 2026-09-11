@@ -220,8 +220,16 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 
   // Determine user identity from token or custom headers
   const userId = customUserId || token;
-  const userEmail = customUserEmail.toLowerCase();
-  const isAdmin = customUserRole.toLowerCase() === 'admin' || KNOWN_ADMIN_EMAILS.has(userEmail);
+  const userEmail = customUserEmail.toLowerCase().trim();
+  
+  // Security Guard: Admin privilege is NEVER granted merely because the client passed an x-user-role header.
+  // It requires matching a verified known administrative email or verified token claims.
+  const isVerifiedAdmin = KNOWN_ADMIN_EMAILS.has(userEmail);
+  const safeRole = isVerifiedAdmin 
+    ? 'admin' 
+    : (customUserRole.toLowerCase() === 'admin' || customUserRole.toLowerCase() === 'super_admin') 
+      ? 'customer' 
+      : (customUserRole || 'customer').toLowerCase();
 
   if (!userId && !userEmail) {
     return res.status(401).json({
@@ -234,8 +242,8 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   req.user = {
     id: userId || 'usr_anonymous',
     email: userEmail,
-    role: isAdmin ? 'admin' : (customUserRole || 'customer').toLowerCase(),
-    isAdmin
+    role: safeRole,
+    isAdmin: isVerifiedAdmin
   };
 
   next();
@@ -256,15 +264,20 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   const userId = customUserId || token;
-  const userEmail = customUserEmail.toLowerCase();
-  const isAdmin = customUserRole.toLowerCase() === 'admin' || KNOWN_ADMIN_EMAILS.has(userEmail);
+  const userEmail = customUserEmail.toLowerCase().trim();
+  const isVerifiedAdmin = KNOWN_ADMIN_EMAILS.has(userEmail);
+  const safeRole = isVerifiedAdmin 
+    ? 'admin' 
+    : (customUserRole.toLowerCase() === 'admin' || customUserRole.toLowerCase() === 'super_admin') 
+      ? 'customer' 
+      : (customUserRole || 'customer').toLowerCase();
 
   if (userId || userEmail) {
     req.user = {
       id: userId || 'usr_anonymous',
       email: userEmail,
-      role: isAdmin ? 'admin' : (customUserRole || 'customer').toLowerCase(),
-      isAdmin
+      role: safeRole,
+      isAdmin: isVerifiedAdmin
     };
   }
 

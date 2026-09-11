@@ -66,6 +66,60 @@
       },
       "required": ["id", "title", "sellerId", "price"]
     },
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profile with mandatory role-based access control and verification status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique authentication identifier" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "User display or store name" },
+        "role": {
+          "type": "string",
+          "enum": [
+            "customer",
+            "seller",
+            "affiliate",
+            "verified_expert_pending",
+            "verified_expert_approved",
+            "verified_expert_rejected",
+            "expert",
+            "admin",
+            "super_admin",
+            "management",
+            "content_editor"
+          ],
+          "description": "Assigned access control role"
+        },
+        "accountStatus": {
+          "type": "string",
+          "enum": ["active", "pending", "suspended", "rejected", "deactivated"],
+          "description": "Account activation or review status"
+        },
+        "emailVerified": { "type": "boolean", "description": "Whether the user email is verified" },
+        "createdAt": { "type": "string", "description": "Profile creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Profile last modification timestamp" }
+      },
+      "required": ["uid", "email", "role", "accountStatus"]
+    },
+    "RoleAuditLog": {
+      "title": "RoleAuditLog",
+      "description": "Audit logging record for tracking role assignments, escalations, and approvals",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "previousRole": { "type": "string" },
+        "assignedRole": { "type": "string" },
+        "performedBy": { "type": "string" },
+        "reason": { "type": "string" },
+        "ip": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["userId", "action", "assignedRole", "performedBy", "timestamp"]
+    },
     "SellerConfig": {
       "title": "SellerConfig",
       "description": "Global merchant configuration settings for payout thresholds and fees",
@@ -322,6 +376,18 @@
         "$ref": "#/entities/ServiceRequest"
       },
       "description": "Customer project brief submissions and status tracking for Nexovira Services Nigeria"
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Authenticated user profiles with immutable or admin-governed role and account status"
+    },
+    "/audit_logs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/RoleAuditLog"
+      },
+      "description": "Immutable security and role change audit logs"
     }
   }
 }

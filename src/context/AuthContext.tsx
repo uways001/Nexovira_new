@@ -25,6 +25,50 @@ import { safeJsonParse } from '../lib/safeFetch';
 
 export type { UserProfile, UserRole, UserAccountStatus };
 
+export function getRoleDashboardRoute(role?: UserRole | string): string {
+  switch (role) {
+    case 'customer':
+      return '/dashboard/customer';
+    case 'seller':
+      return '/dashboard/seller';
+    case 'affiliate':
+      return '/dashboard/affiliate';
+    case 'verified_expert_pending':
+    case 'verified_expert_approved':
+    case 'verified_expert_rejected':
+    case 'expert':
+      return '/dashboard/verified-expert';
+    case 'admin':
+    case 'super_admin':
+    case 'management':
+    case 'content_editor':
+      return '/admin';
+    default:
+      return '/dashboard/customer';
+  }
+}
+
+export function getRoleDashboardTitle(role?: UserRole | string): string {
+  switch (role) {
+    case 'customer':
+      return 'Customer Dashboard';
+    case 'seller':
+      return 'Seller Dashboard';
+    case 'affiliate':
+      return 'Affiliate Dashboard';
+    case 'verified_expert_pending':
+    case 'verified_expert_approved':
+    case 'verified_expert_rejected':
+    case 'expert':
+      return 'Verified Expert Dashboard';
+    case 'admin':
+    case 'super_admin':
+      return 'Admin Command Center';
+    default:
+      return 'Customer Dashboard';
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
@@ -35,6 +79,11 @@ interface AuthContextType {
   isSeller: boolean;
   isAffiliate: boolean;
   isExpert: boolean;
+  isVerifiedExpertApproved: boolean;
+  isVerifiedExpertPending: boolean;
+  isVerifiedExpertRejected: boolean;
+  getRoleDashboard: (role?: UserRole | string) => string;
+  getRoleDashboardTitle: (role?: UserRole | string) => string;
   loading: boolean;
   signUpWithEmail: (
     email: string, 
@@ -77,7 +126,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isContentEditor, setIsContentEditor] = useState<boolean>(() => userProfile?.role === 'content_editor');
   const [isSeller, setIsSeller] = useState<boolean>(() => userProfile?.role === 'seller' && userProfile?.accountStatus === 'active');
   const [isAffiliate, setIsAffiliate] = useState<boolean>(() => (userProfile?.role === 'affiliate' || userProfile?.isAffiliate === true) && userProfile?.accountStatus !== 'suspended');
-  const [isExpert, setIsExpert] = useState<boolean>(() => userProfile?.role === 'expert' && userProfile?.accountStatus !== 'suspended');
+  const [isExpert, setIsExpert] = useState<boolean>(() => (userProfile?.role === 'expert' || userProfile?.role === 'verified_expert_approved') && userProfile?.accountStatus !== 'suspended');
+  const [isVerifiedExpertApproved, setIsVerifiedExpertApproved] = useState<boolean>(() => {
+    const r = userProfile?.role;
+    return r === 'verified_expert_approved' || r === 'expert';
+  });
+  const [isVerifiedExpertPending, setIsVerifiedExpertPending] = useState<boolean>(() => userProfile?.role === 'verified_expert_pending');
+  const [isVerifiedExpertRejected, setIsVerifiedExpertRejected] = useState<boolean>(() => userProfile?.role === 'verified_expert_rejected');
   const [loading, setLoading] = useState<boolean>(true);
 
   const setUserSession = (profile: UserProfile | null) => {
@@ -90,7 +145,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsContentEditor(r === 'content_editor');
     setIsSeller(r === 'seller' && st === 'active');
     setIsAffiliate((r === 'affiliate' || profile?.isAffiliate === true) && st !== 'suspended');
-    setIsExpert(r === 'expert' && st !== 'suspended');
+    setIsExpert((r === 'expert' || r === 'verified_expert_approved') && st !== 'suspended');
+    setIsVerifiedExpertApproved(r === 'verified_expert_approved' || r === 'expert');
+    setIsVerifiedExpertPending(r === 'verified_expert_pending');
+    setIsVerifiedExpertRejected(r === 'verified_expert_rejected');
 
     if (profile) {
       localStorage.setItem('nexovira_user_profile', JSON.stringify(profile));
@@ -120,6 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: data.phone || firebaseUser.phoneNumber || '',
           role: assignedRole,
           accountStatus: assignedStatus,
+          emailVerified: firebaseUser.emailVerified || data.emailVerified || false,
           isAffiliate: assignedRole === 'affiliate' || data.isAffiliate === true,
           affiliateCode: data.affiliateCode,
           affiliateId: data.affiliateId,
@@ -128,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           notificationPreferences: data.notificationPreferences,
           addresses: data.addresses,
           createdAt: data.createdAt || new Date().toISOString(),
+          updatedAt: data.updatedAt || new Date().toISOString(),
           lastActiveAt: new Date().toISOString(),
           internalNotes: data.internalNotes
         };
@@ -140,10 +200,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: firebaseUser.phoneNumber || '',
           role: defaultRole,
           accountStatus: 'active',
+          emailVerified: firebaseUser.emailVerified || false,
           isAffiliate: false,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           lastActiveAt: new Date().toISOString()
         };
+      }
+
+      // Authoritative Server Role Verification
+      // Ensures localStorage or client tampering cannot spoof administrative or elevated access
+      try {
+        const verifyRes = await fetch('/api/v1/auth/verify-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            reportedRole: profile.role 
+          })
+        });
+        if (verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          if (verifyData.success && verifyData.role) {
+            profile.role = verifyData.role;
+            if (verifyData.accountStatus) {
+              profile.accountStatus = verifyData.accountStatus;
+            }
+          }
+        }
+      } catch (verifyErr) {
+        console.warn('Server role verification notice:', verifyErr);
       }
 
       // Persist latest state
@@ -163,6 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: '',
         role: isEmailOwner ? 'super_admin' : 'customer',
         accountStatus: 'active',
+        emailVerified: firebaseUser.emailVerified || false,
         createdAt: new Date().toISOString()
       };
       setUserSession(fallback);
@@ -207,26 +295,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string, 
     phone: string, 
     role: UserRole = 'customer',
-    autoSignIn: boolean = false
+    autoSignIn: boolean = true
   ): Promise<UserProfile | null> => {
     const cleanEmail = email.toLowerCase().trim();
-    const isEmailOwner = cleanEmail === 'nexoviratech@gmail.com' || cleanEmail === 'nexovirasupport@gmail.com';
     
-    // Security Guard: Public registration CANNOT grant admin, super_admin, management, or content_editor roles
-    let safeRole: UserRole = role;
-    if (role === 'admin' || role === 'super_admin' || role === 'management' || role === 'content_editor') {
-      if (!isEmailOwner) {
-        console.warn('Public admin/management registration attempt blocked by security guard.');
-        safeRole = 'customer';
-      } else {
-        safeRole = 'super_admin';
-      }
-    }
-    if (isEmailOwner) {
-      safeRole = 'super_admin';
-    }
+    // Server Role Validation & Strict Allowlist Enforcement
+    // Public signup must NEVER create an admin, super_admin, management, or privileged account
+    let safeRole: UserRole = 'customer';
+    let initialStatus: UserAccountStatus = 'active';
 
-    const initialStatus: UserAccountStatus = (safeRole === 'seller' || safeRole === 'expert') ? 'pending' : 'active';
+    try {
+      const valRes = await fetch('/api/v1/auth/validate-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
+      const valData = await valRes.json();
+      if (!valData.valid) {
+        throw new Error(valData.message || 'Invalid account type selected.');
+      }
+      safeRole = valData.assignedRole;
+      initialStatus = valData.accountStatus;
+    } catch (valErr: any) {
+      if (valErr?.message?.includes('Privileged') || valErr?.message?.includes('allowlist') || valErr?.message?.includes('Invalid account type')) {
+        throw valErr;
+      }
+      // Resilient local allowlist fallback if network API unavailable
+      const ALLOWED_SIGNUP_ROLES = ['customer', 'seller', 'affiliate', 'verified_expert_pending', 'expert'];
+      if (!ALLOWED_SIGNUP_ROLES.includes(role)) {
+        throw new Error(`Account type "${role}" is not permitted for public registration.`);
+      }
+      safeRole = (role === 'expert' || role === 'verified_expert_pending') ? 'verified_expert_pending' : (role as UserRole);
+      initialStatus = safeRole === 'verified_expert_pending' ? 'pending' : 'active';
+    }
 
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
@@ -246,6 +347,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        // Authoritative Server Profile Registration (Synchronizes with server database and records audit log)
+        fetch('/api/v1/auth/register-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: cred.user.uid,
+            email,
+            displayName: name,
+            phone,
+            role: safeRole
+          })
+        }).catch(console.warn);
+
         const newProfile: UserProfile = {
           uid: cred.user.uid,
           email,
@@ -253,10 +367,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone,
           role: safeRole,
           accountStatus: initialStatus,
+          emailVerified: cred.user.emailVerified || false,
           isAffiliate: safeRole === 'affiliate',
           affiliateCode,
           affiliateId,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           lastActiveAt: new Date().toISOString()
         };
         await setDoc(doc(db, 'users', cred.user.uid), sanitizeFirestoreData(newProfile)).catch(() => {});
@@ -308,6 +424,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (_) {}
         }
 
+        // Authoritative Server Profile Registration Fallback
+        fetch('/api/v1/auth/register-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: localUid,
+            email,
+            displayName: name,
+            phone,
+            role: safeRole
+          })
+        }).catch(console.warn);
+
         const fallbackProfile: UserProfile = {
           uid: localUid,
           email,
@@ -315,10 +444,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone,
           role: safeRole,
           accountStatus: initialStatus,
+          emailVerified: false,
           isAffiliate: safeRole === 'affiliate',
           affiliateCode: localAffCode,
           affiliateId: localAffId,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           lastActiveAt: new Date().toISOString()
         };
         await setDoc(doc(db, 'users', localUid), sanitizeFirestoreData(fallbackProfile)).catch(() => {});
@@ -519,6 +650,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isSeller,
       isAffiliate,
       isExpert,
+      isVerifiedExpertApproved,
+      isVerifiedExpertPending,
+      isVerifiedExpertRejected,
+      getRoleDashboard: getRoleDashboardRoute,
+      getRoleDashboardTitle: getRoleDashboardTitle,
       loading,
       signUpWithEmail,
       signInWithEmail,

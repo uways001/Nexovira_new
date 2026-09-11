@@ -51,8 +51,8 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  // Public Role Selection State: Customer, Seller, Affiliate, Tech Expert
-  const [selectedRole, setSelectedRole] = useState<'customer' | 'seller' | 'affiliate' | 'expert'>('customer');
+  // Public Role Selection State: Customer, Seller, Affiliate, Verified Expert
+  const [selectedRole, setSelectedRole] = useState<'customer' | 'seller' | 'affiliate' | 'verified_expert_pending'>('customer');
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
@@ -174,19 +174,26 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
     setLoading(true);
 
     try {
+      const targetDashboard = 
+        selectedRole === 'customer' ? '/dashboard/customer' :
+        selectedRole === 'seller' ? '/dashboard/seller' :
+        selectedRole === 'affiliate' ? '/dashboard/affiliate' :
+        '/dashboard/verified-expert';
+
       await signUpWithEmail(
         sanitizedEmailResult.sanitizedEmail,
         password,
         sanitizedNameResult.sanitizedName,
         sanitizedPhoneVal,
-        selectedRole
+        selectedRole,
+        true
       );
       
-      // STEP 1 & STEP 2 REQUIREMENT: Show "Account Created Successfully" then redirect to Sign In
+      // Automatic role dashboard routing
       setRegisteredSuccess(true);
       setTimeout(() => {
-        onNavigate('/signin');
-      }, 2500);
+        onNavigate(targetDashboard);
+      }, 1000);
     } catch (err: any) {
       setError(formatAuthError(err));
     } finally {
@@ -318,12 +325,12 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
               </div>
             </button>
 
-            {/* Tech Expert Option */}
+            {/* Verified Expert Option */}
             <button
               type="button"
-              onClick={() => setSelectedRole('expert')}
+              onClick={() => setSelectedRole('verified_expert_pending')}
               className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
-                selectedRole === 'expert'
+                selectedRole === 'verified_expert_pending'
                   ? 'bg-purple-500/10 border-purple-500 ring-2 ring-purple-500/20'
                   : 'bg-slate-900 border-slate-800 hover:border-slate-700'
               }`}
@@ -333,15 +340,15 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
               </div>
               <div className="flex-1">
                 <div className="text-xs font-bold text-white flex items-center justify-between">
-                  <span>Tech Expert / Engineer</span>
-                  {selectedRole === 'expert' && (
+                  <span>Verified Expert</span>
+                  {selectedRole === 'verified_expert_pending' && (
                     <span className="text-[10px] text-purple-400 font-mono font-bold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">
                       SELECTED
                     </span>
                   )}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  I want to provide verified engineering, software, and hardware tech services.
+                  I want to provide verified engineering, software, and hardware tech services (Requires technical screening).
                 </div>
               </div>
             </button>
@@ -355,13 +362,25 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
               <span>Account Created Successfully</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Your NEXOVIRA account has been created. Redirecting to Sign In page...
+              Your account has been authenticated. Redirecting you automatically to your {
+                selectedRole === 'customer' ? 'Customer Dashboard' :
+                selectedRole === 'seller' ? 'Seller Dashboard' :
+                selectedRole === 'affiliate' ? 'Affiliate Dashboard' :
+                'Verified Expert Dashboard'
+              }...
             </p>
             <button
-              onClick={() => onNavigate('/signin')}
+              onClick={() => {
+                const target = 
+                  selectedRole === 'customer' ? '/dashboard/customer' :
+                  selectedRole === 'seller' ? '/dashboard/seller' :
+                  selectedRole === 'affiliate' ? '/dashboard/affiliate' :
+                  '/dashboard/verified-expert';
+                onNavigate(target);
+              }}
               className="mt-2 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition-colors cursor-pointer"
             >
-              Sign In Now
+              Enter Dashboard Now
             </button>
           </div>
         )}

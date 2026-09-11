@@ -551,7 +551,7 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
               <Share2 className="w-3.5 h-3.5" />
               <span>NEXOVIRA Official Affiliate Network</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Affiliate Partner Portal</h1>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Affiliate Dashboard</h1>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Promote appliances, tech services, academy courses, and digital e-books. Track real-time clicks, conversions, and receive automated bank payouts.
             </p>

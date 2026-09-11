@@ -33,6 +33,7 @@ import { ProductCompareModal } from './components/ProductCompareModal';
 import { SellerDashboardView } from './components/SellerDashboardView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { CustomerAccountView } from './components/CustomerAccountView';
+import { VerifiedExpertDashboardView } from './components/VerifiedExpertDashboardView';
 import { SignInView } from './components/SignInView';
 import { SignUpView } from './components/SignUpView';
 import { 
@@ -81,6 +82,72 @@ import {
   Lock
 } from 'lucide-react';
 
+interface ForbiddenDashboardViewProps {
+  requiredRoleName: string;
+  onNavigate: (path: string) => void;
+}
+
+const ForbiddenDashboardView: React.FC<ForbiddenDashboardViewProps> = ({ requiredRoleName, onNavigate }) => {
+  const { user, userProfile, getRoleDashboard, getRoleDashboardTitle } = useAuth();
+  const currentRole = userProfile?.role || 'Guest';
+  const myDashboardRoute = getRoleDashboard ? getRoleDashboard(userProfile?.role) : '/dashboard/customer';
+  const myDashboardTitle = getRoleDashboardTitle ? getRoleDashboardTitle(userProfile?.role) : 'My Dashboard';
+
+  return (
+    <div className="min-h-[75vh] flex items-center justify-center p-6 bg-slate-50 dark:bg-[#0B0F17]">
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-red-500/30 dark:border-red-500/40 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
+        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[11px] font-mono font-bold tracking-wide uppercase">
+            HTTP 403 Forbidden Access
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Role Restricted Dashboard
+          </h2>
+        </div>
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          The <span className="font-bold text-slate-900 dark:text-slate-200">{requiredRoleName}</span> is strictly reserved for authorized {requiredRoleName.toLowerCase()} accounts. 
+          {user ? (
+            <>
+              {' '}Your currently authenticated role is <span className="text-cyan-600 dark:text-cyan-400 font-bold uppercase">{currentRole}</span>.
+            </>
+          ) : (
+            ' You must sign in with an authorized account to access this dashboard.'
+          )}
+        </p>
+
+        <div className="pt-2 flex flex-col gap-2.5">
+          {user ? (
+            <button
+              onClick={() => onNavigate(myDashboardRoute)}
+              className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>Go to {myDashboardTitle}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => onNavigate('/signin')}
+              className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer"
+            >
+              Sign In to Your Account
+            </button>
+          )}
+
+          <button
+            onClick={() => onNavigate('/')}
+            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+          >
+            Return to Marketplace
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const { user, userProfile, isAdmin, isSeller } = useAuth();
 
@@ -88,10 +155,11 @@ export default function App() {
   const [activeView, setActiveView] = useState<ActiveEcosystemView>(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
-      if (path === '/affiliate') return 'affiliate';
-      if (path === '/seller') return 'seller';
+      if (path === '/dashboard/customer' || path === '/account') return 'dashboard-customer';
+      if (path === '/dashboard/seller' || path === '/seller') return 'dashboard-seller';
+      if (path === '/dashboard/affiliate' || path === '/affiliate') return 'dashboard-affiliate';
+      if (path === '/dashboard/verified-expert' || path === '/expert') return 'dashboard-verified-expert';
       if (path === '/admin') return 'admin';
-      if (path === '/account') return 'account';
       if (path === '/signin') return 'signin';
       if (path === '/signup') return 'signup';
       if (path === '/book-service' || path === '/services/nigeria' || path === '/services-nigeria') return 'book-service';
@@ -119,10 +187,11 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.toLowerCase();
-      if (path === '/affiliate') setActiveView('affiliate');
-      else if (path === '/seller') setActiveView('seller');
+      if (path === '/dashboard/customer' || path === '/account') setActiveView('dashboard-customer');
+      else if (path === '/dashboard/seller' || path === '/seller') setActiveView('dashboard-seller');
+      else if (path === '/dashboard/affiliate' || path === '/affiliate') setActiveView('dashboard-affiliate');
+      else if (path === '/dashboard/verified-expert' || path === '/expert') setActiveView('dashboard-verified-expert');
       else if (path === '/admin') setActiveView('admin');
-      else if (path === '/account') setActiveView('account');
       else if (path === '/signin') setActiveView('signin');
       else if (path === '/signup') setActiveView('signup');
       else if (path === '/book-service' || path === '/services/nigeria' || path === '/services-nigeria') setActiveView('book-service');
@@ -393,8 +462,20 @@ export default function App() {
       setActiveView('library');
     } else if (cleanPath === '/ai') {
       setActiveView('ai');
-    } else if (cleanPath === '/affiliate') {
-      setActiveView('affiliate');
+    } else if (cleanPath === '/dashboard/customer' || cleanPath === '/account') {
+      setActiveView('dashboard-customer');
+    } else if (cleanPath === '/dashboard/seller' || cleanPath === '/seller') {
+      setActiveView('dashboard-seller');
+    } else if (cleanPath === '/dashboard/affiliate' || cleanPath === '/affiliate') {
+      setActiveView('dashboard-affiliate');
+    } else if (cleanPath === '/dashboard/verified-expert' || cleanPath === '/expert') {
+      setActiveView('dashboard-verified-expert');
+    } else if (cleanPath === '/admin') {
+      setActiveView('admin');
+    } else if (cleanPath === '/signin') {
+      setActiveView('signin');
+    } else if (cleanPath === '/signup') {
+      setActiveView('signup');
     } else if (cleanPath === '/about') {
       setActiveView('about');
     } else if (cleanPath === '/privacy') {
@@ -403,16 +484,6 @@ export default function App() {
       setActiveView('terms');
     } else if (cleanPath === '/contact') {
       setActiveView('contact');
-    } else if (cleanPath === '/seller') {
-      setActiveView('seller');
-    } else if (cleanPath === '/admin') {
-      setActiveView('admin');
-    } else if (cleanPath === '/account') {
-      setActiveView('account');
-    } else if (cleanPath === '/signin') {
-      setActiveView('signin');
-    } else if (cleanPath === '/signup') {
-      setActiveView('signup');
     } else {
       setActiveView('marketplace');
     }
@@ -539,11 +610,16 @@ export default function App() {
             onAddToCart={handleAddToCart}
             onNavigateToView={(v: any) => setActiveView(v)}
           />
-        ) : activeView === 'affiliate' ? (
-          <AffiliatePortalView currentCurrency={currentCurrency} onNavigate={handleNavigate} />
-        ) : activeView === 'seller' ? (
-          /* Role Protected Seller Studio */
-          (userProfile?.role === 'seller' || userProfile?.role === 'admin' || isSeller || isAdmin) ? (
+        ) : (activeView === 'dashboard-affiliate' || activeView === 'affiliate') ? (
+          /* Role Protected Affiliate Dashboard */
+          (userProfile?.role === 'affiliate' || userProfile?.isAffiliate || isAdmin) ? (
+            <AffiliatePortalView currentCurrency={currentCurrency} onNavigate={handleNavigate} />
+          ) : (
+            <ForbiddenDashboardView requiredRoleName="Affiliate Dashboard" onNavigate={handleNavigate} />
+          )
+        ) : (activeView === 'dashboard-seller' || activeView === 'seller') ? (
+          /* Role Protected Seller Dashboard */
+          (userProfile?.role === 'seller' || isAdmin || isSeller) ? (
             <SellerDashboardView
               onAddProduct={(newProd) => setAllProducts([newProd, ...allProducts])}
               sellerId={userProfile?.uid || user?.uid}
@@ -551,67 +627,30 @@ export default function App() {
               onNavigate={handleNavigate}
             />
           ) : (
-            <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[#0B0F17]">
-              <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
-                  <Lock className="w-8 h-8" />
-                </div>
-                <h2 className="text-2xl font-bold text-white">Seller Studio Access Restricted</h2>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Seller Studio is reserved for registered merchant stores on NEXOVIRA. Your current account role is <span className="text-cyan-400 font-bold uppercase">{userProfile?.role || 'Guest'}</span>.
-                </p>
-                <div className="pt-2 flex flex-col gap-2">
-                  <button
-                    onClick={() => handleNavigate('/signup')}
-                    className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
-                  >
-                    Register Store as Seller
-                  </button>
-                  <button
-                    onClick={() => handleNavigate('/')}
-                    className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors"
-                  >
-                    Return to Marketplace
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ForbiddenDashboardView requiredRoleName="Seller Dashboard" onNavigate={handleNavigate} />
+          )
+        ) : activeView === 'dashboard-verified-expert' ? (
+          /* Role Protected Verified Expert Dashboard */
+          (userProfile?.role === 'verified_expert_pending' || 
+           userProfile?.role === 'verified_expert_approved' || 
+           userProfile?.role === 'verified_expert_rejected' || 
+           userProfile?.role === 'expert' || 
+           isAdmin) ? (
+            <VerifiedExpertDashboardView currentCurrency={currentCurrency} onNavigate={handleNavigate} />
+          ) : (
+            <ForbiddenDashboardView requiredRoleName="Verified Expert Dashboard" onNavigate={handleNavigate} />
           )
         ) : activeView === 'admin' ? (
           /* Role Protected Admin Center */
-          (userProfile?.role === 'admin' || isAdmin) ? (
+          (userProfile?.role === 'admin' || userProfile?.role === 'super_admin' || userProfile?.role === 'management' || isAdmin) ? (
             <AdminDashboardView
               homepageSections={homepageSections}
               setHomepageSections={setHomepageSections}
             />
           ) : (
-            <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[#0B0F17]">
-              <div className="max-w-md w-full bg-slate-900 border border-cyan-500/30 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
-                <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
-                  <ShieldAlert className="w-8 h-8" />
-                </div>
-                <h2 className="text-2xl font-bold text-white">Admin Command Access Restricted</h2>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Platform Administration is strictly restricted to authorized platform owners. You cannot access this portal without an Administrator account.
-                </p>
-                <div className="pt-2 flex flex-col gap-2">
-                  <button
-                    onClick={() => handleNavigate('/signin')}
-                    className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
-                  >
-                    Sign In with Admin Account
-                  </button>
-                  <button
-                    onClick={() => handleNavigate('/')}
-                    className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors"
-                  >
-                    Return to Marketplace
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ForbiddenDashboardView requiredRoleName="Admin Command Center" onNavigate={handleNavigate} />
           )
-        ) : activeView === 'account' ? (
+        ) : (activeView === 'dashboard-customer' || activeView === 'account') ? (
           <CustomerAccountView onNavigate={handleNavigate} currentCurrency={currentCurrency} />
         ) : activeView === 'signin' ? (
           <SignInView onNavigate={handleNavigate} />

@@ -166,7 +166,17 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const { user, userProfile, isAdmin, isSeller, logout } = useAuth();
+  const { user, userProfile, isAdmin, isSeller, logout, getRoleDashboard, getRoleDashboardTitle } = useAuth();
+
+  const userDashboardRoute = getRoleDashboard ? getRoleDashboard(userProfile?.role) : (
+    userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? '/admin' :
+    userProfile?.role === 'seller' ? '/dashboard/seller' :
+    userProfile?.role === 'affiliate' ? '/dashboard/affiliate' :
+    (userProfile?.role === 'expert' || userProfile?.role?.startsWith('verified_expert')) ? '/dashboard/verified-expert' :
+    '/dashboard/customer'
+  );
+
+  const userDashboardTitle = getRoleDashboardTitle ? getRoleDashboardTitle(userProfile?.role) : 'My Dashboard';
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,16 +312,13 @@ export const Header: React.FC<HeaderProps> = ({
           {user ? (
             <div className="flex items-center gap-1 sm:gap-1.5">
               <a
-                href={userProfile?.role === 'admin' ? '/admin' : userProfile?.role === 'seller' ? '/seller' : (userProfile?.role === 'affiliate' || userProfile?.isAffiliate) ? '/affiliate' : '/account'}
+                href={userDashboardRoute}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (userProfile?.role === 'admin') onNavigate('/admin');
-                  else if (userProfile?.role === 'seller') onNavigate('/seller');
-                  else if (userProfile?.role === 'affiliate' || userProfile?.isAffiliate) onNavigate('/affiliate');
-                  else onNavigate('/account');
+                  onNavigate(userDashboardRoute);
                 }}
                 className="p-1.5 sm:px-3 text-slate-700 dark:text-slate-200 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2 border border-slate-200 dark:border-slate-800"
-                title="My Profile & Portal"
+                title={userDashboardTitle}
               >
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-xs flex items-center justify-center">
                   {(userProfile?.displayName || user?.displayName || userProfile?.email || user?.email || 'U')[0].toUpperCase()}
@@ -319,9 +326,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="hidden xl:inline text-xs font-bold truncate max-w-[100px]">
                   {userProfile?.displayName || user?.displayName || userProfile?.email?.split('@')[0] || user?.email?.split('@')[0] || 'User'}
                 </span>
-                {(userProfile?.role === 'affiliate' || userProfile?.isAffiliate) && (
-                  <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                    AFFILIATE
+                {userProfile?.role && userProfile.role !== 'customer' && (
+                  <span className={`hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${
+                    isAdmin ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' :
+                    userProfile.role === 'seller' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                    userProfile.role === 'affiliate' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
+                    'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                  }`}>
+                    {isAdmin ? 'ADMIN' :
+                     userProfile.role === 'seller' ? 'SELLER' :
+                     userProfile.role === 'affiliate' ? 'AFFILIATE' :
+                     userProfile.role === 'verified_expert_approved' ? 'EXPERT' :
+                     userProfile.role === 'verified_expert_pending' ? 'PENDING EXPERT' :
+                     userProfile.role.toUpperCase()}
                   </span>
                 )}
               </a>
@@ -457,22 +474,40 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-xs">
-            {userProfile && userProfile.role === 'admin' && (
+            {userProfile && (userProfile.role === 'admin' || userProfile.role === 'super_admin' || userProfile.role === 'management') && (
               <a
                 href="/admin"
                 onClick={(e) => { e.preventDefault(); onNavigate('/admin'); }}
                 className="px-2 py-0.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-500 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
               >
-                <span>⚡ Admin</span>
+                <span>⚡ Admin Command</span>
               </a>
             )}
             {userProfile && userProfile.role === 'seller' && (
               <a
-                href="/seller"
-                onClick={(e) => { e.preventDefault(); onNavigate('/seller'); }}
+                href="/dashboard/seller"
+                onClick={(e) => { e.preventDefault(); onNavigate('/dashboard/seller'); }}
                 className="px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
               >
-                <span>🏪 Seller</span>
+                <span>🏪 Seller Dashboard</span>
+              </a>
+            )}
+            {userProfile && (userProfile.role === 'affiliate' || userProfile.isAffiliate) && (
+              <a
+                href="/dashboard/affiliate"
+                onClick={(e) => { e.preventDefault(); onNavigate('/dashboard/affiliate'); }}
+                className="px-2 py-0.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+              >
+                <span>🤝 Affiliate Dashboard</span>
+              </a>
+            )}
+            {userProfile && (userProfile.role === 'expert' || userProfile.role?.startsWith('verified_expert')) && (
+              <a
+                href="/dashboard/verified-expert"
+                onClick={(e) => { e.preventDefault(); onNavigate('/dashboard/verified-expert'); }}
+                className="px-2 py-0.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+              >
+                <span>🛠️ Expert Dashboard</span>
               </a>
             )}
             <a 
@@ -494,14 +529,11 @@ export const Header: React.FC<HeaderProps> = ({
           {user ? (
             <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-md">
               <a
-                href={userProfile?.role === 'admin' ? '/admin' : userProfile?.role === 'seller' ? '/seller' : (userProfile?.role === 'affiliate' || userProfile?.isAffiliate) ? '/affiliate' : '/account'}
+                href={userDashboardRoute}
                 onClick={(e) => {
                   e.preventDefault();
                   setMobileMenuOpen(false);
-                  if (userProfile?.role === 'admin') onNavigate('/admin');
-                  else if (userProfile?.role === 'seller') onNavigate('/seller');
-                  else if (userProfile?.role === 'affiliate' || userProfile?.isAffiliate) onNavigate('/affiliate');
-                  else onNavigate('/account');
+                  onNavigate(userDashboardRoute);
                 }}
                 className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition-opacity"
               >
@@ -513,7 +545,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {userProfile?.displayName || user?.displayName || userProfile?.email?.split('@')[0] || user?.email?.split('@')[0] || 'User'}
                   </p>
                   <p className="text-[10px] text-cyan-400 font-mono capitalize">
-                    {userProfile?.role || 'Customer'} Portal →
+                    {userDashboardTitle} →
                   </p>
                 </div>
               </a>

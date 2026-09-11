@@ -2,6 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Default Deny Root Pillar
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -14,8 +20,8 @@ service cloud.firestore {
       return resource.data;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
     }
 
     function isAdmin() {
@@ -24,222 +30,310 @@ service cloud.firestore {
         request.auth.token.email == 'nexovirasupport@gmail.com' ||
         request.auth.token.email == 'admin@nexovira.com' ||
         request.auth.token.email == 'nexoviratech@gmail.com' ||
-        (request.auth.token.keys().hasAll(['role']) && request.auth.token.role == 'admin') ||
+        (request.auth.token.keys().hasAll(['role']) && (request.auth.token.role == 'admin' || request.auth.token.role == 'super_admin')) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin')
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'super_admin'))
       );
     }
 
     function isSeller() {
       return isSignedIn() && (
-        (request.auth.token.keys().hasAll(['role']) && (request.auth.token.role == 'seller' || request.auth.token.role == 'admin')) ||
+        isAdmin() ||
+        (request.auth.token.keys().hasAll(['role']) && request.auth.token.role == 'seller') ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'seller' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin')) ||
-        isAdmin()
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'seller')
       );
     }
 
-    // Global Catch-all: allows read & write across all collections
-    match /{document=**} {
-      allow read, write: if true;
+    function isAffiliate() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (request.auth.token.keys().hasAll(['role']) && request.auth.token.role == 'affiliate') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'affiliate' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAffiliate', false) == true))
+      );
     }
 
-    // Explicit collection declarations for clear ABAC clarity
+    function isExpert() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (request.auth.token.keys().hasAll(['role']) && (request.auth.token.role == 'verified_expert_approved' || request.auth.token.role == 'expert')) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'verified_expert_approved' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'expert'))
+      );
+    }
+
+    function isPublicSignupRole(role) {
+      return role in ['customer', 'seller', 'affiliate', 'verified_expert_pending'];
+    }
+
+    // Pillar: Users Collection with strict Role-Based Access Control
+    match /users/{uid} {
+      // Users can read their own profile; admins can read any profile
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // Public registration: Users can create their own profile ONLY with allowed public signup roles
+      // Cannot create admin, super_admin, management, content_editor, or verified_expert_approved
+      allow create: if isSignedIn() && 
+        request.auth.uid == uid && 
+        isPublicSignupRole(incoming().get('role', 'customer')) && 
+        !(incoming().get('role', '') in ['admin', 'super_admin', 'management', 'content_editor', 'verified_expert_approved']) &&
+        (incoming().get('role', '') == 'verified_expert_pending' ? incoming().get('accountStatus', '') == 'pending' : true);
+
+      // Updates: Only administrators can change 'role' or 'accountStatus'.
+      // Regular users can update general info (displayName, phone, addresses, preferences) but CANNOT change role/status.
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (
+          request.auth.uid == uid && 
+          incoming().get('role', '') == existing().get('role', '') &&
+          incoming().get('accountStatus', '') == existing().get('accountStatus', '')
+        )
+      );
+
+      // Only administrators can delete user profiles
+      allow delete: if isAdmin();
+    }
+
+    // Pillar: Role & Security Audit Logs (Append-only by authorized users/system, read by admin)
+    match /audit_logs/{id} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Public Marketplace Catalog
     match /products/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update, delete: if isSeller();
     }
 
     match /categories/{id} {
-      allow read, write: if true;
-    }
-
-    match /orders/{id} {
-      allow read, write: if true;
-    }
-
-    match /reviews/{id} {
-      allow read, write: if true;
-    }
-
-    match /settings/{id} {
-      allow read, write: if true;
-    }
-
-    match /system_configs/{id} {
-      allow read, write: if true;
-    }
-
-    match /store_settings/{id} {
-      allow read, write: if true;
-    }
-
-    match /services/{id} {
-      allow read, write: if true;
-    }
-
-    match /courses/{id} {
-      allow read, write: if true;
-    }
-
-    match /enrollments/{id} {
-      allow read, write: if true;
-    }
-
-    match /ebooks/{id} {
-      allow read, write: if true;
-    }
-
-    match /storage_files/{id} {
-      allow read, write: if true;
-    }
-
-    match /category_requests/{id} {
-      allow read, write: if true;
-    }
-
-    match /contact_messages/{id} {
-      allow read, write: if true;
-    }
-
-    match /notifications/{id} {
-      allow read, write: if true;
-    }
-
-    match /seller_notifications/{id} {
-      allow read, write: if true;
-    }
-
-    match /affiliate_notifications/{id} {
-      allow read, write: if true;
-    }
-
-    match /affiliates/{id} {
-      allow read, write: if true;
-    }
-
-    match /affiliate_links/{id} {
-      allow read, write: if true;
-    }
-
-    match /affiliate_clicks/{id} {
-      allow read, write: if true;
-    }
-
-    match /affiliate_commissions/{id} {
-      allow read, write: if true;
-    }
-
-    match /order_financials/{id} {
-      allow read, write: if true;
-    }
-
-    match /affiliate_ledger/{id} {
-      allow read, write: if true;
-    }
-
-    match /seller_ledger/{id} {
-      allow read, write: if true;
-    }
-
-    match /payouts/{id} {
-      allow read, write: if true;
-    }
-
-    match /seller_payouts/{id} {
-      allow read, write: if true;
-    }
-
-    match /seller_profiles/{id} {
-      allow read, write: if true;
-    }
-
-    match /seller_sales_earnings/{id} {
-      allow read, write: if true;
-    }
-
-    match /seller_bank_audit_logs/{id} {
-      allow read, write: if true;
-    }
-
-    match /service_orders/{id} {
-      allow read, write: if true;
-    }
-
-    match /service_providers/{id} {
-      allow read, write: if true;
-    }
-
-    match /service_requests/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /tech_service_categories/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
+    match /courses/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ebooks/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (request.auth.uid == existing().get('customerId', '') || isAdmin());
+    }
+
+    match /orders/{id} {
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('customerId', '') || isSeller() || isAdmin());
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (request.auth.uid == existing().get('customerId', '') || isSeller() || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Affiliate Network & Commissions
+    match /affiliates/{id} {
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('userId', '') || isAffiliate() || isAdmin());
+      allow write: if isSignedIn();
+    }
+
+    match /affiliate_links/{id} {
+      allow read: if true;
+      allow write: if isAffiliate() || isAdmin();
+    }
+
+    match /affiliate_clicks/{id} {
+      allow read: if isAffiliate() || isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /affiliate_commissions/{id} {
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('affiliateId', '') || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /affiliate_ledger/{id} {
+      allow read: if isAffiliate() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Seller Studio & Payouts
+    match /seller_payouts/{id} {
+      allow read, write: if isSeller() || isAdmin();
+    }
+
+    match /payouts/{id} {
+      allow read, write: if isSeller() || isAdmin();
+    }
+
+    match /seller_profiles/{id} {
+      allow read: if true;
+      allow write: if isSeller() || isAdmin();
+    }
+
+    match /seller_sales_earnings/{id} {
+      allow read, write: if isSeller() || isAdmin();
+    }
+
+    match /seller_ledger/{id} {
+      allow read, write: if isSeller() || isAdmin();
+    }
+
+    match /seller_bank_audit_logs/{id} {
+      allow read, write: if isSeller() || isAdmin();
+    }
+
+    // Tech Services & Expert Network
+    match /service_requests/{id} {
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('customerUid', '') || isExpert() || isAdmin());
+      allow create: if true;
+      allow update: if isSignedIn() && (isExpert() || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /service_providers/{id} {
+      allow read: if true;
+      allow write: if isSignedIn() && (request.auth.uid == id || isAdmin());
+    }
+
+    match /service_orders/{id} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Academy Scholarships & Enrollments
     match /scholarship_applications/{id} {
-      allow read, write: if true;
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('uid', '') || isAdmin());
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     match /scholarship_payments/{id} {
-      allow read, write: if true;
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('uid', '') || isAdmin());
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
-    match /email_notifications/{id} {
-      allow read, write: if true;
+    match /enrollments/{id} {
+      allow read: if isSignedIn() && (request.auth.uid == existing().get('userId', '') || isAdmin());
+      allow write: if isSignedIn();
     }
 
-    match /subscribers/{id} {
-      allow read, write: if true;
+    // Platform Administration & Configurations
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    match /user_notification_settings/{id} {
-      allow read, write: if true;
+    match /system_configs/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    match /users/{uid} {
-      allow read, write: if true;
-    }
-
-    match /audit_logs/{id} {
-      allow read, write: if true;
+    match /store_settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /branding/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /websiteContent/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /whatsappTemplates/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /banners/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /testimonials/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /faqs/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Inquiries, Contact Messages & Subscriptions
+    match /contact_messages/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
 
     match /enquiries/{id} {
-      allow read, write: if true;
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /subscribers/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Notifications & Preferences
+    match /user_notification_settings/{id} {
+      allow read, write: if isSignedIn() && (request.auth.uid == id || isAdmin());
+    }
+
+    match /notifications/{id} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /seller_notifications/{id} {
+      allow read, write: if isSeller() || isAdmin();
+    }
+
+    match /affiliate_notifications/{id} {
+      allow read, write: if isAffiliate() || isAdmin();
+    }
+
+    match /email_notifications/{id} {
+      allow read, write: if isSignedIn();
     }
 
     match /activityLogs/{id} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
 
     match /paystack_transactions/{id} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn();
+    }
+
+    match /storage_files/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /category_requests/{id} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /order_financials/{id} {
+      allow read, write: if isSignedIn();
     }
   }
 }

@@ -32,6 +32,16 @@ import {
   isValidEmail,
   isPositiveNumber
 } from './server/securityMiddleware';
+import {
+  validatePublicSignupRole,
+  registerUserProfile,
+  verifyUserRole,
+  adminChangeUserRole,
+  getRoleAuditLogs,
+  getAllCachedUsers,
+  getDashboardPathForRole,
+  getDashboardTitleForRole
+} from './server/authService';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -708,6 +718,145 @@ app.post(['/api/v1/contact', '/api/contact'], contactRateLimiter, (req, res) => 
   }
   safeLogger.info(`Contact message received from ${name || 'User'} (${email}): ${subject || 'Inquiry'}`);
   res.json({ success: true, message: 'Message received. NEXOVIRA Support will follow up promptly.' });
+});
+
+// ============================================================================
+// 2c. MANDATORY ROLE-BASED SIGNUP & DASHBOARD ASSIGNMENT ENDPOINTS
+// ============================================================================
+
+// A. Server-Side Role Validation against Public Allowlist
+app.post('/api/v1/auth/validate-signup', authRateLimiter, (req, res) => {
+  const { role } = req.body || {};
+  const validation = validatePublicSignupRole(role);
+
+  if (!validation.valid) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid Account Role',
+      message: validation.error,
+      assignedRole: validation.assignedRole,
+      dashboard: validation.dashboard
+    });
+  }
+
+  res.json({
+    success: true,
+    valid: true,
+    assignedRole: validation.assignedRole,
+    accountStatus: validation.initialStatus,
+    dashboard: validation.dashboard,
+    dashboardTitle: validation.dashboardTitle
+  });
+});
+
+// B. Authoritative User Profile Registration with DB Persistence and Audit Logging
+app.post('/api/v1/auth/register-profile', authRateLimiter, async (req, res) => {
+  try {
+    const { uid, email, displayName, phone, role } = req.body || {};
+
+    if (!uid || typeof uid !== 'string') {
+      return res.status(400).json({ success: false, error: 'Validation Error', message: 'User ID (uid) is required.' });
+    }
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ success: false, error: 'Validation Error', message: 'Valid email address is required.' });
+    }
+
+    const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
+
+    const result = await registerUserProfile({
+      uid,
+      email,
+      displayName: displayName || 'NEXOVIRA Member',
+      phone,
+      requestedRole: role,
+      ip: clientIp
+    });
+
+    res.json({
+      success: true,
+      profile: result.profile,
+      dashboard: result.dashboard,
+      dashboardTitle: result.dashboardTitle
+    });
+  } catch (err: any) {
+    safeLogger.error('[Auth Register Error]:', err);
+    res.status(400).json({
+      success: false,
+      error: 'Registration Blocked',
+      message: err.message || 'Could not complete role registration.'
+    });
+  }
+});
+
+// C. Authoritative Role Verification (Bypasses and detects client-side localStorage tampering)
+app.post('/api/v1/auth/verify-role', async (req, res) => {
+  try {
+    const { uid, reportedRole } = req.body || {};
+    if (!uid || typeof uid !== 'string') {
+      return res.status(400).json({ success: false, error: 'Validation Error', message: 'User ID is required.' });
+    }
+
+    const verification = await verifyUserRole(uid, reportedRole);
+
+    res.json({
+      success: true,
+      uid: verification.uid,
+      role: verification.verifiedRole,
+      accountStatus: verification.accountStatus,
+      dashboard: verification.dashboard,
+      dashboardTitle: verification.dashboardTitle,
+      tampered: verification.tampered,
+      profile: verification.profile
+    });
+  } catch (err: any) {
+    safeLogger.error('[Auth Verify Role Error]:', err);
+    res.status(500).json({ success: false, error: 'Verification Error', message: 'Failed to verify user role.' });
+  }
+});
+
+// D. Administrator Role & Status Management (Approve/Reject Verified Experts, Change Roles)
+app.post('/api/v1/admin/users/:uid/role', authenticateToken, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const targetUid = req.params.uid;
+    const { newRole, newStatus, reason } = req.body || {};
+    const adminUser = req.user!;
+
+    if (!newRole) {
+      return res.status(400).json({ success: false, error: 'Missing parameter', message: 'newRole is required.' });
+    }
+
+    const updatedProfile = await adminChangeUserRole({
+      adminUid: adminUser.id,
+      adminEmail: adminUser.email,
+      targetUid,
+      newRole,
+      newStatus,
+      reason
+    });
+
+    res.json({
+      success: true,
+      message: `User role successfully updated to ${newRole}`,
+      profile: updatedProfile,
+      dashboard: getDashboardPathForRole(newRole),
+      dashboardTitle: getDashboardTitleForRole(newRole)
+    });
+  } catch (err: any) {
+    safeLogger.error('[Admin Role Change Error]:', err);
+    res.status(500).json({ success: false, error: 'Server Error', message: 'Failed to modify user role.' });
+  }
+});
+
+// E. Role Audit Logs (Admin-only retrieval)
+app.get('/api/v1/admin/audit-logs/roles', authenticateToken, requireRole('admin', 'super_admin'), (req, res) => {
+  const logs = getRoleAuditLogs();
+  res.json({ success: true, count: logs.length, logs });
+});
+
+// F. Admin User List
+app.get('/api/v1/admin/users/all', authenticateToken, requireRole('admin', 'super_admin'), (req, res) => {
+  const users = getAllCachedUsers();
+  res.json({ success: true, count: users.length, users });
 });
 
 // 3. Product Catalog & Management Endpoints (Row-Level Security & Automated seller_id Assignment)
