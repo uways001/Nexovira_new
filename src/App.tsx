@@ -21,7 +21,6 @@ import { Header } from './components/Header';
 import { HeroAISearch } from './components/HeroAISearch';
 import { EcosystemCards } from './components/EcosystemCards';
 import { TechServicesView } from './components/TechServicesView';
-import { NigeriaServicesView } from './components/NigeriaServicesView';
 import { AcademyView } from './components/AcademyView';
 import { DigitalLibraryView } from './components/DigitalLibraryView';
 import { NexoAIWorkspace } from './components/NexoAIWorkspace';
@@ -77,7 +76,6 @@ import {
   ShieldCheck, 
   Zap, 
   ArrowRight, 
-  Filter, 
   Clock,
   Flame,
   ShieldAlert,
@@ -257,7 +255,6 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [priceFilter, setPriceFilter] = useState<number>(3000);
 
   // Modals & Prompts
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -511,18 +508,6 @@ export default function App() {
     }
   };
 
-  // Filtered Products List
-  const filteredProducts = allProducts.filter((p) => {
-    const matchesCategory = selectedCategory === 'all' || p.categoryId === selectedCategory;
-    const matchesSearch =
-      !searchQuery ||
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPrice = p.price <= priceFilter;
-    return matchesCategory && matchesSearch && matchesPrice;
-  });
-
   const flashDeals = allProducts.filter((p) => p.isFlashDeal);
 
   return (
@@ -676,10 +661,10 @@ export default function App() {
                   </div>
 
                   <button
-                    onClick={() => { setSelectedCategory('all'); setActiveView('marketplace'); }}
+                    onClick={() => { setSelectedCategory('all'); }}
                     className="text-xs font-bold text-cyan-500 hover:underline flex items-center gap-1"
                   >
-                    <span>View All Catalog</span>
+                    <span>View All Categories</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -760,99 +745,6 @@ export default function App() {
                 </div>
               </section>
             )}
-
-            {/* Main Featured Marketplace Grid */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                    Verified Marketplace Catalog
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Showing {filteredProducts.length} grounded products with official manufacturer warranties
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-2 text-xs">
-                  <Filter className="w-4 h-4 text-cyan-500" />
-                  <span className="font-bold text-slate-700 dark:text-slate-300">Max Price:</span>
-                  <input
-                    type="range"
-                    min="100"
-                    max="3000"
-                    step="100"
-                    value={priceFilter}
-                    onChange={(e) => setPriceFilter(Number(e.target.value))}
-                    className="w-28 accent-cyan-500 cursor-pointer"
-                  />
-                  <span className="font-mono font-bold text-cyan-500">{formatCurrency(priceFilter, currentCurrency)}</span>
-                </div>
-              </div>
-
-              {filteredProducts.length === 0 ? (
-                <div className="py-16 px-6 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 max-w-2xl mx-auto shadow-sm">
-                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
-                    <Filter className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                      {selectedCategory !== 'all' 
-                        ? `No products available in ${(categories.find(c => c.id === selectedCategory) || CATEGORIES.find(c => c.id === selectedCategory))?.name || selectedCategory}`
-                        : 'No products match your search or price criteria'}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Our NEXOVIRA merchant stores and Lagos hub stock new inventory daily. You can request custom procurement or ask NexoAI for recommendations.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('all');
-                        setSearchQuery('');
-                        setPriceFilter(3000);
-                      }}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors"
-                    >
-                      Reset All Filters
-                    </button>
-                    <button
-                      onClick={() => handleNavigate('/contact')}
-                      className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs rounded-xl transition-colors"
-                    >
-                      Request Custom Product
-                    </button>
-                    <button
-                      onClick={() => handleOpenAIWithQuery(`Recommend products similar to ${selectedCategory}`)}
-                      className="px-4 py-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold text-xs rounded-xl hover:bg-cyan-500/20 transition-colors"
-                    >
-                      Ask NexoAI
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {filteredProducts.map((prod) => (
-                    <ProductCard
-                      key={prod.id}
-                      product={prod}
-                      onSelectProduct={(p) => setSelectedProduct(p)}
-                      onAddToCart={(p, e) => handleAddToCart(p, 1, e)}
-                      onAskAI={(p, e) => {
-                        e.stopPropagation();
-                        handleOpenAIWithQuery(`Is ${p.title} good for my needs?`);
-                      }}
-                      onToggleCompare={handleToggleCompare}
-                      onToggleWishlist={handleToggleWishlist}
-                      onSetPriceAlert={(p) => setPriceAlertModalProduct(p)}
-                      currentCurrency={currentCurrency}
-                      isCompared={comparedProducts.some((cp) => cp.id === prod.id)}
-                      isInWishlist={wishlist.includes(prod.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
 
           </div>
         )}

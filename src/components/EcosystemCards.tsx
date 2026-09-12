@@ -8,11 +8,7 @@ import {
   Sparkles, 
   Share2, 
   ArrowRight,
-  ShieldCheck,
-  Zap,
-  Star,
-  Briefcase,
-  MapPin
+  ShieldCheck
 } from 'lucide-react';
 
 interface EcosystemCardsProps {
@@ -26,16 +22,16 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       id: 'marketplace' as ActiveEcosystemView,
       title: 'NEXOVIRA Marketplace',
       subtitle: 'High-efficiency inverter appliances & smart home hardware',
-      badge: productCount > 0 ? 'CATALOG LIVE' : 'COMING SOON',
+      badge: productCount > 0 ? 'MARKETPLACE LIVE' : 'COMING SOON',
       badgeColor: productCount > 0 
         ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' 
         : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       icon: ShoppingBag,
       gradient: 'from-slate-900 via-slate-900 to-amber-950/40 border-slate-800 hover:border-amber-500/60',
       accentColor: 'text-amber-400',
-      cta: productCount > 0 ? 'Explore Marketplace' : 'Preview Upcoming Catalog',
+      cta: productCount > 0 ? 'Explore Marketplace' : 'Browse Marketplace',
       image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
-      stats: productCount > 0 ? `${productCount} Verified Products in Catalog` : 'Inverters, Clean Energy Hardware & Smart Living'
+      stats: productCount > 0 ? `${productCount} Verified Products Available` : 'Inverters, Clean Energy Hardware & Smart Living'
     },
     {
       id: 'services' as ActiveEcosystemView,
@@ -179,33 +175,6 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
             </div>
           );
         })}
-      </div>
-
-      {/* Featured Book a Service Callout Banner */}
-      <div className="mt-8 rounded-3xl bg-gradient-to-r from-blue-950 via-slate-900 to-slate-950 border border-blue-500/30 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
-        <div className="space-y-2 relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-500/30">
-            <Briefcase className="w-3.5 h-3.5 text-blue-400" />
-            <span>Nexovira Managed Services • Verified Specialists</span>
-          </div>
-          <h3 className="text-xl sm:text-2xl font-black text-white">
-            Need Specialist Tech Support? Book Vetted Professionals
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Connect with qualified specialists across software development, cloud systems, and technical services under our managed milestone guarantees.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
-          <button
-            onClick={() => onNavigate('book-service')}
-            className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Book a Service</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
     </section>
   );
