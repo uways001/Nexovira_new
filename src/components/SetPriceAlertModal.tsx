@@ -123,7 +123,7 @@ export const SetPriceAlertModal: React.FC<SetPriceAlertModalProps> = ({
 
       const saved = await createPriceAlertInFirestore({
         userId: user?.uid || userProfile?.uid || 'guest',
-        userEmail: user?.email || userProfile?.email || 'customer@nexovira.com',
+        userEmail: user?.email || userProfile?.email || '',
         userName: userProfile?.displayName || user?.displayName || 'Valued Shopper',
         productId: product.id,
         productTitle: product.title,

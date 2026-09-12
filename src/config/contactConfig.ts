@@ -7,24 +7,31 @@
  */
 
 export const NEXOVIRA_CONTACT_CONFIG = {
-  // Official WhatsApp Support Number (Default active line: 07025900156)
-  officialWhatsAppNumber: '07025900156',
-  whatsappNumber: '07025900156',
+  // Approved Business Identity
+  canonicalDomain: 'https://nexovira.com.ng',
+  businessModel: 'Online-only technology ecosystem in Nigeria',
+  physicalStoreNotice: 'Online-only operations. Nationwide courier delivery and digital fulfillment (no physical walk-in store or public customer pickup center).',
+
+  // Official WhatsApp Support Number
+  officialWhatsAppNumber: '+234 702 590 0156',
+  whatsappNumber: '+234 702 590 0156',
+  whatsappLocalFormat: '0702 590 0156',
+  whatsappLink: 'https://wa.me/2347025900156',
 
   // Nigeria country dial code
   countryDialCode: '+234',
 
-  // Human-friendly formatted number for display: +234 702 590 0156 or 07025900156
+  // Human-friendly formatted number for display
   displayWhatsAppNumber: '+234 702 590 0156',
-  whatsappDisplay: '07025900156',
+  whatsappDisplay: '0702 590 0156',
 
-  // Direct Phone Hotline
-  supportPhone: '+234 911 044 3054',
-  supportPhoneHref: 'tel:+2349110443054',
+  // Direct Phone / WhatsApp Support Line
+  supportPhone: '+234 702 590 0156',
+  supportPhoneHref: 'tel:+2347025900156',
 
-  // Official Support Email
-  supportEmail: 'support@nexovira.com',
-  supportEmailHref: 'mailto:support@nexovira.com',
+  // Official Customer Support Email
+  supportEmail: 'nexovirasupport@gmail.com',
+  supportEmailHref: 'mailto:nexovirasupport@gmail.com',
 
   // Default initial greeting for customer WhatsApp inquiries
   defaultWhatsAppGreeting: 'Hello NEXOVIRA Support, I would like assistance with...',
@@ -39,7 +46,7 @@ export const NEXOVIRA_CONTACT_CONFIG = {
    * Sanitizes any phone number into international digits suitable for https://wa.me/{digits}
    */
   getCleanWhatsAppDigits(phoneOverride?: string): string {
-    const raw = (phoneOverride || this.officialWhatsAppNumber).trim();
+    const raw = (phoneOverride || this.whatsappNumber).trim();
     let digits = raw.replace(/[^0-9]/g, '');
 
     // Convert local Nigerian 070... / 080... (11 digits) to international 23470...

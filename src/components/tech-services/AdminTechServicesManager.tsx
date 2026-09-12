@@ -506,9 +506,9 @@ export const AdminTechServicesManager: React.FC = () => {
           payload: {
             referenceNumber: `TEST-NX-${Math.floor(100000 + Math.random() * 900000)}`,
             customerName: 'Nexovira System Auditor',
-            customerEmail: 'nexoviratech@gmail.com',
-            customerPhone: '+234 800 000 0000',
-            customerLocation: 'Victoria Island, Lagos, Nigeria',
+            customerEmail: 'nexovirasupport@gmail.com',
+            customerPhone: '+234 702 590 0156',
+            customerLocation: 'Lagos, Nigeria',
             serviceTitle: 'Test Service Verification Request',
             serviceCategory: 'Artificial Intelligence',
             projectComplexity: 'Medium',
@@ -516,7 +516,7 @@ export const AdminTechServicesManager: React.FC = () => {
             projectScope: 'Medium',
             budgetExpectation: '₦500,000 – ₦1,000,000',
             timeline: 'Within Two to Four Weeks',
-            projectDescription: 'This is an automated system verification test confirming email routing to nexoviratech@gmail.com is operating normally.',
+            projectDescription: 'This is an automated system verification test confirming email routing to nexovirasupport@gmail.com is operating normally.',
             requiredExpertise: ['AI & ML Modeling', 'API Integration', 'Cloud Architecture'],
             detectedRequirements: ['Automated Telemetry', 'Verification Pass']
           }
@@ -529,8 +529,8 @@ export const AdminTechServicesManager: React.FC = () => {
         body: JSON.stringify({
           projectData: {
             fullName: 'NEXOVIRA System Diagnostics',
-            email: 'nexoviratech@gmail.com',
-            phone: '+234 911 044 3054',
+            email: 'nexovirasupport@gmail.com',
+            phone: '+234 702 590 0156',
             projectTitle: 'Automated System Verification Test',
             projectType: 'One-time Project',
             projectScope: 'Medium',

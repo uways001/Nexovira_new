@@ -145,8 +145,8 @@ export const ContactViewContent: React.FC = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold text-slate-300">Lagos Operating Hub</div>
-                  <div className="text-slate-400">14 Admiralty Way, Victoria Island, Lagos, Nigeria</div>
+                  <div className="font-bold text-slate-300">Business Model</div>
+                  <div className="text-slate-400">Online-Only Technology Business in Nigeria (Nationwide Courier & Digital Delivery)</div>
                 </div>
               </div>
             </div>
@@ -164,7 +164,7 @@ export const ContactViewContent: React.FC = () => {
           {submitted ? (
             <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 space-y-2 text-center">
               <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-400" />
-              <h4 className="font-bold text-base text-white">Message Delivered to Lagos Hub</h4>
+              <h4 className="font-bold text-base text-white">Message Delivered to Support Team</h4>
               <p className="text-slate-300">Thank you, {name}! Our customer care team will respond to {email} shortly.</p>
               <button
                 onClick={() => setSubmitted(false)}

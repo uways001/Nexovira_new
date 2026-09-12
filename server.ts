@@ -26,11 +26,19 @@ import {
   paymentRateLimiter,
   newsletterRateLimiter,
   contactRateLimiter,
+  uploadRateLimiter,
+  orderRateLimiter,
+  bankRateLimiter,
+  strictCorsMiddleware,
   authenticateToken,
   optionalAuth,
   requireRole,
   isValidEmail,
-  isPositiveNumber
+  isPositiveNumber,
+  sanitizeString,
+  isValidNuban,
+  isValidPaystackReference,
+  safeErrorHandler
 } from './server/securityMiddleware';
 import {
   validatePublicSignupRole,
@@ -84,16 +92,20 @@ const PORT = 3000;
 // Enable Compression
 app.use(compression());
 
-// Enable Security Headers with Paystack Pop inline support
+// Strict CORS: Restrict to approved domains, prevent unauthorized origins
+app.use(strictCorsMiddleware);
+
+// Hardened Security Headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), payment=(self "https://checkout.paystack.co")');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://js.paystack.co; frame-src 'self' https: https://checkout.paystack.co; connect-src 'self' https: wss:; img-src 'self' https: data: blob:; media-src 'self' https: blob:;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss: https://api.paystack.co https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebasestorage.googleapis.com; frame-src 'self' https://checkout.paystack.co https://*.firebaseapp.com; frame-ancestors 'self' https://*.run.app https://ai.studio https://*.google.com https://nexovira.com.ng; object-src 'none'; base-uri 'self';"
   );
   next();
 });
@@ -176,17 +188,28 @@ async function uploadBufferToFirebaseStorage(
   throw new Error('Failed to persist asset to Firebase Cloud Storage.');
 }
 
-app.post('/api/v1/storage/upload', async (req, res) => {
+const ALLOWED_UPLOAD_MIME_TYPES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+  'application/pdf',
+  'video/mp4', 'video/webm', 'video/ogg',
+  'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'
+]);
+
+const FORBIDDEN_EXTENSIONS = new Set([
+  'exe', 'bat', 'cmd', 'sh', 'php', 'phtml', 'pl', 'cgi', 'py', 'js', 'ts', 'html', 'htm', 'jar', 'vbs'
+]);
+
+app.post('/api/v1/storage/upload', uploadRateLimiter, async (req, res) => {
   try {
     const { filename, contentType, base64Data, dataUrl, folder = 'general' } = req.body;
 
-    let mimeType = contentType || 'application/octet-stream';
+    let mimeType = (contentType || 'application/octet-stream').toLowerCase().trim();
     let rawBase64 = base64Data;
 
     if (dataUrl && typeof dataUrl === 'string') {
       const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
       if (match) {
-        mimeType = match[1];
+        mimeType = match[1].toLowerCase().trim();
         rawBase64 = match[2];
       } else {
         rawBase64 = dataUrl;
@@ -194,20 +217,23 @@ app.post('/api/v1/storage/upload', async (req, res) => {
     } else if (rawBase64 && typeof rawBase64 === 'string' && rawBase64.startsWith('data:')) {
       const match = rawBase64.match(/^data:([^;]+);base64,(.+)$/);
       if (match) {
-        mimeType = match[1];
+        mimeType = match[1].toLowerCase().trim();
         rawBase64 = match[2];
       }
     }
 
-    if (!rawBase64) {
-      return res.status(400).json({ error: 'Missing base64 data for file upload.' });
+    if (!rawBase64 || typeof rawBase64 !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing base64 data for file upload.' });
     }
 
-    // Sanitize folder
-    const safeFolder = (folder || 'general').replace(/[^a-zA-Z0-9_\-\/]/g, '').replace(/\.\./g, '');
-    const targetDir = path.join(UPLOADS_DIR, safeFolder);
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
+    // Base64 size check (approximate: length * 0.75 <= 15MB)
+    if (rawBase64.length > 22 * 1024 * 1024) {
+      return res.status(413).json({ success: false, error: 'File exceeds maximum upload size limit of 15MB.' });
+    }
+
+    const buffer = Buffer.from(rawBase64, 'base64');
+    if (buffer.length > 15 * 1024 * 1024) {
+      return res.status(413).json({ success: false, error: 'File exceeds maximum upload size limit of 15MB.' });
     }
 
     // Determine clean extension
@@ -226,12 +252,25 @@ app.post('/api/v1/storage/upload', async (req, res) => {
       extension = 'pdf';
     }
 
+    if (FORBIDDEN_EXTENSIONS.has(extension)) {
+      return res.status(400).json({ success: false, error: 'File type not permitted for security reasons.' });
+    }
+
+    if (!ALLOWED_UPLOAD_MIME_TYPES.has(mimeType) && !mimeType.startsWith('image/') && !mimeType.startsWith('video/') && !mimeType.startsWith('audio/')) {
+      return res.status(400).json({ success: false, error: 'Unsupported media type. Allowed formats: Images, PDF, Video, Audio.' });
+    }
+
+    // Sanitize folder
+    const safeFolder = (folder || 'general').replace(/[^a-zA-Z0-9_\-\/]/g, '').replace(/\.\./g, '');
+    const targetDir = path.join(UPLOADS_DIR, safeFolder);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
     const uniqueId = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const baseName = filename ? filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_\-]/g, '_') : 'asset';
     const safeFileName = `${baseName}_${uniqueId}.${extension}`;
     const storagePath = `${safeFolder}/${safeFileName}`;
-
-    const buffer = Buffer.from(rawBase64, 'base64');
     
     // Also save to local directory for instant local serving fallback
     try {
@@ -256,10 +295,10 @@ app.post('/api/v1/storage/upload', async (req, res) => {
       contentType: mimeType
     });
   } catch (err: any) {
-    console.error('[Storage Upload Error]:', err);
+    safeLogger.error('[Storage Upload Error]:', err);
     return res.status(500).json({ 
-      error: 'Failed to save file to persistent storage.',
-      details: err?.message 
+      success: false,
+      error: 'Failed to save file to persistent storage.'
     });
   }
 });
@@ -299,10 +338,13 @@ app.get('/sitemap.xml', (req, res) => {
 
 // Direct Referral Link Handler (e.g. /ref/JOHN8K4P2M or /ref/JOHN8K4P2M?target=/product/prod-1)
 app.get('/ref/:code', (req, res) => {
-  const code = req.params.code;
-  const target = (req.query.target as string) || '/';
-  res.setHeader('Set-Cookie', `nexovira_ref_code=${code}; Path=/; Max-Age=${30 * 24 * 3600}; SameSite=Lax`);
-  res.redirect(`${target}${target.includes('?') ? '&' : '?'}ref=${code}`);
+  const code = (req.params.code || '').toUpperCase().trim().replace(/[^A-Z0-9_\-]/g, '');
+  const rawTarget = (req.query.target as string) || '/';
+  // Prevent open redirect: target must start with / and not //
+  const safeTarget = (rawTarget.startsWith('/') && !rawTarget.startsWith('//')) ? rawTarget : '/';
+  const isSecure = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.setHeader('Set-Cookie', `nexovira_ref_code=${encodeURIComponent(code)}; Path=/; Max-Age=${30 * 24 * 3600}; SameSite=Lax${isSecure ? '; Secure' : ''}`);
+  res.redirect(`${safeTarget}${safeTarget.includes('?') ? '&' : '?'}ref=${encodeURIComponent(code)}`);
 });
 
 // Affiliate Config Memory & State Store
@@ -318,12 +360,20 @@ app.get('/api/v1/affiliate/config', (req, res) => {
   res.json({ success: true, config: systemAffiliateConfig });
 });
 
-app.post('/api/v1/affiliate/config', (req, res) => {
-  const { minCommissionRate, maxCommissionRate, attributionWindowDays, marketplaceCommissionRate } = req.body;
-  if (minCommissionRate !== undefined) systemAffiliateConfig.minCommissionRate = Number(minCommissionRate);
-  if (maxCommissionRate !== undefined) systemAffiliateConfig.maxCommissionRate = Number(maxCommissionRate);
-  if (attributionWindowDays !== undefined) systemAffiliateConfig.attributionWindowDays = Number(attributionWindowDays);
-  if (marketplaceCommissionRate !== undefined) systemAffiliateConfig.marketplaceCommissionRate = Number(marketplaceCommissionRate);
+app.post('/api/v1/affiliate/config', authenticateToken, requireRole('admin', 'super_admin'), (req, res) => {
+  const { minCommissionRate, maxCommissionRate, attributionWindowDays, marketplaceCommissionRate } = req.body || {};
+  if (minCommissionRate !== undefined && isPositiveNumber(minCommissionRate) && Number(minCommissionRate) <= 50) {
+    systemAffiliateConfig.minCommissionRate = Number(minCommissionRate);
+  }
+  if (maxCommissionRate !== undefined && isPositiveNumber(maxCommissionRate) && Number(maxCommissionRate) <= 50) {
+    systemAffiliateConfig.maxCommissionRate = Number(maxCommissionRate);
+  }
+  if (attributionWindowDays !== undefined && isPositiveNumber(attributionWindowDays) && Number(attributionWindowDays) <= 365) {
+    systemAffiliateConfig.attributionWindowDays = Number(attributionWindowDays);
+  }
+  if (marketplaceCommissionRate !== undefined && isPositiveNumber(marketplaceCommissionRate) && Number(marketplaceCommissionRate) <= 50) {
+    systemAffiliateConfig.marketplaceCommissionRate = Number(marketplaceCommissionRate);
+  }
   res.json({ success: true, config: systemAffiliateConfig });
 });
 
@@ -634,10 +684,11 @@ app.get(['/api/health', '/api/v1/health'], (req, res) => {
   res.json({ 
     status: 'ok', 
     ecosystem: 'NEXOVIRA AI Digital Commerce & Knowledge Platform', 
-    ownerLocation: 'Victoria Island, Lagos, Nigeria',
-    phone: '+234 911 044 3054',
-    whatsapp: '+234 812 959 5134',
-    domain: req.get('host') || 'localhost',
+    businessModel: 'Online-only Technology Ecosystem in Nigeria',
+    phone: '+234 702 590 0156',
+    whatsapp: '+234 702 590 0156',
+    email: 'nexovirasupport@gmail.com',
+    domain: req.get('host') || 'nexovira.com.ng',
     timestamp: new Date().toISOString() 
   });
 });
@@ -1089,32 +1140,116 @@ app.delete(['/api/v1/admin/products/:id', '/api/v1/products/:id'], authenticateT
   return res.json({ success: true, message: `Product ${productId} deleted successfully` });
 });
 
-// 3.5. Order Processing Endpoint
-app.post('/api/v1/orders', (req, res) => {
-  const { customerName, customerEmail, items, total, shippingAddress, paymentMethod } = req.body;
-  const newOrder = {
-    id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
-    customerId: 'cust-1',
-    customerName: customerName || 'Valued Shopper',
-    customerEmail: customerEmail || 'shopper@example.com',
-    items: items || [],
-    subtotal: total ? total - 35 : 0,
-    shippingFee: 35,
-    discount: 0,
-    total: total || 0,
-    currency: 'USD',
-    status: 'Paid',
-    paymentMethod: paymentMethod || 'Paystack Secured Card',
-    paymentTransactionId: `PSTK_${Date.now()}`,
-    shippingAddress: shippingAddress || { fullName: customerName, street: '14 Admiralty Way', city: 'Lagos', country: 'Nigeria', phone: '+234 911 044 3054' },
-    timeline: [
-      { status: 'Paid', timestamp: new Date().toLocaleString(), description: 'Payment authorized and verified server-side.' }
-    ],
-    createdAt: new Date().toISOString(),
-    sellerIds: ['store-1']
-  };
+// 3.5. Secure Order Processing & Server Payment Verification Endpoint
+app.post('/api/v1/orders', orderRateLimiter, async (req, res) => {
+  try {
+    const { 
+      customerName, 
+      customerEmail, 
+      customerId,
+      items, 
+      total, 
+      currency = 'NGN',
+      shippingAddress, 
+      paymentMethod,
+      paystackReference,
+      refCode
+    } = req.body || {};
 
-  res.json({ success: true, order: newOrder });
+    // 1. Validation
+    if (!customerEmail || !isValidEmail(customerEmail)) {
+      return res.status(400).json({ success: false, error: 'Valid customer email is required.' });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, error: 'Order must contain at least one item.' });
+    }
+
+    if (!isPositiveNumber(total)) {
+      return res.status(400).json({ success: false, error: 'Total must be a positive number.' });
+    }
+
+    const orderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+    const cleanCustomerName = sanitizeString(customerName || 'Valued Shopper', 100);
+    const cleanEmail = customerEmail.toLowerCase().trim();
+
+    // 2. Server-side payment verification: Never mark paid without genuine gateway settlement
+    let isPaymentVerified = false;
+    let verifiedPaymentReference = '';
+    let paidAtTimestamp = '';
+
+    if (paystackReference && typeof paystackReference === 'string' && isValidPaystackReference(paystackReference)) {
+      const verifyResult = await verifyPaystackTransaction(paystackReference.trim());
+      if (verifyResult.success && verifyResult.verified) {
+        isPaymentVerified = true;
+        verifiedPaymentReference = verifyResult.reference;
+        paidAtTimestamp = verifyResult.paidAt || new Date().toISOString();
+      }
+    }
+
+    // 3. Construct Order (paymentStatus is pending unless verified by server)
+    const newOrder = {
+      id: orderId,
+      customerId: customerId || 'guest',
+      customerName: cleanCustomerName,
+      customerEmail: cleanEmail,
+      items: items.map((it: any) => ({
+        id: sanitizeString(it.id || it.product?.id || `item-${Date.now()}`, 64),
+        title: sanitizeString(it.title || it.product?.title || 'Ecosystem Item', 200),
+        price: Number(it.price || it.product?.price || 0),
+        quantity: Math.max(1, parseInt(it.quantity || 1, 10)),
+        brand: sanitizeString(it.brand || it.product?.brand || 'NEXOVIRA', 100),
+        sellerId: sanitizeString(it.sellerId || it.product?.sellerId || 'store-1', 64)
+      })),
+      subtotal: Math.max(0, Number(total) - 35),
+      shippingFee: 35,
+      discount: 0,
+      total: Number(total),
+      currency: currency || 'NGN',
+      status: isPaymentVerified ? 'Paid' : 'Pending Payment',
+      paymentStatus: isPaymentVerified ? 'successful' : 'pending',
+      paymentMethod: paymentMethod || (isPaymentVerified ? 'Paystack Verified Checkout' : 'Pending Payment'),
+      paystackReference: verifiedPaymentReference || null,
+      paymentTransactionId: verifiedPaymentReference ? `PSTK_${verifiedPaymentReference}` : null,
+      paidAt: paidAtTimestamp || null,
+      verifiedByServer: isPaymentVerified,
+      shippingAddress: shippingAddress ? {
+        fullName: sanitizeString(shippingAddress.fullName || cleanCustomerName, 100),
+        street: sanitizeString(shippingAddress.street || shippingAddress.address || 'Delivery Address', 250),
+        city: sanitizeString(shippingAddress.city || 'Lagos', 100),
+        state: sanitizeString(shippingAddress.state || 'Lagos State', 100),
+        country: 'Nigeria',
+        phone: sanitizeString(shippingAddress.phone || '+234 702 590 0156', 25)
+      } : null,
+      timeline: [
+        { 
+          status: isPaymentVerified ? 'Paid' : 'Pending Payment', 
+          timestamp: new Date().toLocaleString(), 
+          description: isPaymentVerified 
+            ? 'Payment verified server-side via Paystack.' 
+            : 'Order created awaiting verified payment settlement.' 
+        }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      refCode: refCode ? sanitizeString(refCode, 20) : null
+    };
+
+    // 4. Server-authoritative persistence to Firestore
+    try {
+      initFirebaseAdminApp();
+      const firestore = getFirestore();
+      await firestore.collection('orders').doc(orderId).set(newOrder);
+      safeLogger.info(`[Order Created]: ${orderId} by ${cleanEmail} with status: ${newOrder.status}`);
+    } catch (saveErr) {
+      safeLogger.warn('[Firestore Order Save Warning]:', saveErr);
+    }
+
+    return res.json({ success: true, order: newOrder, verified: isPaymentVerified });
+  } catch (err: any) {
+    safeLogger.error('[Order Processing API Error]:', err);
+    return res.status(500).json({ success: false, error: 'Order processing failed.' });
+  }
 });
 
 // 4. Intelligent NEXOVIRA AI Ecosystem Chatbot Endpoint (Customer Advisory Grounded strictly in available products)
@@ -1290,28 +1425,35 @@ If the provided review list is empty or contains no real feedback, return the JS
 });
 
 // 5. Admin AI Analytics Endpoint
-app.post('/api/v1/ai/admin', async (req, res) => {
+app.post('/api/v1/ai/admin', authenticateToken, requireRole('admin', 'super_admin'), aiRateLimiter, async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query } = req.body || {};
+    if (!query || typeof query !== 'string' || !query.trim()) {
+      return res.status(400).json({ success: false, error: 'Query string is required.' });
+    }
+
+    const cleanQuery = sanitizeString(query, 1000);
     const ai = getAIClient();
 
     let response;
     try {
       response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-lite',
-        contents: `You are NEXOVIRA Admin AI for the Executive Owner in Victoria Island, Lagos, Nigeria. Answer concisely: "${query}". Context: GMV is $1,842,900 across 142 verified stores, 6 digital ecosystems active.`,
+        contents: `You are NEXOVIRA Admin AI for the executive management of NEXOVIRA (https://nexovira.com.ng), an online-only Nigerian technology ecosystem. Answer concisely: "${cleanQuery}". Context: Online-only operations, secure nationwide courier delivery, authorized manufacturer warranties.`,
       });
     } catch {
       response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
-        contents: `You are NEXOVIRA Admin AI for the Executive Owner in Victoria Island, Lagos, Nigeria. Answer concisely: "${query}". Context: GMV is $1,842,900 across 142 verified stores, 6 digital ecosystems active.`,
+        contents: `You are NEXOVIRA Admin AI for the executive management of NEXOVIRA (https://nexovira.com.ng), an online-only Nigerian technology ecosystem. Answer concisely: "${cleanQuery}". Context: Online-only operations, secure nationwide courier delivery, authorized manufacturer warranties.`,
       });
     }
 
-    res.json({ answer: response.text });
+    res.json({ success: true, answer: response.text });
   } catch (err) {
+    safeLogger.error('[AI Admin Error]:', err);
     res.json({
-      answer: `Grounded Admin Insights: GMV stands at $1,842,900 across Lagos Hub and global partners. 0 stock bottlenecks reported today.`
+      success: true,
+      answer: `NEXOVIRA Executive Advisory: Operations running smoothly across verified merchant stores and verified technology services.`
     });
   }
 });
@@ -1999,17 +2141,21 @@ app.post('/api/v1/scholarship/verify-payment', async (req, res) => {
 });
 
 // 5.4d. AI Seller Description Generator (Missing endpoint fix)
-app.post('/api/v1/ai/seller', async (req, res) => {
+app.post('/api/v1/ai/seller', authenticateToken, requireRole('seller', 'admin', 'super_admin'), aiRateLimiter, async (req, res) => {
   try {
-    const { title, brand, isDigital, author } = req.body;
-    if (!title || !title.trim()) {
+    const { title, brand, isDigital, author } = req.body || {};
+    if (!title || typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ error: 'Title is required for product description.' });
     }
 
+    const cleanTitle = sanitizeString(title, 200);
+    const cleanBrand = sanitizeString(brand || 'NEXOVIRA', 100);
+    const cleanAuthor = sanitizeString(author || 'Nexovira Academy', 100);
+
     const client = getAIClient();
     const prompt = isDigital
-      ? `Generate an engaging, professional e-book description (under 50 words) for a digital technical guide titled "${title}" written by ${author || 'Nexovira Academy'}. Highlight core technical skills and practical value.`
-      : `Generate a high-converting, premium product description (under 50 words) for "${brand || 'NEXOVIRA'}" ${title}. Highlight reliability, energy efficiency, and peace of mind for Nigerian customers.`;
+      ? `Generate an engaging, professional e-book description (under 50 words) for a digital technical guide titled "${cleanTitle}" written by ${cleanAuthor}. Highlight core technical skills and practical value.`
+      : `Generate a high-converting, premium product description (under 50 words) for "${cleanBrand}" ${cleanTitle}. Highlight reliability, energy efficiency, and peace of mind for Nigerian customers.`;
 
     let response;
     try {
@@ -2027,10 +2173,10 @@ app.post('/api/v1/ai/seller', async (req, res) => {
     const description = response.text?.trim() || '';
     res.json({ success: true, description });
   } catch (err: any) {
-    console.error('[AI Seller Endpoint Notice]:', err?.message);
-    const fallback = req.body.isDigital
-      ? `Comprehensive digital guide "${req.body.title}" written by ${req.body.author || 'Nexovira Faculty'}. Features verified industry insights, step-by-step frameworks, and high-resolution technical illustrations.`
-      : `Premium ${req.body.brand || 'NEXOVIRA'} ${req.body.title} engineered with zero-defect quality, energy-efficient smart technology, and verified manufacturer warranty.`;
+    safeLogger.error('[AI Seller Endpoint Notice]:', err);
+    const fallback = req.body?.isDigital
+      ? `Comprehensive digital guide "${sanitizeString(req.body?.title || '', 200)}" written by ${sanitizeString(req.body?.author || 'Nexovira Faculty', 100)}. Features verified industry insights and step-by-step frameworks.`
+      : `Premium ${sanitizeString(req.body?.brand || 'NEXOVIRA', 100)} ${sanitizeString(req.body?.title || '', 200)} engineered with zero-defect quality, energy-efficient smart technology, and verified manufacturer warranty.`;
     res.json({ success: true, description: fallback });
   }
 });
@@ -2115,7 +2261,7 @@ app.get('/api/v1/bank/banks', async (req, res) => {
 });
 
 // C. Real NUBAN Interbank Account Resolution
-app.post('/api/v1/bank/verify', async (req, res) => {
+app.post('/api/v1/bank/verify', bankRateLimiter, async (req, res) => {
   try {
     const { bankName, bankCode, accountNumber, sellerId } = req.body;
     const cleanAcc = (accountNumber || '').replace(/\D/g, '');
@@ -2315,6 +2461,9 @@ async function startServer() {
       next(err);
     }
   });
+
+  // Global Centralized Safe Error Handling Middleware
+  app.use(safeErrorHandler);
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`NEXOVIRA Platform Server running on http://0.0.0.0:${PORT}`);

@@ -168,11 +168,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
 
   const [storeSettings, setStoreSettings] = useState({
     exchangeRate: 1600,
-    storePhone: '+234 911 044 3054',
-    whatsappPhone: '07025900156',
+    storePhone: '+234 702 590 0156',
+    whatsappPhone: '+234 702 590 0156',
     contactEmail: 'nexovirasupport@gmail.com',
-    storeAddress: '14 Admiralty Way, Victoria Island, Lagos, Nigeria',
-    flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Lagos Delivery!'
+    storeAddress: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
+    flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Nationwide Delivery!'
   });
 
   const [liveRateInfo, setLiveRateInfo] = useState<ExchangeRateInfo>(getLiveExchangeRateInfo());

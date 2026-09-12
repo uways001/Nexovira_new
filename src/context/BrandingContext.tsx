@@ -40,9 +40,9 @@ const DEFAULT_BRANDING_STATE: BrandingSettings = {
   primaryColor: '#0682F4',
   secondaryColor: '#01213D',
   accentColor: '#06C3F8',
-  supportEmail: 'support@nexovira.com',
-  supportPhone: '+234 911 044 3054',
-  address: '14 Admiralty Way, Lekki Phase 1, Lagos, Nigeria',
+  supportEmail: 'nexovirasupport@gmail.com',
+  supportPhone: '+234 702 590 0156',
+  address: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
   currency: 'NGN',
   updatedAt: new Date().toISOString()
 };

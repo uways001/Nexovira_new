@@ -43,11 +43,11 @@ export const STORES: Store[] = [
     joinedDate: '2023-01-15',
     productsCount: 0,
     description: 'Direct store partner for smart home appliances, inverter air conditioners, and premium OLED displays.',
-    location: 'Lagos Hub / Victoria Island',
+    location: 'Online Storefront / Lagos Fulfillment',
     country: 'Nigeria',
     currency: 'NGN',
     contactEmail: 'nexovirasupport@gmail.com',
-    contactPhone: '+234 911 044 3054',
+    contactPhone: '+234 702 590 0156',
     payoutMethod: 'Bank Transfer / Paystack',
   },
   {
@@ -62,11 +62,11 @@ export const STORES: Store[] = [
     joinedDate: '2023-04-10',
     productsCount: 0,
     description: 'Premier supplier of energy-efficient washing machines, side-by-side refrigerators, and heavy-duty kitchen equipment.',
-    location: 'Lagos Hub / Ikeja',
+    location: 'Online Storefront / Lagos Fulfillment',
     country: 'Nigeria',
     currency: 'NGN',
     contactEmail: 'sales@electrahome.io',
-    contactPhone: '+234 812 959 5134',
+    contactPhone: '+234 702 590 0156',
     payoutMethod: 'Paystack Direct / Wire',
   },
   {
@@ -81,11 +81,11 @@ export const STORES: Store[] = [
     joinedDate: '2022-11-01',
     productsCount: 0,
     description: 'Specializing in high-performance workstation laptops, solar generator power stations, and next-gen hardware.',
-    location: 'Lagos Hub / Lekki',
+    location: 'Online Storefront / Lagos Fulfillment',
     country: 'Nigeria',
     currency: 'NGN',
     contactEmail: 'orders@apexcomputing.com',
-    contactPhone: '+234 911 044 3054',
+    contactPhone: '+234 702 590 0156',
     payoutMethod: 'Paystack Automated',
   },
 ];
@@ -127,11 +127,11 @@ export const INITIAL_BRAND_SETTINGS: GlobalBrandSettings = {
   defaultCurrency: 'NGN',
   ownerProfile: {
     name: 'NEXOVIRA Executive Owner',
-    email: 'owner@nexovira.com',
-    phone: '+234 800 NEXOVIRA',
+    email: 'nexovirasupport@gmail.com',
+    phone: '+234 702 590 0156',
     country: 'Nigeria',
     city: 'Lagos',
-    hubAddress: 'NEXOVIRA Innovation Center, Victoria Island, Lagos, Nigeria',
+    hubAddress: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
     verified: true
   }
 };

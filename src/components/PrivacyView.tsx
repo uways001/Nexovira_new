@@ -43,7 +43,7 @@ export const PrivacyView: React.FC = () => {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">4. Contact & Data Protection Officer</h2>
           <p>
-            For privacy inquiries or data removal requests, contact our privacy desk in Lagos at <span className="font-mono text-cyan-400">nexovirasupport@gmail.com</span> or phone <span className="font-mono text-cyan-400">+234 911 044 3054</span>.
+            For privacy inquiries or data removal requests, contact our privacy team at <span className="font-mono text-cyan-400">nexovirasupport@gmail.com</span> or official WhatsApp/phone <span className="font-mono text-cyan-400">+234 702 590 0156</span>.
           </p>
         </section>
       </div>

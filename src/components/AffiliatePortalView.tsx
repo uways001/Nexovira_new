@@ -205,7 +205,7 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
             affProf = await applyForAffiliateProgramInFirestore(
               user.uid,
               user.displayName || userProfile?.displayName || 'NEXOVIRA Affiliate',
-              user.email || userProfile?.email || 'affiliate@nexovira.com',
+              user.email || userProfile?.email || '',
               'Direct Login'
             );
           } catch (e) {
@@ -324,7 +324,7 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
       const updatedProfile = await applyForAffiliateProgramInFirestore(
         user.uid,
         user.displayName || 'NEXOVIRA Affiliate',
-        user.email || 'affiliate@nexovira.com',
+        user.email || '',
         promotionalChannels,
         bankDetails
       );

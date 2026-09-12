@@ -66,7 +66,7 @@ export const VerifiedExpertDashboardView: React.FC<VerifiedExpertDashboardViewPr
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : '',
           'x-user-id': user?.uid || '',
-          'x-user-email': user?.email || (isAdmin ? 'admin@nexovira.com' : ''),
+          'x-user-email': user?.email || (isAdmin ? 'nexovirasupport@gmail.com' : ''),
           'x-user-role': isAdmin ? 'admin' : 'customer'
         },
         body: JSON.stringify({

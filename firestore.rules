@@ -26,10 +26,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == 'hubproductpro@gmail.com' ||
-        request.auth.token.email == 'nexovirasupport@gmail.com' ||
-        request.auth.token.email == 'admin@nexovira.com' ||
-        request.auth.token.email == 'nexoviratech@gmail.com' ||
+        request.auth.token.email in ['hubproductpro@gmail.com', 'nexovirasupport@gmail.com', 'nexoviratech@gmail.com'] ||
         (request.auth.token.keys().hasAll(['role']) && (request.auth.token.role == 'admin' || request.auth.token.role == 'super_admin')) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin' ||
@@ -139,15 +136,47 @@ service cloud.firestore {
 
     match /orders/{id} {
       allow read: if isSignedIn() && (request.auth.uid == existing().get('customerId', '') || isSeller() || isAdmin());
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == existing().get('customerId', '') || isSeller() || isAdmin());
+      // Orders created by clients can only start in unpaid/pending status; verified status requires server/admin
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          request.auth.uid == incoming().get('customerId', '') &&
+          incoming().get('paymentStatus', 'pending') in ['pending', 'unpaid', 'awaiting_payment'] &&
+          incoming().get('status', 'Pending Payment') in ['Pending Payment', 'pending', 'Placed']
+        )
+      );
+      // Customers cannot alter paymentStatus, total, or paystackReference once created.
+      // Fulfillment status can be updated by sellers/admins.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          isSeller() &&
+          incoming().get('paymentStatus', '') == existing().get('paymentStatus', '') &&
+          incoming().get('total', 0) == existing().get('total', 0)
+        ) ||
+        (
+          request.auth.uid == existing().get('customerId', '') &&
+          incoming().get('paymentStatus', '') == existing().get('paymentStatus', '') &&
+          incoming().get('status', '') == existing().get('status', '') &&
+          incoming().get('total', 0) == existing().get('total', 0)
+        )
+      );
       allow delete: if isAdmin();
     }
 
     // Affiliate Network & Commissions
     match /affiliates/{id} {
       allow read: if isSignedIn() && (request.auth.uid == existing().get('userId', '') || isAffiliate() || isAdmin());
-      allow write: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == incoming().get('userId', '');
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (
+          request.auth.uid == existing().get('userId', '') &&
+          incoming().get('balance', 0) == existing().get('balance', 0) &&
+          incoming().get('totalEarned', 0) == existing().get('totalEarned', 0)
+        )
+      );
+      allow delete: if isAdmin();
     }
 
     match /affiliate_links/{id} {
@@ -312,7 +341,8 @@ service cloud.firestore {
     }
 
     match /email_notifications/{id} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /activityLogs/{id} {
@@ -320,7 +350,8 @@ service cloud.firestore {
     }
 
     match /paystack_transactions/{id} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid == existing().get('customer', {}).get('id', ''));
+      allow write: if isAdmin();
     }
 
     match /storage_files/{id} {
@@ -333,7 +364,8 @@ service cloud.firestore {
     }
 
     match /order_financials/{id} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid == existing().get('customerId', ''));
+      allow write: if isAdmin();
     }
   }
 }

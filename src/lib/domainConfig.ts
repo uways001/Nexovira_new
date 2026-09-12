@@ -13,6 +13,8 @@ export interface SystemDomainConfig {
 }
 
 export const DEFAULT_APPROVED_DOMAINS = [
+  'nexovira.com.ng',
+  'www.nexovira.com.ng',
   'nexovira.com',
   'www.nexovira.com',
   'run.app', // Cloud Run preview deployments (*.run.app)
@@ -28,7 +30,7 @@ export function getCurrentPublicOrigin(): string {
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     return normalizeUrl(window.location.origin);
   }
-  return 'https://nexovira.com';
+  return 'https://nexovira.com.ng';
 }
 
 /**
@@ -167,7 +169,7 @@ export function buildAffiliateDeepLink(params: {
   // Sanitize destination path
   let safePath = targetPath.trim();
   if (!isAllowedDestinationPath(safePath)) {
-    safePath = '/marketplace';
+    safePath = '/';
   }
 
   // Ensure path starts with /

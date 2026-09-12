@@ -262,7 +262,7 @@ export const ServiceRequestTrackerModal: React.FC<ServiceRequestTrackerModalProp
 
         {/* Footer */}
         <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-          <span className="text-slate-500 text-[11px]">Need urgent assistance? Contact management at services@nexovira.com</span>
+          <span className="text-slate-500 text-[11px]">Need urgent assistance? Contact support at nexovirasupport@gmail.com</span>
           <button
             type="button"
             onClick={onClose}

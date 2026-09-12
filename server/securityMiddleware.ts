@@ -176,6 +176,81 @@ export const contactRateLimiter = createRateLimiter({
   message: 'Message rate limit exceeded. Please try again later.'
 });
 
+export const uploadRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 20,
+  keyPrefix: 'upload',
+  message: 'Upload frequency limit reached. Please wait a minute before uploading additional files.'
+});
+
+export const orderRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 25,
+  keyPrefix: 'order',
+  message: 'Order submission limit reached. Please wait a moment before proceeding.'
+});
+
+export const bankRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 15,
+  keyPrefix: 'bank',
+  message: 'Too many bank verification attempts. Please wait a moment before trying again.'
+});
+
+// ============================================================================
+// 2.5. STRICT CORS & DOMAIN POLICY ENGINE
+// ============================================================================
+
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/(www\.)?nexovira\.com\.ng$/,
+  /^https:\/\/(www\.)?nexovira\.name\.ng$/,
+  /^http:\/\/localhost(:[0-9]+)?$/,
+  /^http:\/\/127\.0\.0\.1(:[0-9]+)?$/,
+  /^https:\/\/[a-z0-9\-]+\.run\.app$/,
+  /^https:\/\/[a-z0-9\-]+\.google\.com$/,
+  /^https:\/\/ai\.studio$/
+];
+
+export function isAllowedOrigin(origin?: string): boolean {
+  if (!origin) return false;
+  return ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin));
+}
+
+/**
+ * Strict CORS middleware:
+ * - Restricts requests strictly to approved domains.
+ * - Never emits Access-Control-Allow-Origin: * for credential-bearing or authenticated requests.
+ * - Handles preflight OPTIONS requests securely.
+ */
+export function strictCorsMiddleware(req: Request, res: Response, next: NextFunction) {
+  const origin = req.headers.origin;
+
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    res.setHeader(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, DELETE, PATCH, OPTIONS'
+    );
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-User-Id, X-User-Email, X-User-Role, X-Auth-User-Id, X-Requested-With'
+    );
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+
+  // Preflight check
+  if (req.method === 'OPTIONS') {
+    if (origin && !isAllowedOrigin(origin)) {
+      return res.status(403).json({ error: 'Origin not allowed by CORS policy' });
+    }
+    return res.status(204).end();
+  }
+
+  next();
+}
+
 // ============================================================================
 // 3. AUTHENTICATION & ROLE-BASED ACCESS CONTROL (RBAC)
 // ============================================================================
@@ -336,3 +411,57 @@ export function isPositiveNumber(value: unknown): boolean {
   }
   return false;
 }
+
+export function sanitizeString(val: unknown, maxLength = 500): string {
+  if (typeof val !== 'string') return '';
+  return val.trim().slice(0, maxLength);
+}
+
+export function isValidNuban(accountNumber: unknown): boolean {
+  if (typeof accountNumber !== 'string') return false;
+  const digits = accountNumber.replace(/\D/g, '');
+  return digits.length === 10;
+}
+
+export function isValidPaystackReference(ref: unknown): boolean {
+  if (typeof ref !== 'string') return false;
+  const trimmed = ref.trim();
+  // Valid references are alphanumeric strings between 6 and 100 characters
+  return /^[a-zA-Z0-9_\-\.]{6,100}$/.test(trimmed);
+}
+
+// ============================================================================
+// 5. GLOBAL SAFE ERROR HANDLER MIDDLEWARE
+// ============================================================================
+
+/**
+ * Global Express error handling middleware:
+ * - Logs errors safely with redacted credentials.
+ * - Masks internal stack traces, DB error objects, and system paths.
+ * - Guarantees safe, consistent JSON responses.
+ */
+export function safeErrorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+  safeLogger.error(`Unhandled error on ${req.method} ${req.path}:`, err);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const statusCode = typeof err.status === 'number' && err.status >= 400 && err.status < 600 
+    ? err.status 
+    : typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600 
+      ? err.statusCode 
+      : 500;
+
+  const isClientError = statusCode >= 400 && statusCode < 500;
+  const safeMessage = isClientError && err.message 
+    ? err.message 
+    : 'An unexpected error occurred. Please try again later.';
+
+  res.status(statusCode).json({
+    success: false,
+    error: statusCode === 400 ? 'Bad Request' : statusCode === 401 ? 'Unauthorized' : statusCode === 403 ? 'Forbidden' : statusCode === 404 ? 'Not Found' : 'Internal Server Error',
+    message: safeMessage
+  });
+}
+

@@ -59,9 +59,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <Award className="w-5 h-5" />
           </div>
-          <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">Lagos Hub Operations</h3>
+          <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">Online Ecosystem Operations</h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Headquartered in Victoria Island, Lagos, we oversee nationwide fulfillment, verified seller onboarding, instant express shipping, and dedicated WhatsApp order desk assistance.
+            Operating as an online-only technology business in Nigeria, we coordinate nationwide door-to-door courier dispatch, digital fulfillment, authorized seller verification, and official WhatsApp customer support.
           </p>
         </div>
       </div>
@@ -123,39 +123,46 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
       {/* Verified Corporate Contact Info */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-950 p-8 rounded-3xl border border-slate-800 text-white space-y-6">
-        <h2 className="text-xl font-bold text-cyan-400">Official Hub & Contact Details</h2>
+        <h2 className="text-xl font-bold text-cyan-400">Official Contact & Customer Support</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs">
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
             <div>
-              <div className="font-bold text-slate-200">Headquarters Address</div>
-              <div className="text-slate-400 mt-1">14 Admiralty Way, Victoria Island, Lagos, Nigeria</div>
+              <div className="font-bold text-slate-200">Business Model</div>
+              <div className="text-slate-400 mt-1">Online-Only Business in Nigeria (Nationwide Courier & Digital Delivery)</div>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
             <Phone className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
             <div>
-              <div className="font-bold text-slate-200">Phone Hotline</div>
-              <div className="text-slate-400 mt-1">+234 911 044 3054</div>
+              <div className="font-bold text-slate-200">Customer Care Email</div>
+              <div className="text-slate-400 mt-1 font-mono">nexovirasupport@gmail.com</div>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
             <MessageSquare className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
             <div>
-              <div className="font-bold text-slate-200">WhatsApp Desk</div>
-              <div className="text-emerald-400 mt-1 font-mono">+234 812 959 5134</div>
+              <div className="font-bold text-slate-200">Official WhatsApp</div>
+              <a 
+                href="https://wa.me/2347025900156" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-emerald-400 mt-1 font-mono block hover:underline"
+              >
+                +234 702 590 0156 (0702 590 0156)
+              </a>
             </div>
           </div>
         </div>
 
         <div className="pt-4 border-t border-slate-800 flex justify-end items-center text-xs text-slate-400">
           <button
-            onClick={() => onNavigate('/marketplace')}
+            onClick={() => onNavigate('/')}
             className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-extrabold rounded-xl hover:bg-cyan-400 transition-colors"
           >
-            Explore Marketplace Catalog
+            Explore Ecosystem
           </button>
         </div>
       </div>

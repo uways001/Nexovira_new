@@ -1,12 +1,54 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      // Allow public read for catalog assets, product images, branding logos, and documents
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in ['hubproductpro@gmail.com', 'nexovirasupport@gmail.com', 'nexoviratech@gmail.com'] ||
+        (request.auth.token.keys().hasAll(['role']) && (request.auth.token.role == 'admin' || request.auth.token.role == 'super_admin'))
+      );
+    }
+
+    function isAllowedFileType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('video/.*') ||
+             request.resource.contentType.matches('audio/.*');
+    }
+
+    function isWithinSizeLimit() {
+      return request.resource.size < 15 * 1024 * 1024; // 15MB limit
+    }
+
+    // Public catalog images, products, and branding: public read, authenticated upload
+    match /public/{allPaths=**} {
       allow read: if true;
-      
-      // Allow uploads with size validation (up to 20MB per asset)
-      allow write: if request.resource.size < 20 * 1024 * 1024;
+      allow write: if isSignedIn() && isAllowedFileType() && isWithinSizeLimit();
+    }
+
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isAllowedFileType() && isWithinSizeLimit();
+    }
+
+    match /sellers/{sellerId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && (request.auth.uid == sellerId || isAdmin()) && isAllowedFileType() && isWithinSizeLimit();
+    }
+
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isAllowedFileType() && isWithinSizeLimit();
+    }
+
+    // Default: Authenticated write with strict validation
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isAllowedFileType() && isWithinSizeLimit();
     }
   }
 }
+

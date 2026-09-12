@@ -332,7 +332,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <input
                   type="text"
                   value={street}
-                  placeholder="e.g. 14 Admiralty Way, Lekki Phase 1"
+                  placeholder="e.g. 24 Commercial Avenue, Yaba"
                   onChange={(e) => setStreet(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium"
                   required

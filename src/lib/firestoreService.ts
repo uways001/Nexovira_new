@@ -170,7 +170,7 @@ export function isFounderOrAdmin(email?: string | null): boolean {
   return (
     clean === 'nexovirasupport@gmail.com' ||
     clean === 'nexoviratech@gmail.com' ||
-    clean === 'admin@nexovira.com' ||
+    clean === 'admin@nexovira.com.ng' ||
     clean === 'abdullahoderinde@gmail.com' ||
     clean === 'abdullah.oderinde@gmail.com' ||
     clean === 'musauways@gmail.com' ||
@@ -1016,7 +1016,7 @@ export async function deleteProduct(
         publicly_visible: false,
         deleted_at: new Date().toISOString(),
         deleted_by: effectiveUser?.uid || 'admin',
-        deleted_by_email: effectiveUser?.email || 'admin@nexovira.com',
+        deleted_by_email: effectiveUser?.email || 'nexovirasupport@gmail.com',
         deletion_reason: options?.reason || 'admin_dashboard_deletion',
         stock: 0,
         inStock: false,
@@ -1067,7 +1067,7 @@ export async function deleteProduct(
         publicly_visible: false,
         deleted_at: new Date().toISOString(),
         deleted_by: effectiveUser?.uid || 'admin',
-        deleted_by_email: effectiveUser?.email || 'admin@nexovira.com',
+        deleted_by_email: effectiveUser?.email || 'nexovirasupport@gmail.com',
         deletion_reason: options?.reason || (isCurrentUserAdmin ? 'admin_dashboard_deletion' : 'seller_store_deletion'),
         stock: 0,
         inStock: false,
@@ -1206,10 +1206,10 @@ export async function createOrderInFirestore(orderData: Partial<Order>): Promise
       paymentTransactionId: `PSTK_${Date.now()}`,
       shippingAddress: orderData.shippingAddress || {
         fullName: orderData.customerName || '',
-        street: '14 Admiralty Way',
+        street: 'Online Customer Address',
         city: 'Lagos',
         country: 'Nigeria',
-        phone: '+234 911 044 3054'
+        phone: '+234 702 590 0156'
       },
       timeline: [
         { status: 'Pending Order', timestamp: new Date().toLocaleString(), description: 'Order recorded in Firestore database.' }
@@ -1375,11 +1375,11 @@ export async function getStoreSettingsFromFirestore(): Promise<{
 }> {
   const defaultSettings = {
     exchangeRate: getLiveExchangeRate(),
-    storePhone: '+234 911 044 3054',
-    whatsappPhone: '07025900156',
+    storePhone: '+234 702 590 0156',
+    whatsappPhone: '+234 702 590 0156',
     contactEmail: 'nexovirasupport@gmail.com',
-    storeAddress: '14 Admiralty Way, Victoria Island, Lagos, Nigeria',
-    flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Lagos Delivery!'
+    storeAddress: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
+    flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Nationwide Delivery!'
   };
 
   try {
@@ -4571,7 +4571,7 @@ export async function createSellerPayoutRequestInFirestore(
       payoutId,
       sellerId,
       sellerName: currentSavedBank.accountName || bankDetails.accountName, // Official provider name
-      contactEmail: 'seller@nexovira.com',
+      contactEmail: 'seller@nexovira.com.ng',
       amountNGN,
       currency: payoutCurrency,
       bankDetails: {
@@ -5311,8 +5311,8 @@ const DEFAULT_BRANDING: BrandingSettings = {
   logoUrl: '',
   primaryColor: '#06b6d4',
   accentColor: '#3b82f6',
-  address: '14 Admiralty Way, Victoria Island, Lagos, Nigeria',
-  supportPhone: '+234 911 044 3054',
+  address: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
+  supportPhone: '+234 702 590 0156',
   updatedAt: new Date().toISOString()
 };
 
@@ -5364,11 +5364,11 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContentSettings = {
   id: 'main',
   heroHeading: 'Master High-Income Tech Skills & Build the Future in Nigeria',
   heroSubheading: 'Join thousands of ambitious Nigerians learning Software Engineering, AI, Cloud Computing, and Tech Trades with 100% full-tuition scholarships.',
-  aboutUsText: 'Nexovira Academy empowers students and professionals across Nigeria with industry-certified training, practical project experience, and guaranteed job placement pathways.',
-  supportEmail: 'support@nexovira.com',
-  supportPhone: '+234 911 044 3054',
-  whatsappPhone: '07025900156',
-  officeAddress: '14 Admiralty Way, Lekki Phase 1, Lagos, Nigeria',
+  aboutUsText: 'Nexovira Academy empowers students and professionals across Nigeria with industry-certified training, practical project experience, and career mentorship.',
+  supportEmail: 'nexovirasupport@gmail.com',
+  supportPhone: '+234 702 590 0156',
+  whatsappPhone: '+234 702 590 0156',
+  officeAddress: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
   updatedAt: new Date().toISOString()
 };
 
@@ -5686,7 +5686,7 @@ export async function logCMSActivityInFirestore(action: string, targetEntity: st
     const log: CMSActivityLog = {
       id,
       action,
-      actorEmail: user?.email || 'admin@nexovira.com',
+      actorEmail: user?.email || 'nexovirasupport@gmail.com',
       targetEntity,
       details: details || {},
       timestamp: new Date().toISOString()

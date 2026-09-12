@@ -28,7 +28,7 @@ export const Footer: React.FC<FooterProps> = ({
   const activeWhatsappNumber = whatsappPhone || NEXOVIRA_CONTACT_CONFIG.whatsappNumber;
   const cleanWhatsapp = NEXOVIRA_CONTACT_CONFIG.sanitizeForWaMe(activeWhatsappNumber);
   const displayWhatsapp = activeWhatsappNumber;
-  const displayAddress = branding?.address || '14 Admiralty Way, Victoria Island, Lagos, Nigeria';
+  const displayAddress = branding?.address || 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)';
   const displayPhone = storePhone || branding?.supportPhone || NEXOVIRA_CONTACT_CONFIG.supportPhone;
 
   const validateEmail = (email: string) => {
@@ -109,7 +109,7 @@ export const Footer: React.FC<FooterProps> = ({
                 <ShieldCheck className="w-3.5 h-3.5" /> Authentic Product Warranty
               </span>
               <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Lagos Hub Fulfilled
+                <ShieldCheck className="w-3.5 h-3.5" /> Nationwide Delivery Fulfilled
               </span>
             </div>
           </div>

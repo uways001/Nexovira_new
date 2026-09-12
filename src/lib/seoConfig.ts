@@ -81,7 +81,7 @@ export function getOrganizationSchema(baseUrl: string) {
     'contactPoint': [
       {
         '@type': 'ContactPoint',
-        'telephone': '+234-911-044-3054',
+        'telephone': '+234-702-590-0156',
         'contactType': 'customer support',
         'areaServed': 'NG',
         'availableLanguage': ['en']
@@ -89,9 +89,8 @@ export function getOrganizationSchema(baseUrl: string) {
     ],
     'address': {
       '@type': 'PostalAddress',
-      'addressLocality': 'Victoria Island, Lagos',
-      'addressRegion': 'Lagos State',
-      'addressCountry': 'NG'
+      'addressCountry': 'NG',
+      'description': 'Online-only Technology Ecosystem in Nigeria'
     },
     'sameAs': [
       'https://twitter.com/nexovira',
@@ -115,7 +114,7 @@ export function getWebSiteSchema(baseUrl: string) {
       '@type': 'SearchAction',
       'target': {
         '@type': 'EntryPoint',
-        'urlTemplate': `${baseUrl}/marketplace?search={search_term_string}`
+        'urlTemplate': `${baseUrl}/?search={search_term_string}`
       },
       'query-input': 'required name=search_term_string'
     }
@@ -600,8 +599,8 @@ export function getRouteSEOMetadata(
       { name: 'Contact', url: '/contact' }
     ];
     return {
-      title: 'Contact NEXOVIRA Support & Corporate Headquarters | Lagos, Nigeria',
-      description: 'Get in touch with NEXOVIRA customer support, vendor relations, corporate headquarters in Lagos, or reach our official WhatsApp hotline.',
+      title: 'Contact NEXOVIRA Customer Support | Nigeria',
+      description: 'Get in touch with NEXOVIRA online customer support via official WhatsApp (+234 702 590 0156) or official email (nexovirasupport@gmail.com).',
       canonicalUrl,
       ogImage: defaultLogo,
       ogType: 'website',
@@ -615,8 +614,8 @@ export function getRouteSEOMetadata(
       ],
       semanticHtml: `
         <header>
-          <h1>Contact NEXOVIRA Headquarters & Customer Care</h1>
-          <p>Lagos Innovation Center: Victoria Island, Lagos, Nigeria. Phone: +234 911 044 3054. Email: nexovirasupport@gmail.com.</p>
+          <h1>Contact NEXOVIRA Customer Care</h1>
+          <p>Online-Only Technology Ecosystem in Nigeria. Official WhatsApp: +234 702 590 0156. Email: nexovirasupport@gmail.com.</p>
         </header>
       `
     };

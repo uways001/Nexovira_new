@@ -1466,14 +1466,23 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
       {activeTab === 'addresses' && (
         <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-4">
           <h3 className="text-lg font-bold text-white">Default Shipping Address</h3>
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-white text-sm">{userProfile?.displayName || 'Chief Customer'}</span>
-              <span className="bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded text-[10px]">DEFAULT</span>
+          {userProfile?.addresses && userProfile.addresses.length > 0 ? (
+            userProfile.addresses.map((addr) => (
+              <div key={addr.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-white text-sm">{addr.fullName || userProfile?.displayName}</span>
+                  {addr.default && <span className="bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded text-[10px]">DEFAULT</span>}
+                </div>
+                <p className="text-slate-400">{addr.street}, {addr.city}, {addr.country}</p>
+                <p className="text-slate-400">Contact: {addr.phone || userProfile?.phone || 'Not provided'}</p>
+              </div>
+            ))
+          ) : (
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-2">
+              <p className="text-slate-400">No default delivery address registered yet.</p>
+              <p className="text-slate-500 text-[11px]">Delivery addresses are provided during checkout and dispatched via verified nationwide courier services.</p>
             </div>
-            <p className="text-slate-400">14 Admiralty Way, Victoria Island, Lagos, Nigeria</p>
-            <p className="text-slate-400">Contact: {userProfile?.phone || '+234 911 044 3054'}</p>
-          </div>
+          )}
         </div>
       )}
 

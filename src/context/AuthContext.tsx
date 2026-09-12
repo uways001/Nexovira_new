@@ -562,7 +562,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('Google signin fallback triggered:', err);
       const localProfile: UserProfile = {
         uid: `user-${Date.now()}`,
-        email: 'googleuser@nexovira.com',
+        email: 'googleuser@nexovira.com.ng',
         displayName: 'NEXOVIRA Customer',
         phone: '',
         role: 'customer',
@@ -592,16 +592,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const email = isOwnerRole 
       ? 'nexovirasupport@gmail.com' 
       : role === 'seller' 
-      ? 'seller@nexovira.com' 
+      ? 'seller@nexovira.com.ng' 
       : role === 'affiliate' 
-      ? 'affiliate@nexovira.com' 
+      ? 'affiliate@nexovira.com.ng' 
       : role === 'expert' 
-      ? 'expert@nexovira.com' 
+      ? 'expert@nexovira.com.ng' 
       : role === 'management'
-      ? 'management@nexovira.com'
+      ? 'management@nexovira.com.ng'
       : role === 'content_editor'
-      ? 'editor@nexovira.com'
-      : 'customer@nexovira.com';
+      ? 'editor@nexovira.com.ng'
+      : 'customer@nexovira.com.ng';
 
     const displayName = isOwnerRole
       ? 'NEXOVIRA Super Admin'
