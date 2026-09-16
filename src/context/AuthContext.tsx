@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signInWithPopup, 
+  signInAnonymously,
   signOut,
   updateProfile,
   sendPasswordResetEmail
@@ -264,8 +265,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentUser) {
         await fetchUserProfile(currentUser);
       } else {
-        setUser(null);
-        setUserSession(null);
+        // Check for existing saved profile session (e.g. remembered session or preset login)
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('nexovira_user_profile') : null;
+        const parsed = safeJsonParse<UserProfile | null>(saved, null);
+        if (parsed && parsed.role) {
+          setUserProfile(parsed);
+          const r = parsed.role;
+          setIsAdmin(r === 'super_admin' || r === 'admin' || r === 'management' || r === 'content_editor');
+          setIsSuperAdmin(r === 'super_admin');
+          setIsManagement(r === 'super_admin' || r === 'admin' || r === 'management');
+          setIsContentEditor(r === 'content_editor');
+          setIsSeller(r === 'seller' && parsed.accountStatus === 'active');
+          setIsAffiliate((r === 'affiliate' || parsed.isAffiliate === true) && parsed.accountStatus !== 'suspended');
+          setIsExpert((r === 'expert' || r === 'verified_expert_approved') && parsed.accountStatus !== 'suspended');
+
+          // Bridge session with Firebase Auth anonymously if no active user exists
+          try {
+            const anonCred = await signInAnonymously(auth);
+            if (anonCred?.user) {
+              const liveUid = anonCred.user.uid;
+              await setDoc(doc(db, 'users', liveUid), sanitizeFirestoreData({ ...parsed, uid: liveUid }), { merge: true }).catch(() => {});
+              if (r === 'super_admin' || r === 'admin' || r === 'management') {
+                await setDoc(doc(db, 'admins', liveUid), { uid: liveUid, email: parsed.email, role: r, updatedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
+              }
+            }
+          } catch (bridgeErr) {
+            // Non-blocking fallback
+          }
+        } else {
+          setUser(null);
+          setUserSession(null);
+        }
       }
       setLoading(false);
     });
@@ -530,8 +560,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Auto-provision owner email if attempting to log in as root admin
       if (isEmailOwner) {
+        let liveUid = localUid;
+        try {
+          if (!auth.currentUser) {
+            const cred = await signInAnonymously(auth);
+            if (cred?.user) liveUid = cred.user.uid;
+          } else {
+            liveUid = auth.currentUser.uid;
+          }
+        } catch (e) {}
+
         const ownerProfile: UserProfile = {
-          uid: localUid,
+          uid: liveUid,
           email: lowerEmail,
           displayName: 'NEXOVIRA Admin Master',
           phone: '',
@@ -541,7 +581,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: new Date().toISOString(),
           lastActiveAt: new Date().toISOString()
         };
-        await setDoc(doc(db, 'users', localUid), sanitizeFirestoreData(ownerProfile)).catch(() => {});
+        await setDoc(doc(db, 'users', liveUid), sanitizeFirestoreData(ownerProfile)).catch(() => {});
+        await setDoc(doc(db, 'admins', liveUid), { uid: liveUid, email: lowerEmail, role: 'super_admin', updatedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
         setUserSession(ownerProfile);
         return ownerProfile;
       }
@@ -619,8 +660,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const effectiveRole: UserRole = isOwnerRole ? 'super_admin' : role;
 
+    let liveUid = `preset-${role}`;
+    try {
+      if (!auth.currentUser) {
+        const cred = await signInAnonymously(auth);
+        if (cred?.user) liveUid = cred.user.uid;
+      } else {
+        liveUid = auth.currentUser.uid;
+      }
+    } catch (e) {}
+
     const presetProfile: UserProfile = {
-      uid: `preset-${role}`,
+      uid: liveUid,
       email,
       displayName,
       role: effectiveRole,
@@ -629,6 +680,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       affiliateCode: role === 'affiliate' ? 'NEXO-PRESET' : undefined,
       createdAt: new Date().toISOString()
     };
+
+    await setDoc(doc(db, 'users', liveUid), sanitizeFirestoreData(presetProfile), { merge: true }).catch(() => {});
+    if (isOwnerRole || effectiveRole === 'management') {
+      await setDoc(doc(db, 'admins', liveUid), { uid: liveUid, email, role: effectiveRole, updatedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
+    }
 
     setUser({
       uid: presetProfile.uid,

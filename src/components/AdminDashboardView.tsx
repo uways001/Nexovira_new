@@ -168,8 +168,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
 
   const [storeSettings, setStoreSettings] = useState({
     exchangeRate: 1600,
-    storePhone: '+234 702 590 0156',
-    whatsappPhone: '+234 702 590 0156',
+    storePhone: '+234 911 954 6897',
+    whatsappPhone: '+234 911 954 6897',
     contactEmail: 'nexovirasupport@gmail.com',
     storeAddress: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
     flashDealBannerText: 'FLASH SALE: Up to 20% OFF NEXOVIRA Smart Inverter ACs & Solar Generators - Fast Nationwide Delivery!'
@@ -394,10 +394,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (!loading && isAdmin) {
       loadData();
     }
-  }, [isAdmin]);
+  }, [isAdmin, loading]);
 
   useEffect(() => {
     const handleRateUpdate = () => {
@@ -538,12 +538,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           <NexoviraLogo size={40} showText={false} />
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black">NEXOVIRA Database Admin Portal</h1>
-              <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2.5 py-0.5 rounded-full font-bold">
+              <h1 className="text-2xl font-black tracking-tight text-[#081A2B] dark:text-white">NEXOVIRA Database Admin Portal</h1>
+              <span className="text-xs bg-[#DDF8F2] text-[#00A6A6] dark:bg-[#00A6A6]/20 dark:text-teal-300 border border-[#00A6A6]/30 px-2.5 py-0.5 rounded-full font-bold">
                 Firestore Cloud Database
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1">
               Manage real Firestore products, live order shipments, categories, & store exchange rates.
             </p>
           </div>
@@ -553,7 +553,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           <button
             onClick={loadData}
             disabled={loadingData}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-2 shrink-0 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#081A2B] hover:bg-[#1769FF] dark:bg-[#0D2B45] dark:hover:bg-[#1769FF] text-white font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-2 shrink-0 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingData ? 'animate-spin' : ''}`} />
             Refresh Database
@@ -563,93 +563,93 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
               await logout();
               onNavigate && onNavigate('/signin');
             }}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#17202A] dark:text-slate-200 font-semibold text-xs rounded-xl border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
             title="Sign Out of Admin Account"
           >
-            <LogOut className="w-3.5 h-3.5 text-slate-400" />
+            <LogOut className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <span>Sign Out</span>
           </button>
         </div>
       </div>
 
       {saveSuccessMsg && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm rounded-2xl flex items-center gap-2">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm rounded-2xl flex items-center gap-2">
           <CheckCircle className="w-5 h-5" />
           <span>{saveSuccessMsg}</span>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
+      <div className="flex items-center gap-2.5 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold scrollbar-none">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'overview' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'overview' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <ShieldCheck className="w-4 h-4" /> Overview
         </button>
         <button
           onClick={() => setActiveTab('products')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'products' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'products' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Package className="w-4 h-4" /> Products ({products.length})
         </button>
         <button
           onClick={() => setActiveTab('categories')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'categories' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'categories' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <ShoppingBag className="w-4 h-4" /> Categories ({categories.length})
         </button>
         <button
           onClick={() => setActiveTab('orders')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'orders' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Truck className="w-4 h-4" /> Orders ({orders.length})
         </button>
         <button
           onClick={() => setActiveTab('services')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'services' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'services' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Code2 className="w-4 h-4" /> Tech & Digital Services Ecosystem
         </button>
         <button
           onClick={() => setActiveTab('scholarships')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'scholarships' ? 'bg-[#0682F4] text-white font-black shadow-md' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'scholarships' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <GraduationCap className="w-4 h-4" /> Nexovira Academy & Scholarships
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'users' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'users' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Users className="w-4 h-4" /> Users &amp; Roles
         </button>
         <button
           onClick={() => setActiveTab('affiliates')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'affiliates' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'affiliates' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Share2 className="w-4 h-4" /> Affiliates & Financials ({affiliateProfiles.length})
         </button>
         <button
           onClick={() => setActiveTab('seller-payouts')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'seller-payouts' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'seller-payouts' ? 'bg-[#168A5B] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Wallet className="w-4 h-4" /> Seller NGN Payouts ({sellerPayouts.length})
         </button>
         <button
           onClick={() => setActiveTab('audit-logs')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'audit-logs' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'audit-logs' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <History className="w-4 h-4" /> Security & Audit Logs ({auditLogs.length})
         </button>
         <button
           onClick={() => setActiveTab('cms')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'cms' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'cms' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Globe className="w-4 h-4" /> CMS & Branding
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 ${activeTab === 'settings' ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`}
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'settings' ? 'bg-[#1769FF] text-white font-black shadow-xs' : 'bg-slate-100 dark:bg-[#0D2B45] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60'}`}
         >
           <Settings className="w-4 h-4" /> Store Config
         </button>
@@ -659,28 +659,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       {activeTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Total Catalog Items</span>
-              <div className="text-3xl font-black text-white">{totalProducts}</div>
-              <p className="text-[11px] text-cyan-400">Live in Firestore Database</p>
+            <div className="p-6 bg-white dark:bg-[#0D2B45] border border-[#E2E8F0] dark:border-slate-800/80 rounded-2xl shadow-xs space-y-2">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase">Total Catalog Items</span>
+              <div className="text-3xl font-black text-[#17202A] dark:text-white">{totalProducts}</div>
+              <p className="text-[11px] text-[#1769FF] dark:text-blue-400 font-semibold">Live in Firestore Database</p>
             </div>
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Pending Orders</span>
-              <div className="text-3xl font-black text-amber-400">{pendingOrders.length}</div>
-              <p className="text-[11px] text-slate-400">Awaiting dispatch confirmation</p>
+            <div className="p-6 bg-white dark:bg-[#0D2B45] border border-[#E2E8F0] dark:border-slate-800/80 rounded-2xl shadow-xs space-y-2">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase">Pending Orders</span>
+              <div className="text-3xl font-black text-[#F4B740]">{pendingOrders.length}</div>
+              <p className="text-[11px] text-[#64748B] dark:text-slate-400">Awaiting dispatch confirmation</p>
             </div>
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Today's Revenue</span>
-              <div className="text-3xl font-black text-emerald-400">
+            <div className="p-6 bg-white dark:bg-[#0D2B45] border border-[#E2E8F0] dark:border-slate-800/80 rounded-2xl shadow-xs space-y-2">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase">Today's Revenue</span>
+              <div className="text-3xl font-black text-[#168A5B] dark:text-emerald-400">
                 ₦{Math.round(todayRevenue >= 500 ? todayRevenue : todayRevenue * liveRateInfo.rate).toLocaleString()}
               </div>
-              <p className="text-[11px] text-slate-400">All products settled in Naira (₦)</p>
+              <p className="text-[11px] text-[#64748B] dark:text-slate-400">All products settled in Naira (₦)</p>
             </div>
-            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Automated Online FX Rate</span>
-              <div className="text-3xl font-black text-cyan-400">₦{liveRateInfo.rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / $1</div>
-              <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+            <div className="p-6 bg-white dark:bg-[#0D2B45] border border-[#E2E8F0] dark:border-slate-800/80 rounded-2xl shadow-xs space-y-2">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase">Automated Online FX Rate</span>
+              <div className="text-3xl font-black text-[#00A6A6] dark:text-teal-300">₦{liveRateInfo.rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / $1</div>
+              <p className="text-[11px] text-[#168A5B] dark:text-emerald-400 flex items-center gap-1 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#168A5B] dark:bg-emerald-400 animate-pulse inline-block" />
                 Live Automated Sync
               </p>
             </div>

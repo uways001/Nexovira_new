@@ -13,21 +13,21 @@ export const NEXOVIRA_CONTACT_CONFIG = {
   physicalStoreNotice: 'Online-only operations. Nationwide courier delivery and digital fulfillment (no physical walk-in store or public customer pickup center).',
 
   // Official WhatsApp Support Number
-  officialWhatsAppNumber: '+234 702 590 0156',
-  whatsappNumber: '+234 702 590 0156',
-  whatsappLocalFormat: '0702 590 0156',
-  whatsappLink: 'https://wa.me/2347025900156',
+  officialWhatsAppNumber: '+234 911 954 6897',
+  whatsappNumber: '+234 911 954 6897',
+  whatsappLocalFormat: '0911 954 6897',
+  whatsappLink: 'https://wa.me/2349119546897',
 
   // Nigeria country dial code
   countryDialCode: '+234',
 
   // Human-friendly formatted number for display
-  displayWhatsAppNumber: '+234 702 590 0156',
-  whatsappDisplay: '0702 590 0156',
+  displayWhatsAppNumber: '+234 911 954 6897',
+  whatsappDisplay: '0911 954 6897',
 
   // Direct Phone / WhatsApp Support Line
-  supportPhone: '+234 702 590 0156',
-  supportPhoneHref: 'tel:+2347025900156',
+  supportPhone: '+234 911 954 6897',
+  supportPhoneHref: 'tel:+2349119546897',
 
   // Official Customer Support Email
   supportEmail: 'nexovirasupport@gmail.com',
@@ -37,7 +37,7 @@ export const NEXOVIRA_CONTACT_CONFIG = {
   defaultWhatsAppGreeting: 'Hello NEXOVIRA Support, I would like assistance with...',
   defaultMessage: 'Hello NEXOVIRA Support, I would like assistance with...',
 
-  // Clean wa.me international digits (2347025900156)
+  // Clean wa.me international digits (2349119546897)
   get whatsappWaMeNumber(): string {
     return this.getCleanWhatsAppDigits();
   },
@@ -49,7 +49,7 @@ export const NEXOVIRA_CONTACT_CONFIG = {
     const raw = (phoneOverride || this.whatsappNumber).trim();
     let digits = raw.replace(/[^0-9]/g, '');
 
-    // Convert local Nigerian 070... / 080... (11 digits) to international 23470...
+    // Convert local Nigerian 070... / 080... / 090... / 091... (11 digits) to international 23491...
     if (digits.startsWith('0') && digits.length === 11) {
       digits = '234' + digits.slice(1);
     } else if (digits.length === 10 && !digits.startsWith('234')) {
@@ -57,7 +57,7 @@ export const NEXOVIRA_CONTACT_CONFIG = {
     }
 
     // Default fallback to Nexovira official line if empty
-    return digits || '2347025900156';
+    return digits || '2349119546897';
   },
 
   sanitizeForWaMe(phoneOverride?: string): string {

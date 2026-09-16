@@ -361,7 +361,7 @@ export const AdminCMSManager: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-slate-400 font-bold mb-1 uppercase">WhatsApp Support Phone (e.g. 07025900156 or 2347025900156)</label>
+            <label className="block text-slate-400 font-bold mb-1 uppercase">WhatsApp Support Phone (e.g. 09119546897 or 2349119546897)</label>
             <input
               type="text"
               value={websiteContent.whatsappPhone}

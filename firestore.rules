@@ -26,11 +26,28 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.email in ['hubproductpro@gmail.com', 'nexovirasupport@gmail.com', 'nexoviratech@gmail.com'] ||
-        (request.auth.token.keys().hasAll(['role']) && (request.auth.token.role == 'admin' || request.auth.token.role == 'super_admin')) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'super_admin'))
+        request.auth.token.email in [
+          'hubproductpro@gmail.com',
+          'nexovirasupport@gmail.com',
+          'nexoviratech@gmail.com',
+          'admin@nexovira.com.ng',
+          'superadmin@nexovira.com.ng',
+          'management@nexovira.com.ng',
+          'editor@nexovira.com.ng',
+          'admin@nexovira.com',
+          'superadmin@nexovira.com',
+          'abdullahoderinde@gmail.com',
+          'abdullah.oderinde@gmail.com',
+          'musauways@gmail.com',
+          'musa.uways@gmail.com'
+        ] ||
+        (request.auth.token.keys().hasAll(['role']) && (
+          request.auth.token.role in ['admin', 'super_admin', 'management', 'content_editor']
+        )) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['admin', 'super_admin', 'management', 'content_editor']
+        )) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
 
@@ -102,10 +119,21 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Pillar: Admins Collection
+    match /admins/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
     // Public Marketplace Catalog
     match /products/{id} {
       allow read: if true;
       allow create, update, delete: if isSeller();
+    }
+
+    match /services/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /categories/{id} {

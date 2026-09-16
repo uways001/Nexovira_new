@@ -186,14 +186,14 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const navLinkClass = (pathView: string, activeColorClass: string) =>
-    `px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors ${
+    `px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all text-xs font-semibold ${
       activeView === pathView
-        ? `${activeColorClass} font-black border`
-        : 'text-slate-600 dark:text-slate-300 hover:text-cyan-500'
+        ? `${activeColorClass} font-bold border`
+        : 'text-slate-600 dark:text-slate-300 hover:text-[#1769FF] dark:hover:text-[#00A6A6]'
     }`;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-40 w-full border-b border-[#E2E8F0] dark:border-slate-800/90 bg-white/95 dark:bg-[#081A2B]/95 backdrop-blur-md transition-colors shadow-xs">
       {/* Main Navigation Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
         {/* Brand Logo Link */}
@@ -203,12 +203,12 @@ export const Header: React.FC<HeaderProps> = ({
           className="cursor-pointer shrink-0 py-1"
           aria-label="NEXOVIRA Home"
         >
-          <NexoviraLogo size={38} showText={true} showTagline={true} taglineClassName="hidden xl:block text-[9px] font-bold text-cyan-500 dark:text-cyan-400" />
+          <NexoviraLogo size={38} showText={true} showTagline={true} taglineClassName="hidden xl:block text-[9px] font-bold text-[#1769FF] dark:text-[#00A6A6]" />
         </a>
 
         {/* Global Search Bar */}
         <form onSubmit={handleSearchSubmit} className="hidden lg:flex flex-1 max-w-xl items-center relative">
-          <div className="relative w-full flex items-center bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden focus-within:border-cyan-500 dark:focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all">
+          <div className="relative w-full flex items-center bg-slate-50 dark:bg-[#0D2B45] border border-[#E2E8F0] dark:border-slate-700/80 rounded-2xl overflow-hidden focus-within:border-[#1769FF] dark:focus-within:border-[#00A6A6] focus-within:ring-2 focus-within:ring-[#1769FF]/20 transition-all">
             <select
               value={selectedCategory}
               onChange={(e) => {
@@ -217,7 +217,7 @@ export const Header: React.FC<HeaderProps> = ({
                 if (cat !== 'all') onNavigate(`/category/${cat}`);
                 else onNavigate('/marketplace');
               }}
-              className="bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2.5 border-r border-slate-300 dark:border-slate-800 focus:outline-none cursor-pointer max-w-[130px] truncate"
+              className="bg-slate-100 dark:bg-[#081A2B] text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2.5 border-r border-[#E2E8F0] dark:border-slate-700/80 focus:outline-none cursor-pointer max-w-[130px] truncate"
             >
               <option value="all">All Items</option>
               {(categories && categories.length > 0 ? categories : CATEGORIES).map((cat) => (
@@ -252,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               type="submit"
-              className="mr-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer shadow-sm"
+              className="mr-1.5 px-3 py-1.5 rounded-xl bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer shadow-xs min-h-[36px]"
               title="Search NEXOVIRA"
               aria-label="Search NEXOVIRA"
             >
@@ -262,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {speechFeedback && (
-            <div className="absolute top-full left-0 right-0 mt-1 p-2 rounded-lg bg-slate-900 text-cyan-300 text-xs text-center border border-slate-800 z-50 shadow-lg">
+            <div className="absolute top-full left-0 right-0 mt-1 p-2 rounded-xl bg-[#081A2B] text-[#DDF8F2] text-xs text-center border border-slate-700 z-50 shadow-lg">
               {speechFeedback}
             </div>
           )}
@@ -282,11 +282,11 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Theme Toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-colors cursor-pointer"
+            className="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1769FF] dark:hover:text-[#00A6A6] hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-colors cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             aria-label="Toggle Theme"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-[#F4B740]" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
 
           {/* Price Alerts Notification Dropdown */}
@@ -298,12 +298,12 @@ export const Header: React.FC<HeaderProps> = ({
           <a
             href="/cart"
             onClick={(e) => { e.preventDefault(); onOpenCart(); }}
-            className="relative p-2.5 text-slate-700 dark:text-slate-200 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            className="relative p-2.5 text-[#17202A] dark:text-slate-200 hover:text-[#1769FF] dark:hover:text-[#00A6A6] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="View Shopping Cart"
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-cyan-500 text-slate-950 font-bold text-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0B0F17]">
+              <span className="absolute -top-1 -right-1 bg-[#1769FF] text-white font-bold text-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-[#081A2B] shadow-xs">
                 {cartCount}
               </span>
             )}
@@ -317,10 +317,10 @@ export const Header: React.FC<HeaderProps> = ({
                   e.preventDefault();
                   onNavigate(userDashboardRoute);
                 }}
-                className="p-1.5 sm:px-3 text-slate-700 dark:text-slate-200 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2 border border-slate-200 dark:border-slate-800"
+                className="p-1.5 sm:px-3 text-[#17202A] dark:text-slate-200 hover:text-[#1769FF] dark:hover:text-[#00A6A6] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]"
                 title={userDashboardTitle}
               >
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-xs flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#1769FF] to-[#00A6A6] text-white font-black text-xs flex items-center justify-center shadow-xs">
                   {(userProfile?.displayName || user?.displayName || userProfile?.email || user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <span className="hidden xl:inline text-xs font-bold truncate max-w-[100px]">
@@ -328,10 +328,10 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
                 {userProfile?.role && userProfile.role !== 'customer' && (
                   <span className={`hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${
-                    isAdmin ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' :
-                    userProfile.role === 'seller' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                    userProfile.role === 'affiliate' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
-                    'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                    isAdmin ? 'bg-[#1769FF]/15 text-[#1769FF] dark:text-cyan-400 border-[#1769FF]/30' :
+                    userProfile.role === 'seller' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' :
+                    userProfile.role === 'affiliate' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' :
+                    'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30'
                   }`}>
                     {isAdmin ? 'ADMIN' :
                      userProfile.role === 'seller' ? 'SELLER' :
@@ -348,7 +348,7 @@ export const Header: React.FC<HeaderProps> = ({
                   await logout();
                   onNavigate('/signin');
                 }}
-                className="p-2 sm:px-2.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-800 cursor-pointer"
+                className="p-2 sm:px-2.5 text-slate-600 dark:text-slate-300 hover:text-[#17202A] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold border border-[#E2E8F0] dark:border-slate-800 cursor-pointer min-h-[44px]"
                 title="Sign Out"
                 aria-label="Sign Out"
               >
@@ -363,17 +363,17 @@ export const Header: React.FC<HeaderProps> = ({
                 e.preventDefault();
                 onNavigate('/signin');
               }}
-              className="p-2 sm:px-3 text-slate-700 dark:text-slate-200 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold"
+              className="p-2 sm:px-3 text-[#17202A] dark:text-slate-200 hover:text-[#1769FF] dark:hover:text-[#00A6A6] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold min-h-[44px]"
               title="Sign In"
             >
-              <LogIn className="w-4 h-4 text-cyan-400" />
+              <LogIn className="w-4 h-4 text-[#1769FF] dark:text-[#00A6A6]" />
               <span className="hidden xl:inline">Sign In</span>
             </a>
           )}
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+            className="lg:hidden p-2 text-[#17202A] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Toggle Menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -382,18 +382,18 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Six Ecosystem Navigation Tabs Bar */}
-      <div className="hidden lg:block bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200/80 dark:border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs font-bold py-2">
+      <div className="hidden lg:block bg-[#F8FAFC] dark:bg-[#081A2B]/90 border-t border-[#E2E8F0] dark:border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs font-semibold py-2">
           <div className="flex items-center gap-1 sm:gap-2">
             
             <a
               href="/marketplace"
               onClick={(e) => { e.preventDefault(); onNavigate('/marketplace'); }}
-              className={navLinkClass('marketplace', 'bg-cyan-500/10 text-cyan-500 border-cyan-500/30')}
+              className={navLinkClass('marketplace', 'bg-[#1769FF]/10 text-[#1769FF] border-[#1769FF]/30 dark:bg-[#00A6A6]/10 dark:text-[#00A6A6] dark:border-[#00A6A6]/30')}
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>Marketplace</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30">
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                 Soon
               </span>
             </a>
@@ -401,7 +401,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/services"
               onClick={(e) => { e.preventDefault(); onNavigate('/services'); }}
-              className={navLinkClass(activeView === 'services' || activeView === 'book-service' ? 'services' : '', 'bg-blue-500/10 text-blue-500 border-blue-500/30')}
+              className={navLinkClass(activeView === 'services' || activeView === 'book-service' ? 'services' : '', 'bg-[#1769FF]/10 text-[#1769FF] border-[#1769FF]/30 dark:bg-[#00A6A6]/10 dark:text-[#00A6A6] dark:border-[#00A6A6]/30')}
             >
               <Code2 className="w-3.5 h-3.5" />
               <span>Tech Services</span>
@@ -410,7 +410,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/academy"
               onClick={(e) => { e.preventDefault(); onNavigate('/academy'); }}
-              className={navLinkClass('academy', 'bg-amber-500/10 text-amber-500 border-amber-500/30')}
+              className={navLinkClass('academy', 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30')}
             >
               <GraduationCap className="w-3.5 h-3.5" />
               <span>Academy</span>
@@ -419,7 +419,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/library"
               onClick={(e) => { e.preventDefault(); onNavigate('/library'); }}
-              className={navLinkClass('library', 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30')}
+              className={navLinkClass('library', 'bg-[#168A5B]/10 text-[#168A5B] dark:text-emerald-400 border-[#168A5B]/30')}
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span>Digital Library</span>
@@ -428,7 +428,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/ai"
               onClick={(e) => { e.preventDefault(); onNavigate('/ai'); }}
-              className={navLinkClass('ai', 'bg-purple-500/10 text-purple-500 border-purple-500/30')}
+              className={navLinkClass('ai', 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30')}
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>NEXOVIRA AI</span>
@@ -437,7 +437,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/affiliate"
               onClick={(e) => { e.preventDefault(); onNavigate('/affiliate'); }}
-              className={navLinkClass('affiliate', 'bg-rose-500/10 text-rose-500 border-rose-500/30')}
+              className={navLinkClass('affiliate', 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30')}
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Affiliate & Earn</span>
@@ -446,17 +446,17 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/presentation"
               onClick={(e) => { e.preventDefault(); onNavigate('/presentation'); }}
-              className={navLinkClass('presentation', 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30')}
+              className={navLinkClass('presentation', 'bg-[#00A6A6]/10 text-[#00A6A6] border-[#00A6A6]/30')}
               title="NEXOVIRA Ecosystem Vision Presentation"
             >
-              <Layers className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              <Layers className="w-3.5 h-3.5 text-[#00A6A6]" />
               <span>Ecosystem Deck</span>
             </a>
 
             <a
               href="/about"
               onClick={(e) => { e.preventDefault(); onNavigate('/about'); }}
-              className={navLinkClass('about', 'bg-slate-500/10 text-slate-300 border-slate-500/30')}
+              className={navLinkClass('about', 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30')}
             >
               <Info className="w-3.5 h-3.5" />
               <span>About Us</span>
@@ -465,7 +465,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="/contact"
               onClick={(e) => { e.preventDefault(); onNavigate('/contact'); }}
-              className={navLinkClass('contact', 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30')}
+              className={navLinkClass('contact', 'bg-[#1769FF]/10 text-[#1769FF] dark:text-cyan-400 border-[#1769FF]/30')}
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Contact</span>
@@ -512,10 +512,10 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             <a 
               href={NEXOVIRA_CONTACT_CONFIG.supportPhoneHref} 
-              className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-cyan-500 dark:hover:text-cyan-400 font-mono text-[11px] transition-colors"
+              className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-[#1769FF] dark:hover:text-[#00A6A6] font-mono text-[11px] transition-colors"
               title="Official Phone Support Hotline"
             >
-              <Phone className="w-3 h-3 text-cyan-500" />
+              <Phone className="w-3 h-3 text-[#1769FF] dark:text-[#00A6A6]" />
               <span>{NEXOVIRA_CONTACT_CONFIG.supportPhone}</span>
             </a>
           </div>
@@ -524,10 +524,10 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F17] px-4 py-4 space-y-4">
+        <div className="lg:hidden border-t border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-[#081A2B] px-4 py-4 space-y-4 shadow-xl">
           {/* User Account / Sign Out / Sign In Quick Bar */}
           {user ? (
-            <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-md">
+            <div className="p-3 bg-slate-50 dark:bg-[#0D2B45] border border-[#E2E8F0] dark:border-slate-700/80 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
               <a
                 href={userDashboardRoute}
                 onClick={(e) => {
@@ -537,14 +537,14 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition-opacity"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-sm flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#1769FF] to-[#00A6A6] text-white font-black text-sm flex items-center justify-center shrink-0">
                   {(userProfile?.displayName || user?.displayName || userProfile?.email || user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-white truncate">
+                  <p className="text-xs font-bold text-[#17202A] dark:text-white truncate">
                     {userProfile?.displayName || user?.displayName || userProfile?.email?.split('@')[0] || user?.email?.split('@')[0] || 'User'}
                   </p>
-                  <p className="text-[10px] text-cyan-400 font-mono capitalize">
+                  <p className="text-[10px] text-[#1769FF] dark:text-teal-400 font-mono capitalize">
                     {userDashboardTitle} →
                   </p>
                 </div>
@@ -555,7 +555,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setMobileMenuOpen(false);
                   onNavigate('/signin');
                 }}
-                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors min-h-[40px]"
                 title="Sign Out of Account"
               >
                 <LogOut className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
@@ -563,9 +563,9 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
           ) : (
-            <div className="p-3 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-2xl border border-[#E2E8F0] dark:border-slate-700/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-cyan-500" />
+                <User className="w-4 h-4 text-[#1769FF] dark:text-[#00A6A6]" />
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Welcome to NEXOVIRA</span>
               </div>
               <button
@@ -573,7 +573,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setMobileMenuOpen(false);
                   onNavigate('/signin');
                 }}
-                className="px-3 py-1.5 bg-cyan-500 text-slate-950 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-cyan-400 transition-colors"
+                className="px-3 py-1.5 bg-[#1769FF] text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-[#0E56D9] transition-colors min-h-[40px]"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Sign In</span>
@@ -581,66 +581,66 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          <div className="p-3 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
-            <NexoviraLogo size={32} showText={true} showTagline={true} taglineClassName="text-[10px] font-medium text-cyan-600 dark:text-cyan-400 mt-0.5" />
+          <div className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-2xl border border-[#E2E8F0] dark:border-slate-700/80 text-center">
+            <NexoviraLogo size={32} showText={true} showTagline={true} taglineClassName="text-[10px] font-medium text-[#1769FF] dark:text-[#00A6A6] mt-0.5" />
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-            <div className="col-span-2 p-3 bg-gradient-to-r from-blue-950/40 to-slate-900 rounded-xl border border-blue-500/30 space-y-2">
+          <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+            <div className="col-span-2 p-3 bg-gradient-to-r from-blue-950/20 to-slate-900/10 dark:from-[#081A2B] dark:to-[#0D2B45] rounded-xl border border-[#1769FF]/30 space-y-2">
               <div className="flex items-center justify-between">
                 <a
                   href="/services"
                   onClick={(e) => { e.preventDefault(); onNavigate('/services'); setMobileMenuOpen(false); }}
-                  className="flex items-center gap-2 text-blue-400 font-bold hover:text-white"
+                  className="flex items-center gap-2 text-[#1769FF] dark:text-blue-400 font-bold hover:underline"
                 >
-                  <Code2 className="w-4 h-4 text-blue-400" />
+                  <Code2 className="w-4 h-4 text-[#1769FF] dark:text-blue-400" />
                   <span>Tech Services Ecosystem</span>
                 </a>
-                <span className="text-[10px] text-slate-400 font-normal">Services</span>
+                <span className="text-[10px] text-slate-500 font-normal">Services</span>
               </div>
               <a 
                 href="/book-service" 
                 onClick={(e) => { e.preventDefault(); onNavigate('/book-service'); setMobileMenuOpen(false); }} 
-                className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-left flex items-center justify-between text-xs font-bold transition-colors"
+                className="w-full py-2.5 px-3 bg-[#1769FF] hover:bg-[#0E56D9] text-white rounded-xl text-left flex items-center justify-between text-xs font-bold transition-colors min-h-[44px]"
               >
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-3.5 h-3.5 text-white" />
                   <span>Book a Service</span>
                 </div>
-                <span className="text-[10px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded font-bold">Verified →</span>
+                <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold">Verified →</span>
               </a>
             </div>
 
-            <a href="/marketplace" onClick={(e) => { e.preventDefault(); onNavigate('/marketplace'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center justify-between">
-              <span className="flex items-center gap-2"><ShoppingBag className="w-4 h-4 text-cyan-500" /> Marketplace</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">Soon</span>
+            <a href="/marketplace" onClick={(e) => { e.preventDefault(); onNavigate('/marketplace'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center justify-between border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
+              <span className="flex items-center gap-2"><ShoppingBag className="w-4 h-4 text-[#1769FF] dark:text-[#00A6A6]" /> Marketplace</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">Soon</span>
             </a>
-            <a href="/academy" onClick={(e) => { e.preventDefault(); onNavigate('/academy'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-amber-500" /> Academy
+            <a href="/academy" onClick={(e) => { e.preventDefault(); onNavigate('/academy'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
+              <GraduationCap className="w-4 h-4 text-[#F4B740]" /> Academy
             </a>
-            <a href="/library" onClick={(e) => { e.preventDefault(); onNavigate('/library'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-emerald-500" /> Digital Library
+            <a href="/library" onClick={(e) => { e.preventDefault(); onNavigate('/library'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
+              <BookOpen className="w-4 h-4 text-[#168A5B]" /> Digital Library
             </a>
-            <a href="/ai" onClick={(e) => { e.preventDefault(); onNavigate('/ai'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
+            <a href="/ai" onClick={(e) => { e.preventDefault(); onNavigate('/ai'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
               <Sparkles className="w-4 h-4 text-purple-500" /> NEXOVIRA AI
             </a>
-            <a href="/affiliate" onClick={(e) => { e.preventDefault(); onNavigate('/affiliate'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
+            <a href="/affiliate" onClick={(e) => { e.preventDefault(); onNavigate('/affiliate'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
               <Share2 className="w-4 h-4 text-rose-500" /> Affiliate & Earn
             </a>
-            <a href="/presentation" onClick={(e) => { e.preventDefault(); onNavigate('/presentation'); setMobileMenuOpen(false); }} className="p-3 bg-cyan-500/10 dark:bg-cyan-950/40 text-cyan-400 border border-cyan-500/30 rounded-xl text-left flex items-center gap-2 col-span-2">
-              <Layers className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <a href="/presentation" onClick={(e) => { e.preventDefault(); onNavigate('/presentation'); setMobileMenuOpen(false); }} className="p-3 bg-[#00A6A6]/10 dark:bg-[#00A6A6]/20 text-[#00A6A6] dark:text-teal-300 border border-[#00A6A6]/30 rounded-xl text-left flex items-center gap-2 col-span-2 min-h-[44px]">
+              <Layers className="w-4 h-4 text-[#00A6A6]" />
               <span>NEXOVIRA Platform Architecture Overview</span>
             </a>
-            <a href="/about" onClick={(e) => { e.preventDefault(); onNavigate('/about'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
+            <a href="/about" onClick={(e) => { e.preventDefault(); onNavigate('/about'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
               <Info className="w-4 h-4 text-slate-400" /> About Us
             </a>
-            <a href="/contact" onClick={(e) => { e.preventDefault(); onNavigate('/contact'); setMobileMenuOpen(false); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-cyan-400" /> Contact
+            <a href="/contact" onClick={(e) => { e.preventDefault(); onNavigate('/contact'); setMobileMenuOpen(false); }} className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-xl text-left flex items-center gap-2 border border-[#E2E8F0] dark:border-slate-800 min-h-[44px]">
+              <HelpCircle className="w-4 h-4 text-[#1769FF] dark:text-[#00A6A6]" /> Contact
             </a>
           </div>
 
           {/* Mobile Utilities Strip: Currency & Hotline */}
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
+          <div className="pt-2 border-t border-[#E2E8F0] dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
             <CurrencySelector
               currentCurrency={currentCurrency}
               onCurrencyChange={onCurrencyChange}
@@ -648,9 +648,9 @@ export const Header: React.FC<HeaderProps> = ({
             />
             <a
               href={NEXOVIRA_CONTACT_CONFIG.supportPhoneHref}
-              className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-mono text-xs hover:text-cyan-500 transition-colors"
+              className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-mono text-xs hover:text-[#1769FF] transition-colors"
             >
-              <Phone className="w-3.5 h-3.5 text-cyan-500" />
+              <Phone className="w-3.5 h-3.5 text-[#1769FF] dark:text-[#00A6A6]" />
               <span>{NEXOVIRA_CONTACT_CONFIG.supportPhone}</span>
             </a>
           </div>

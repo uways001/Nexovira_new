@@ -507,7 +507,7 @@ export const AdminTechServicesManager: React.FC = () => {
             referenceNumber: `TEST-NX-${Math.floor(100000 + Math.random() * 900000)}`,
             customerName: 'Nexovira System Auditor',
             customerEmail: 'nexovirasupport@gmail.com',
-            customerPhone: '+234 702 590 0156',
+            customerPhone: '+234 911 954 6897',
             customerLocation: 'Lagos, Nigeria',
             serviceTitle: 'Test Service Verification Request',
             serviceCategory: 'Artificial Intelligence',
@@ -530,7 +530,7 @@ export const AdminTechServicesManager: React.FC = () => {
           projectData: {
             fullName: 'NEXOVIRA System Diagnostics',
             email: 'nexovirasupport@gmail.com',
-            phone: '+234 702 590 0156',
+            phone: '+234 911 954 6897',
             projectTitle: 'Automated System Verification Test',
             projectType: 'One-time Project',
             projectScope: 'Medium',

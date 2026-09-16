@@ -24,11 +24,11 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       subtitle: 'High-efficiency inverter appliances & smart home hardware',
       badge: productCount > 0 ? 'MARKETPLACE LIVE' : 'COMING SOON',
       badgeColor: productCount > 0 
-        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' 
-        : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+        ? 'bg-[#DDF8F2] text-[#00A6A6] border-[#00A6A6]/40 dark:bg-[#00A6A6]/20 dark:text-[#DDF8F2]' 
+        : 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
       icon: ShoppingBag,
-      gradient: 'from-slate-900 via-slate-900 to-amber-950/40 border-slate-800 hover:border-amber-500/60',
-      accentColor: 'text-amber-400',
+      accentColor: 'text-[#1769FF] dark:text-blue-400',
+      iconBg: 'bg-[#1769FF]/10 dark:bg-[#1769FF]/20 text-[#1769FF] dark:text-blue-400 border border-[#1769FF]/20',
       cta: productCount > 0 ? 'Explore Marketplace' : 'Browse Marketplace',
       image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
       stats: productCount > 0 ? `${productCount} Verified Products Available` : 'Inverters, Clean Energy Hardware & Smart Living'
@@ -38,10 +38,10 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       title: 'Tech & Digital Services',
       subtitle: 'Software engineering, cloud systems & managed tech services',
       badge: 'ACTIVE / AVAILABLE',
-      badgeColor: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+      badgeColor: 'bg-[#DDF8F2] text-[#00A6A6] border-[#00A6A6]/40 dark:bg-[#00A6A6]/20 dark:text-[#DDF8F2]',
       icon: Code2,
-      gradient: 'from-slate-900 via-slate-900 to-cyan-950/40 border-slate-800 hover:border-cyan-500/60',
-      accentColor: 'text-cyan-400',
+      accentColor: 'text-[#00A6A6] dark:text-teal-300',
+      iconBg: 'bg-[#00A6A6]/10 dark:bg-[#00A6A6]/20 text-[#00A6A6] dark:text-teal-300 border border-[#00A6A6]/20',
       cta: 'Explore Services',
       image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80',
       stats: 'AI, Web, Cloud, Cybersecurity & Managed Booking'
@@ -51,10 +51,10 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       title: 'NEXOVIRA Academy',
       subtitle: 'Practical technology tracks & ₦4,500 scholarship tuition subsidies',
       badge: 'ACTIVE / ENROLLING',
-      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      badgeColor: 'bg-emerald-50 text-[#168A5B] border-[#168A5B]/30 dark:bg-[#168A5B]/20 dark:text-emerald-300',
       icon: GraduationCap,
-      gradient: 'from-slate-900 via-slate-900 to-emerald-950/40 border-slate-800 hover:border-emerald-500/60',
-      accentColor: 'text-emerald-400',
+      accentColor: 'text-[#F4B740]',
+      iconBg: 'bg-amber-500/10 dark:bg-amber-500/20 text-[#F4B740] border border-amber-500/20',
       cta: 'View Available Courses',
       image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
       stats: 'Web Dev, AI, Cloud Engineering & Verified Certs'
@@ -64,10 +64,10 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       title: 'Digital Library',
       subtitle: 'Books, guides, resources & digital assets',
       badge: 'ACTIVE / AVAILABLE',
-      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      badgeColor: 'bg-emerald-50 text-[#168A5B] border-[#168A5B]/30 dark:bg-[#168A5B]/20 dark:text-emerald-300',
       icon: BookOpen,
-      gradient: 'from-slate-900 via-slate-900 to-emerald-950/40 border-slate-800 hover:border-emerald-500/60',
-      accentColor: 'text-emerald-400',
+      accentColor: 'text-[#168A5B] dark:text-emerald-400',
+      iconBg: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-[#168A5B] dark:text-emerald-400 border border-[#168A5B]/20',
       cta: 'Explore Library',
       image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
       stats: 'PDFs, E-Books & Code Boilerplates'
@@ -77,10 +77,10 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       title: 'NEXOVIRA AI Workspace',
       subtitle: 'Ask. Create. Learn. Solve.',
       badge: 'ACTIVE / AVAILABLE',
-      badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+      badgeColor: 'bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-300',
       icon: Sparkles,
-      gradient: 'from-slate-900 via-slate-900 to-purple-950/40 border-slate-800 hover:border-purple-500/60',
-      accentColor: 'text-purple-400',
+      accentColor: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20',
       cta: 'Talk to NEXOVIRA AI',
       image: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80',
       stats: 'Shopping, Coding, Research & Plans'
@@ -90,10 +90,10 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
       title: 'Affiliate & Earn',
       subtitle: 'Share. Refer. Earn commissions.',
       badge: 'ACTIVE / AVAILABLE',
-      badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+      badgeColor: 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300',
       icon: Share2,
-      gradient: 'from-slate-900 via-slate-900 to-rose-950/40 border-slate-800 hover:border-rose-500/60',
-      accentColor: 'text-rose-400',
+      accentColor: 'text-rose-600 dark:text-rose-400',
+      iconBg: 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20',
       cta: 'Start Earning',
       image: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=600&auto=format&fit=crop&q=80',
       stats: 'Unique Link Generator & QR Code'
@@ -104,24 +104,24 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 text-left">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold border border-cyan-500/20 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DDF8F2]/60 dark:bg-[#DDF8F2]/10 text-[#00A6A6] text-xs font-bold border border-[#00A6A6]/30 mb-2">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>NEXOVIRA Ecosystem Architecture</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#17202A] dark:text-white tracking-tight">
             Six Interconnected Ecosystem Destinations
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-1">
             Shop physical products, learn tech skills, hire specialists, download resources, ask AI, or earn commissions.
           </p>
         </div>
 
         <button
           onClick={() => onNavigate('presentation')}
-          className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 shrink-0 border border-cyan-400/30"
+          className="px-5 py-2.5 rounded-xl bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer min-h-[44px]"
           title="Architectural Overview"
         >
-          <Sparkles className="w-4 h-4 text-cyan-200" />
+          <Sparkles className="w-4 h-4 text-blue-200" />
           <span>Explore Platform Architecture</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
@@ -134,7 +134,7 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
             <div
               key={card.id}
               onClick={() => onNavigate(card.id)}
-              className="group cursor-pointer rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm hover:shadow-md hover:border-cyan-500/40 dark:hover:border-cyan-500/40 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
+              className="group cursor-pointer rounded-2xl border border-[#E2E8F0] dark:border-slate-800/80 bg-white dark:bg-[#0D2B45] p-6 shadow-xs hover:shadow-md hover:border-[#1769FF]/50 dark:hover:border-[#00A6A6]/50 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
             >
               {/* Background Subtle Image Overlay */}
               <div className="absolute top-0 right-0 w-32 h-32 opacity-10 dark:opacity-15 group-hover:opacity-20 transition-opacity rounded-bl-full overflow-hidden pointer-events-none">
@@ -144,7 +144,7 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
               <div>
                 {/* Header Badge & Icon */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${card.accentColor} shadow-sm`}>
+                  <div className={`p-3 rounded-xl ${card.iconBg} shadow-xs`}>
                     <IconComp className="w-5 h-5" />
                   </div>
                   <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${card.badgeColor}`}>
@@ -153,21 +153,21 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
                 </div>
 
                 {/* Title & Subtitle */}
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                <h3 className="text-lg font-bold text-[#17202A] dark:text-white group-hover:text-[#1769FF] dark:group-hover:text-[#00A6A6] transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                <p className="text-xs text-[#64748B] dark:text-slate-400 mt-2 leading-relaxed">
                   {card.subtitle}
                 </p>
               </div>
 
               {/* Bottom CTA & Stats */}
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-medium">
+              <div className="mt-6 pt-4 border-t border-[#E2E8F0] dark:border-slate-800/80 flex items-center justify-between">
+                <span className="text-[11px] font-mono text-[#64748B] dark:text-slate-400 font-medium truncate max-w-[65%]">
                   {card.stats}
                 </span>
 
-                <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${card.accentColor} group-hover:translate-x-0.5 transition-transform`}>
+                <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${card.accentColor} group-hover:translate-x-0.5 transition-transform shrink-0`}>
                   <span>{card.cta}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </div>

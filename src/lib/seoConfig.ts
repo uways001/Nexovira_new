@@ -600,7 +600,7 @@ export function getRouteSEOMetadata(
     ];
     return {
       title: 'Contact NEXOVIRA Customer Support | Nigeria',
-      description: 'Get in touch with NEXOVIRA online customer support via official WhatsApp (+234 702 590 0156) or official email (nexovirasupport@gmail.com).',
+      description: 'Get in touch with NEXOVIRA online customer support via official WhatsApp (+234 911 954 6897) or official email (nexovirasupport@gmail.com).',
       canonicalUrl,
       ogImage: defaultLogo,
       ogType: 'website',
@@ -615,7 +615,7 @@ export function getRouteSEOMetadata(
       semanticHtml: `
         <header>
           <h1>Contact NEXOVIRA Customer Care</h1>
-          <p>Online-Only Technology Ecosystem in Nigeria. Official WhatsApp: +234 702 590 0156. Email: nexovirasupport@gmail.com.</p>
+          <p>Online-Only Technology Ecosystem in Nigeria. Official WhatsApp: +234 911 954 6897. Email: nexovirasupport@gmail.com.</p>
         </header>
       `
     };

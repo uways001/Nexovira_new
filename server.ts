@@ -63,6 +63,7 @@ import {
 // Initialize Firebase Admin lazily for durable server-side storage & transaction persistence
 const FIREBASE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || 'gen-lang-client-0797653089.firebasestorage.app';
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0797653089';
+const FIREBASE_DATABASE_ID = process.env.FIREBASE_DATABASE_ID || 'ai-studio-remixremixremixn-d0aea433-b07e-4dd5-b9f8-c4ffbfffb4dc';
 
 function initFirebaseAdminApp() {
   if (getApps().length === 0) {
@@ -74,6 +75,15 @@ function initFirebaseAdminApp() {
     } catch (err) {
       console.warn('[Firebase Admin Initialization Notice]:', err);
     }
+  }
+}
+
+function getAdminFirestore() {
+  initFirebaseAdminApp();
+  try {
+    return getFirestore(FIREBASE_DATABASE_ID);
+  } catch (err) {
+    return getFirestore();
   }
 }
 import { 
@@ -685,8 +695,8 @@ app.get(['/api/health', '/api/v1/health'], (req, res) => {
     status: 'ok', 
     ecosystem: 'NEXOVIRA AI Digital Commerce & Knowledge Platform', 
     businessModel: 'Online-only Technology Ecosystem in Nigeria',
-    phone: '+234 702 590 0156',
-    whatsapp: '+234 702 590 0156',
+    phone: '+234 911 954 6897',
+    whatsapp: '+234 911 954 6897',
     email: 'nexovirasupport@gmail.com',
     domain: req.get('host') || 'nexovira.com.ng',
     timestamp: new Date().toISOString() 
@@ -1140,6 +1150,137 @@ app.delete(['/api/v1/admin/products/:id', '/api/v1/products/:id'], authenticateT
   return res.json({ success: true, message: `Product ${productId} deleted successfully` });
 });
 
+// ============================================================================
+// 3f. ACADEMY COURSES & SCHOLARSHIPS API (Direct Cloud Firestore Admin Sync)
+// ============================================================================
+
+app.post(['/api/v1/admin/courses', '/api/v1/courses'], optionalAuth, async (req, res) => {
+  try {
+    const courseData = req.body;
+    if (!courseData || !courseData.id) {
+      return res.status(400).json({ success: false, error: 'Course payload with valid id is required.' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const normalized = {
+      ...courseData,
+      updated_at: nowIso,
+      updatedAt: nowIso
+    };
+
+    try {
+      const firestore = getAdminFirestore();
+      await firestore.collection('courses').doc(courseData.id).set(normalized, { merge: true });
+      safeLogger.info(`[Course Saved via Admin API]: ${courseData.id} (published: ${!!normalized.published})`);
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Firestore Course Sync Notice]: ${dbErr?.message}`);
+    }
+
+    return res.json({ success: true, course: normalized });
+  } catch (err: any) {
+    safeLogger.error('[Course Save Endpoint Error]:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to save course.' });
+  }
+});
+
+app.put('/api/v1/admin/courses/:id', optionalAuth, async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const courseData = req.body;
+    if (!courseId) {
+      return res.status(400).json({ success: false, error: 'Course id is required.' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const normalized = {
+      ...courseData,
+      id: courseId,
+      updated_at: nowIso,
+      updatedAt: nowIso
+    };
+
+    try {
+      const firestore = getAdminFirestore();
+      await firestore.collection('courses').doc(courseId).set(normalized, { merge: true });
+      safeLogger.info(`[Course Updated via Admin API]: ${courseId}`);
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Firestore Course Update Notice]: ${dbErr?.message}`);
+    }
+
+    return res.json({ success: true, course: normalized });
+  } catch (err: any) {
+    safeLogger.error('[Course Update Endpoint Error]:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update course.' });
+  }
+});
+
+app.delete(['/api/v1/admin/courses/:id', '/api/v1/courses/:id'], optionalAuth, async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    if (!courseId) {
+      return res.status(400).json({ success: false, error: 'Course id is required' });
+    }
+
+    try {
+      const firestore = getAdminFirestore();
+      await firestore.collection('courses').doc(courseId).delete();
+      safeLogger.info(`[Course Deleted via Admin API]: ${courseId}`);
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Firestore Course Delete Notice]: ${dbErr?.message}`);
+    }
+
+    return res.json({ success: true, courseId });
+  } catch (err: any) {
+    safeLogger.error('[Course Delete Endpoint Error]:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to delete course.' });
+  }
+});
+
+// Digital E-Books Catalog Management
+app.post(['/api/v1/admin/ebooks', '/api/v1/ebooks'], optionalAuth, async (req, res) => {
+  try {
+    const ebookData = req.body;
+    if (!ebookData || !ebookData.id) {
+      return res.status(400).json({ success: false, error: 'Ebook payload with valid id is required.' });
+    }
+
+    try {
+      const firestore = getAdminFirestore();
+      await firestore.collection('ebooks').doc(ebookData.id).set(ebookData, { merge: true });
+      safeLogger.info(`[Ebook Saved via Admin API]: ${ebookData.id}`);
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Firestore Ebook Save Notice]: ${dbErr?.message}`);
+    }
+
+    return res.json({ success: true, ebook: ebookData });
+  } catch (err: any) {
+    safeLogger.error('[Ebook Save Endpoint Error]:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to save ebook.' });
+  }
+});
+
+app.delete(['/api/v1/admin/ebooks/:id', '/api/v1/ebooks/:id'], optionalAuth, async (req, res) => {
+  try {
+    const ebookId = req.params.id;
+    if (!ebookId) {
+      return res.status(400).json({ success: false, error: 'Ebook id is required' });
+    }
+
+    try {
+      const firestore = getAdminFirestore();
+      await firestore.collection('ebooks').doc(ebookId).delete();
+      safeLogger.info(`[Ebook Deleted via Admin API]: ${ebookId}`);
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Firestore Ebook Delete Notice]: ${dbErr?.message}`);
+    }
+
+    return res.json({ success: true, ebookId });
+  } catch (err: any) {
+    safeLogger.error('[Ebook Delete Endpoint Error]:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to delete ebook.' });
+  }
+});
+
 // 3.5. Secure Order Processing & Server Payment Verification Endpoint
 app.post('/api/v1/orders', orderRateLimiter, async (req, res) => {
   try {
@@ -1219,7 +1360,7 @@ app.post('/api/v1/orders', orderRateLimiter, async (req, res) => {
         city: sanitizeString(shippingAddress.city || 'Lagos', 100),
         state: sanitizeString(shippingAddress.state || 'Lagos State', 100),
         country: 'Nigeria',
-        phone: sanitizeString(shippingAddress.phone || '+234 702 590 0156', 25)
+        phone: sanitizeString(shippingAddress.phone || '+234 911 954 6897', 25)
       } : null,
       timeline: [
         { 

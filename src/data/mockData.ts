@@ -47,7 +47,7 @@ export const STORES: Store[] = [
     country: 'Nigeria',
     currency: 'NGN',
     contactEmail: 'nexovirasupport@gmail.com',
-    contactPhone: '+234 702 590 0156',
+    contactPhone: '+234 911 954 6897',
     payoutMethod: 'Bank Transfer / Paystack',
   },
   {
@@ -66,7 +66,7 @@ export const STORES: Store[] = [
     country: 'Nigeria',
     currency: 'NGN',
     contactEmail: 'sales@electrahome.io',
-    contactPhone: '+234 702 590 0156',
+    contactPhone: '+234 911 954 6897',
     payoutMethod: 'Paystack Direct / Wire',
   },
   {
@@ -85,7 +85,7 @@ export const STORES: Store[] = [
     country: 'Nigeria',
     currency: 'NGN',
     contactEmail: 'orders@apexcomputing.com',
-    contactPhone: '+234 702 590 0156',
+    contactPhone: '+234 911 954 6897',
     payoutMethod: 'Paystack Automated',
   },
 ];
@@ -128,7 +128,7 @@ export const INITIAL_BRAND_SETTINGS: GlobalBrandSettings = {
   ownerProfile: {
     name: 'NEXOVIRA Executive Owner',
     email: 'nexovirasupport@gmail.com',
-    phone: '+234 702 590 0156',
+    phone: '+234 911 954 6897',
     country: 'Nigeria',
     city: 'Lagos',
     hubAddress: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',

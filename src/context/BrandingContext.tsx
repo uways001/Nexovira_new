@@ -41,7 +41,7 @@ const DEFAULT_BRANDING_STATE: BrandingSettings = {
   secondaryColor: '#01213D',
   accentColor: '#06C3F8',
   supportEmail: 'nexovirasupport@gmail.com',
-  supportPhone: '+234 702 590 0156',
+  supportPhone: NEXOVIRA_CONTACT_CONFIG.supportPhone,
   address: 'Online-Only Technology Ecosystem, Nigeria (Nationwide Courier & Digital Delivery)',
   currency: 'NGN',
   updatedAt: new Date().toISOString()

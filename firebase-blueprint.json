@@ -314,9 +314,36 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "title", "description", "category", "status"]
+    },
+    "TechService": {
+      "title": "TechService",
+      "description": "Commercial engineering, software development, cloud, AI and cybersecurity services catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "startingPrice": { "type": "number" },
+        "currency": { "type": "string" },
+        "deliveryTime": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["published", "draft", "deleted"] },
+        "published": { "type": "boolean" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "category", "startingPrice"]
     }
   },
   "firestore": {
+    "/services/{serviceId}": {
+      "schema": {
+        "$ref": "#/entities/TechService"
+      },
+      "description": "Commercial technology services catalog visible across the Nexovira platform"
+    },
     "/courses/{courseId}": {
       "schema": {
         "$ref": "#/entities/Course"

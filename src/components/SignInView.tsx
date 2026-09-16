@@ -153,8 +153,8 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-[#0B0F17]">
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-[#081A2B]">
+      <div className="w-full max-w-md bg-[#0D2B45] border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
         {/* Header Branding */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-3">
@@ -162,10 +162,10 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
               size={44} 
               showText={true} 
               showTagline={true} 
-              taglineClassName="text-[10px] sm:text-xs font-semibold text-cyan-400 italic mt-0.5" 
+              taglineClassName="text-[10px] sm:text-xs font-semibold text-[#00A6A6] mt-0.5" 
             />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight mt-3">Welcome Back</h1>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight mt-3">Welcome Back</h1>
           <p className="text-slate-400 text-xs mt-1">Sign in to continue to your Nexovira account.</p>
         </div>
 
@@ -188,7 +188,7 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
             <p className="text-slate-300">
               Go to <strong>Firebase Console &gt; Authentication &gt; Settings &gt; Authorized Domains</strong> and add this domain:
             </p>
-            <div className="flex items-center justify-between gap-2 bg-slate-950 p-2 rounded-lg border border-slate-800 font-mono text-[11px] text-cyan-300">
+            <div className="flex items-center justify-between gap-2 bg-[#081A2B] p-2 rounded-lg border border-slate-800 font-mono text-[11px] text-[#00A6A6]">
               <span className="truncate">{domainNotice}</span>
               <button
                 onClick={handleCopyDomain}
@@ -205,23 +205,23 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
         {/* Sign In Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-400 mb-2">Email Address</label>
+            <label className="block text-xs font-semibold uppercase text-slate-300 mb-2">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
+              <Mail className="absolute left-3.5 top-3 w-5 h-5 text-slate-400" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                className="w-full bg-[#081A2B] border border-slate-700 rounded-xl pl-11 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF] text-sm"
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold uppercase text-slate-400">Password</label>
+              <label className="block text-xs font-semibold uppercase text-slate-300">Password</label>
               <button
                 type="button"
                 onClick={() => {
@@ -229,25 +229,25 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
                   setForgotStatus(null);
                   setIsForgotPasswordOpen(true);
                 }}
-                className="text-xs text-cyan-400 hover:underline font-medium"
+                className="text-xs text-[#00A6A6] hover:underline font-medium cursor-pointer"
               >
                 Forgot Password?
               </button>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
+              <Lock className="absolute left-3.5 top-3 w-5 h-5 text-slate-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                className="w-full bg-[#081A2B] border border-slate-700 rounded-xl pl-11 pr-11 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF] text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3 text-slate-500 hover:text-cyan-400 transition-colors focus:outline-none"
+                className="absolute right-3.5 top-3 text-slate-400 hover:text-white transition-colors focus:outline-none cursor-pointer"
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -258,7 +258,7 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold py-3 rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+            className="w-full bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 min-h-[44px] cursor-pointer"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
             <LogIn className="w-4 h-4" />
@@ -266,14 +266,14 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
         </form>
 
         <div className="relative my-6 text-center">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
-          <span className="relative bg-slate-900 px-3 text-xs text-slate-500 uppercase font-semibold">Or continue with</span>
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-700"></div></div>
+          <span className="relative bg-[#0D2B45] px-3 text-xs text-slate-400 uppercase font-semibold">Or continue with</span>
         </div>
 
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-3 text-sm"
+          className="w-full bg-[#081A2B] hover:bg-slate-800 border border-slate-700 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-3 text-sm min-h-[44px] cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
@@ -284,14 +284,14 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
           Google Account
         </button>
 
-        <div className="mt-8 pt-6 border-t border-slate-800 text-center space-y-3">
+        <div className="mt-8 pt-6 border-t border-slate-700/80 text-center space-y-3">
           <p className="text-slate-400 text-sm">
             Don't have a NEXOVIRA account yet?
           </p>
           <button
             type="button"
             onClick={() => onNavigate('/signup')}
-            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-[#DDF8F2] hover:text-white border border-slate-700 hover:border-[#00A6A6]/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs min-h-[44px]"
           >
             <span>Create New Account</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -302,18 +302,18 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
       {/* Forgot Password Modal */}
       {isForgotPasswordOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="w-full max-w-md bg-[#0D2B45] border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
               <h3 className="text-lg font-bold text-white">Reset Password</h3>
               <button
                 onClick={() => setIsForgotPasswordOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               Enter your registered email address. We will send a secure password reset link to your inbox.
             </p>
 
@@ -334,16 +334,16 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
 
             <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 pt-1">
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Registered Email</label>
+                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Registered Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                  <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                   <input
                     type="email"
                     required
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 text-sm"
+                    className="w-full bg-[#081A2B] border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#1769FF] text-sm"
                   />
                 </div>
               </div>
@@ -352,14 +352,14 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
                 <button
                   type="button"
                   onClick={() => setIsForgotPasswordOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs rounded-xl transition-all disabled:opacity-50"
+                  className="px-5 py-2.5 bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 min-h-[40px] cursor-pointer"
                 >
                   {forgotLoading ? 'Sending link...' : 'Send Reset Link'}
                 </button>

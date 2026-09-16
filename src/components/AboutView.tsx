@@ -146,12 +146,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div>
               <div className="font-bold text-slate-200">Official WhatsApp</div>
               <a 
-                href="https://wa.me/2347025900156" 
+                href="https://wa.me/2349119546897" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="text-emerald-400 mt-1 font-mono block hover:underline"
               >
-                +234 702 590 0156 (0702 590 0156)
+                +234 911 954 6897 (0911 954 6897)
               </a>
             </div>
           </div>

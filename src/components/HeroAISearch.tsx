@@ -219,26 +219,26 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
     : searchHistory;
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-16 lg:pb-20 border-b border-slate-800/80">
+    <section className="relative overflow-hidden bg-[#081A2B] text-white pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-16 lg:pb-20 border-b border-slate-800/80">
       {/* Background Soft Subtle Ambient Illumination */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-cyan-500/5 blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0D2B45] via-[#081A2B] to-[#081A2B]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-[#1769FF]/10 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-7 sm:space-y-8">
         
         {/* Subtle Category Pill Indicator */}
         <div className="flex items-center justify-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold tracking-wide shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#DDF8F2]/10 border border-[#00A6A6]/30 text-[#DDF8F2] text-xs font-semibold tracking-wide shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#00A6A6]" />
             <span>Smart Technology & Digital Services</span>
           </div>
         </div>
 
         {/* Main Headline & Supporting Text */}
         <div className="max-w-3xl mx-auto space-y-3">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.15]">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15]">
             What do you want to{' '}
-            <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#1769FF] via-[#00A6A6] to-[#DDF8F2] bg-clip-text text-transparent">
               do today?
             </span>
           </h1>
@@ -252,16 +252,16 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
         <div className="max-w-2xl mx-auto relative" ref={searchContainerRef}>
           <form onSubmit={handleSearchSubmit} className="relative z-20">
             <div 
-              className={`relative flex items-center bg-slate-900/90 border rounded-2xl p-1.5 sm:p-2 shadow-lg backdrop-blur-md transition-all duration-200 ${
+              className={`relative flex items-center bg-[#0D2B45]/90 border rounded-2xl p-1.5 sm:p-2 shadow-xl backdrop-blur-md transition-all duration-200 ${
                 isListening 
-                  ? 'border-cyan-400 ring-2 ring-cyan-400/30' 
+                  ? 'border-red-400 ring-2 ring-red-400/30' 
                   : isInputFocused 
-                  ? 'border-cyan-500 ring-2 ring-cyan-500/20' 
+                  ? 'border-[#1769FF] ring-2 ring-[#1769FF]/20' 
                   : 'border-slate-700/80 hover:border-slate-600'
               }`}
             >
-              <div className="p-2.5 sm:p-3 bg-cyan-500/10 text-cyan-400 rounded-xl shrink-0 hidden sm:flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-cyan-400" />
+              <div className="p-2.5 sm:p-3 bg-[#1769FF]/10 text-[#1769FF] rounded-xl shrink-0 hidden sm:flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-[#1769FF]" />
               </div>
 
               <input
@@ -278,7 +278,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
                 <button
                   type="button"
                   onClick={() => setInputQuery('')}
-                  className="p-2 text-slate-400 hover:text-white rounded-xl mr-1 transition-colors"
+                  className="p-2 text-slate-400 hover:text-white rounded-xl mr-1 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                   title="Clear input"
                 >
                   <X className="w-4 h-4" />
@@ -289,9 +289,9 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
               <button
                 type="button"
                 onClick={toggleVoiceSearch}
-                className={`p-2.5 sm:p-3 rounded-xl shrink-0 transition-all mr-1 flex items-center justify-center min-w-[42px] min-h-[42px] ${
+                className={`p-2.5 sm:p-3 rounded-xl shrink-0 transition-all mr-1.5 flex items-center justify-center min-w-[44px] min-h-[44px] ${
                   isListening 
-                    ? 'bg-blue-600 text-white animate-pulse shadow-md shadow-blue-500/30' 
+                    ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30' 
                     : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
                 }`}
                 title={isListening ? 'Stop Voice Search' : 'Search using Voice Command'}
@@ -302,7 +302,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
               {/* Search Action Button */}
               <button
                 type="submit"
-                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0 flex items-center gap-1.5 sm:gap-2 min-h-[42px] cursor-pointer"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold text-xs sm:text-sm shadow-md transition-all shrink-0 flex items-center gap-1.5 sm:gap-2 min-h-[44px] cursor-pointer"
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden sm:inline">Ask NEXOVIRA</span>
@@ -312,12 +312,12 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
           {/* Interactive Search History Dropdown on Focus */}
           {isInputFocused && filteredHistory.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-xl backdrop-blur-md z-30 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-150">
-              <div className="p-3 px-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
+            <div className="absolute left-0 right-0 top-full mt-2 bg-[#0D2B45] border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-md z-30 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-150">
+              <div className="p-3 px-4 bg-[#081A2B]/80 border-b border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  <Clock className="w-3.5 h-3.5 text-[#00A6A6]" />
                   <span>Recent Searches</span>
-                  <span className="text-[10px] font-mono bg-slate-800 text-cyan-400 px-1.5 py-0.2 rounded-full">
+                  <span className="text-[10px] font-mono bg-slate-800 text-[#00A6A6] px-1.5 py-0.2 rounded-full">
                     {filteredHistory.length}
                   </span>
                 </div>
@@ -336,19 +336,19 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
                   <div
                     key={`${queryText}-${index}`}
                     onClick={() => handleExecuteSearch(queryText)}
-                    className="p-3 px-4 flex items-center justify-between gap-3 hover:bg-[#05A9F7]/10 cursor-pointer transition-colors group"
+                    className="p-3 px-4 flex items-center justify-between gap-3 hover:bg-[#1769FF]/10 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-slate-800 group-hover:bg-[#05A9F7]/20 text-slate-400 group-hover:text-[#08E6F9] shrink-0 transition-colors">
+                      <div className="p-1.5 rounded-lg bg-slate-800 group-hover:bg-[#1769FF]/20 text-slate-400 group-hover:text-[#1769FF] shrink-0 transition-colors">
                         <History className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-sm text-[#CCD2D9] group-hover:text-white font-medium truncate">
+                      <span className="text-sm text-slate-200 group-hover:text-white font-medium truncate">
                         {queryText}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[11px] text-[#08E6F9] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-mono">
+                      <span className="text-[11px] text-[#1769FF] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-mono">
                         <span>Search</span>
                         <CornerDownLeft className="w-3 h-3" />
                       </span>
@@ -370,9 +370,9 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
           {/* Voice Search Feedback Banner */}
           {speechFeedback && (
             <div className={`mt-2 p-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in ${
-              isListening ? 'bg-blue-900/40 border border-blue-500/40 text-blue-200' : 'bg-slate-900 border border-slate-700 text-slate-300'
+              isListening ? 'bg-blue-900/40 border border-[#1769FF]/40 text-blue-200' : 'bg-[#0D2B45] border border-slate-700 text-slate-300'
             }`}>
-              {isListening && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />}
+              {isListening && <span className="w-2 h-2 rounded-full bg-[#00A6A6] animate-ping" />}
               <span>{speechFeedback}</span>
             </div>
           )}
@@ -386,7 +386,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
                   key={idx}
                   type="button"
                   onClick={() => handleExecuteSearch(item.query)}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/40 text-xs text-slate-300 hover:text-white font-medium shadow-sm transition-all duration-150 cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#0D2B45]/80 hover:bg-[#0D2B45] border border-slate-700/80 hover:border-[#1769FF]/50 text-xs text-slate-300 hover:text-white font-medium shadow-xs transition-all duration-150 cursor-pointer min-h-[36px]"
                 >
                   "{item.label}"
                 </button>
@@ -403,15 +403,15 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-2.5">
             <button
               onClick={() => onNavigate('marketplace')}
-              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#1769FF]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
             >
-              <ShoppingBag className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <ShoppingBag className="w-4 h-4 text-[#1769FF] group-hover:scale-110 transition-transform" />
               <span className="truncate">Appliances</span>
             </button>
 
             <button
               onClick={() => onNavigate('ai')}
-              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#00A6A6]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
             >
               <Bot className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Talk to AI</span>
@@ -419,31 +419,31 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
             <button
               onClick={() => onNavigate('academy')}
-              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#F4B740]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
             >
-              <GraduationCap className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+              <GraduationCap className="w-4 h-4 text-[#F4B740] group-hover:scale-110 transition-transform" />
               <span className="truncate">Academy</span>
             </button>
 
             <button
               onClick={() => onNavigate('library')}
-              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#168A5B]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
             >
-              <BookOpen className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <BookOpen className="w-4 h-4 text-[#168A5B] group-hover:scale-110 transition-transform" />
               <span className="truncate">E-books</span>
             </button>
 
             <button
               onClick={() => onNavigate('services')}
-              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#1769FF]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
             >
-              <Code2 className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+              <Code2 className="w-4 h-4 text-[#1769FF] group-hover:scale-110 transition-transform" />
               <span className="truncate">Tech Services</span>
             </button>
 
             <button
               onClick={() => onNavigate('affiliate')}
-              className="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/30 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[44px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-rose-500/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
             >
               <Share2 className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Affiliate</span>

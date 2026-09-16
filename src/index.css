@@ -1,8 +1,39 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-navy: #081A2B;
+  --color-brand-darkblue: #0D2B45;
+  --color-brand-electric: #1769FF;
+  --color-brand-teal: #00A6A6;
+  --color-brand-mint: #DDF8F2;
+  --color-brand-warmwhite: #F8FAFC;
+  --color-brand-charcoal: #17202A;
+  --color-brand-muted: #64748B;
+  --color-brand-border: #E2E8F0;
+  --color-brand-success: #168A5B;
+  --color-brand-accent: #F4B740;
+
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
 @layer base {
+  :root {
+    --brand-navy: #081A2B;
+    --brand-darkblue: #0D2B45;
+    --brand-electric: #1769FF;
+    --brand-teal: #00A6A6;
+    --brand-mint: #DDF8F2;
+    --brand-warmwhite: #F8FAFC;
+    --brand-charcoal: #17202A;
+    --brand-muted: #64748B;
+    --brand-border: #E2E8F0;
+    --brand-success: #168A5B;
+    --brand-accent: #F4B740;
+  }
+
   body {
-    @apply antialiased text-slate-900 bg-slate-50 dark:bg-[#0B0F17] dark:text-slate-100 transition-colors duration-200;
+    font-family: var(--font-sans);
+    @apply antialiased text-[#17202A] bg-[#F8FAFC] dark:bg-[#081A2B] dark:text-slate-100 transition-colors duration-200;
   }
 }
 
@@ -17,10 +48,57 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* Reusable 2026 Brand Utility Classes */
+.btn-electric {
+  background-color: #1769FF;
+  color: #FFFFFF;
+  transition: all 0.2s ease-in-out;
+}
+.btn-electric:hover {
+  background-color: #0E56D9;
+  box-shadow: 0 4px 14px 0 rgba(23, 105, 255, 0.35);
+}
+
+.btn-teal {
+  background-color: #00A6A6;
+  color: #FFFFFF;
+  transition: all 0.2s ease-in-out;
+}
+.btn-teal:hover {
+  background-color: #008E8E;
+  box-shadow: 0 4px 14px 0 rgba(0, 166, 166, 0.35);
+}
+
+.badge-mint {
+  background-color: #DDF8F2;
+  color: #008E8E;
+  border: 1px solid rgba(0, 166, 166, 0.2);
+}
+
+.card-brand {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+.card-brand:hover {
+  border-color: rgba(23, 105, 255, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(8, 26, 43, 0.06);
+}
+
+.dark .card-brand {
+  background-color: #0D2B45;
+  border-color: rgba(226, 232, 240, 0.1);
+}
+.dark .card-brand:hover {
+  border-color: rgba(23, 105, 255, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
 }
