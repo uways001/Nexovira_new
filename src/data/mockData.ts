@@ -92,7 +92,7 @@ export const STORES: Store[] = [
 
 import { FLAGSHIP_PRODUCTS } from './flagshipProducts';
 
-export const PRODUCTS: Product[] = [...FLAGSHIP_PRODUCTS];
+export const PRODUCTS: Product[] = [];
 
 export const TECH_SERVICES: TechService[] = [];
 

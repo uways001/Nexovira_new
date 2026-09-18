@@ -261,6 +261,10 @@ export interface AuthenticatedUser {
   role: string;
   isAdmin: boolean;
   name?: string;
+  profile_completed: boolean;
+  is_verified: boolean;
+  can_upload_products: boolean;
+  can_access_products: boolean;
 }
 
 declare global {
@@ -326,11 +330,32 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     });
   }
 
+  const profileCompletedHeader = req.headers['x-user-profile-completed'];
+  const isVerifiedHeader = req.headers['x-user-verified'];
+
+  const profile_completed = profileCompletedHeader !== undefined
+    ? (profileCompletedHeader === 'true' || profileCompletedHeader === '1')
+    : (safeRole === 'customer' || isVerifiedAdmin);
+
+  const is_verified = isVerifiedHeader !== undefined
+    ? (isVerifiedHeader === 'true' || isVerifiedHeader === '1')
+    : (safeRole === 'customer' || safeRole === 'verified_expert_approved' || isVerifiedAdmin);
+
+  // Sellers: can_upload_products is strictly true ONLY when profile_completed == true AND is_verified == true
+  const can_upload_products = (safeRole === 'seller' && profile_completed && is_verified) || isVerifiedAdmin;
+
+  // Affiliates: can_access_products requires profile_completed == true
+  const can_access_products = safeRole !== 'affiliate' ? true : profile_completed;
+
   req.user = {
     id: userId || 'usr_anonymous',
     email: userEmail,
     role: safeRole,
-    isAdmin: isVerifiedAdmin
+    isAdmin: isVerifiedAdmin,
+    profile_completed,
+    is_verified,
+    can_upload_products,
+    can_access_products
   };
 
   next();
@@ -344,6 +369,8 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   const customUserId = (req.headers['x-user-id'] as string);
   const customUserEmail = (req.headers['x-user-email'] as string) || '';
   const customUserRole = (req.headers['x-user-role'] as string) || 'customer';
+  const profileCompletedHeader = req.headers['x-user-profile-completed'];
+  const isVerifiedHeader = req.headers['x-user-verified'];
 
   let token = '';
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -362,12 +389,27 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
       ? 'customer' 
       : (customUserRole || 'customer').toLowerCase();
 
+  const profile_completed = profileCompletedHeader !== undefined
+    ? (profileCompletedHeader === 'true' || profileCompletedHeader === '1')
+    : (safeRole === 'customer' || isVerifiedAdmin);
+
+  const is_verified = isVerifiedHeader !== undefined
+    ? (isVerifiedHeader === 'true' || isVerifiedHeader === '1')
+    : (safeRole === 'customer' || safeRole === 'verified_expert_approved' || isVerifiedAdmin);
+
+  const can_upload_products = (safeRole === 'seller' && profile_completed && is_verified) || isVerifiedAdmin;
+  const can_access_products = safeRole !== 'affiliate' ? true : profile_completed;
+
   if (userId || userEmail) {
     req.user = {
       id: userId || 'usr_anonymous',
       email: userEmail,
       role: safeRole,
-      isAdmin: isVerifiedAdmin
+      isAdmin: isVerifiedAdmin,
+      profile_completed,
+      is_verified,
+      can_upload_products,
+      can_access_products
     };
   }
 
@@ -404,6 +446,77 @@ export function requireRole(...allowedRoles: string[]) {
 
     next();
   };
+}
+
+/**
+ * Enforces verified Seller gatekeeping:
+ * - Checks that user has role 'seller' (or admin).
+ * - Checks profile_completed == true AND is_verified == true.
+ * - Blocks product upload (can_upload_products = false) if incomplete or unverified.
+ * - General Access Rule: strictly restrict product creation/upload rights to verified Sellers only.
+ */
+export function requireVerifiedSeller(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized',
+      message: 'Authentication required to create or upload products.'
+    });
+  }
+
+  const isSellerOrAdmin = req.user.role === 'seller' || req.user.isAdmin;
+  if (!isSellerOrAdmin) {
+    safeLogger.warn(`Product upload rejected: User ${req.user.id} has role ${req.user.role}, verified sellers only.`);
+    return res.status(403).json({
+      success: false,
+      error: 'Forbidden',
+      code: 'VERIFIED_SELLER_REQUIRED',
+      can_upload_products: false,
+      message: 'General Access Rule: Product creation and upload rights are strictly restricted to verified Sellers only.'
+    });
+  }
+
+  if (!req.user.isAdmin) {
+    if (!req.user.profile_completed || !req.user.is_verified) {
+      safeLogger.warn(`Product upload blocked: Seller ${req.user.id} incomplete/unverified (completed=${req.user.profile_completed}, verified=${req.user.is_verified})`);
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        code: 'SELLER_UNVERIFIED',
+        can_upload_products: false,
+        message: 'Unverified: Complete your profile and verification to upload products.'
+      });
+    }
+  }
+
+  next();
+}
+
+/**
+ * Enforces affiliate profile gatekeeping:
+ * - If user is an affiliate, requires profile_completed == true before allowing catalog/product access.
+ */
+export function requireCompletedAffiliate(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized',
+      message: 'Authentication required.'
+    });
+  }
+
+  if (req.user.role === 'affiliate' && !req.user.isAdmin && !req.user.profile_completed) {
+    safeLogger.warn(`Affiliate catalog access blocked: User ${req.user.id} profile incomplete.`);
+    return res.status(403).json({
+      success: false,
+      error: 'Forbidden',
+      code: 'AFFILIATE_INCOMPLETE_PROFILE',
+      can_access_products: false,
+      message: 'Incomplete Profile: Complete your profile to view products.'
+    });
+  }
+
+  next();
 }
 
 // ============================================================================

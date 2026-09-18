@@ -38,6 +38,10 @@ export interface UserProfileRecord {
   emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  profile_completed?: boolean;
+  is_verified?: boolean;
+  can_upload_products?: boolean;
+  can_access_products?: boolean;
   isAffiliate?: boolean;
   affiliateCode?: string;
   affiliateId?: string;
@@ -93,7 +97,7 @@ export function getDashboardPathForRole(role: UserRole | string): string {
     case 'verified_expert_approved':
     case 'verified_expert_rejected':
     case 'expert':
-      return '/dashboard/verified-expert';
+      return '/dashboard/expert';
     case 'admin':
     case 'super_admin':
     case 'management':

@@ -105,8 +105,25 @@ export interface StandardMarketplaceItem {
 }
 
 export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ currentCurrency, onNavigate }) => {
-  const { user, userProfile, logout, loading: authLoading } = useAuth();
+  const { 
+    user, 
+    userProfile, 
+    accessControl,
+    can_access_products, 
+    completeProfile, 
+    toggleProfileCompletedDemo, 
+    logout, 
+    loading: authLoading 
+  } = useAuth();
   
+  // Dynamic Profile Completion & Gatekeeping Check
+  const isAffiliateProfileCompleted = Boolean(
+    userProfile?.profile_completed ?? 
+    userProfile?.profileCompleted ?? 
+    accessControl.profile_completed
+  );
+  const canAccessProducts = Boolean(can_access_products && isAffiliateProfileCompleted);
+
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<'marketplace' | 'wallet' | 'links' | 'account'>('marketplace');
 
@@ -328,6 +345,17 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
         promotionalChannels,
         bankDetails
       );
+      
+      // Update access control state to complete profile
+      await completeProfile({
+        profile_completed: true,
+        is_verified: true,
+        promotionalChannels,
+        accountNumber,
+        bankName,
+        accountName
+      });
+
       setProfile(updatedProfile);
       setAccountSaveSuccess(true);
       setTimeout(() => setAccountSaveSuccess(false), 3000);
@@ -459,6 +487,11 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
   }, [allMarketplaceItems]);
 
   const generateAndCopyLink = async (item: StandardMarketplaceItem) => {
+    if (!canAccessProducts) {
+      alert('Incomplete Profile: Complete your profile to view products and generate promotional links.');
+      setActiveTab('account');
+      return;
+    }
     if (!profile) return;
     const cleanCode = (profile.affiliateCode || 'AFF').trim().toUpperCase();
     const linkId = `${cleanCode}_${item.contentType}_${item.id}`.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -551,7 +584,19 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
               <Share2 className="w-3.5 h-3.5" />
               <span>NEXOVIRA Official Affiliate Network</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Affiliate Dashboard</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Affiliate Dashboard</h1>
+              {isAffiliateProfileCompleted ? (
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Active Affiliate
+                </span>
+              ) : (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Incomplete Profile: Complete your profile to view products</span>
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Promote appliances, tech services, academy courses, and digital e-books. Track real-time clicks, conversions, and receive automated bank payouts.
             </p>
@@ -571,6 +616,46 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
           </button>
         )}
       </div>
+
+      {/* Prominent Gatekeeping Banner: Incomplete Affiliate Profile */}
+      {user && !isAffiliateProfileCompleted && (
+        <div className="p-5 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-slate-900 dark:text-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-sm sm:text-base text-amber-600 dark:text-amber-400">
+                  Incomplete Profile: Complete your profile to view products
+                </h3>
+                <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                  Catalog Blocked
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
+                Access to the product catalog and promotion link generation is restricted. Complete your profile (promotional channels and bank payout details) to unlock product browsing and links.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+            <button
+              onClick={() => setActiveTab('account')}
+              className="w-full md:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Complete Profile Now</span>
+            </button>
+            <button
+              onClick={() => toggleProfileCompletedDemo()}
+              className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-semibold border border-slate-700 transition-colors cursor-pointer"
+              title="Toggle profile completion for demo testing"
+            >
+              Toggle Demo Status
+            </button>
+          </div>
+        </div>
+      )}
 
       {authLoading || (loading && user) ? (
         <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-xl max-w-lg mx-auto">
@@ -692,14 +777,23 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => {
+                  if (!canAccessProducts) {
+                    alert('Incomplete Profile: Complete your profile to view products and share referral links.');
+                    setActiveTab('account');
+                    return;
+                  }
                   navigator.clipboard.writeText(mainReferralLink);
                   setCopiedId('master-link');
                   setTimeout(() => setCopiedId(null), 2000);
                 }}
-                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-1.5"
+                className={`px-3.5 py-2 font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  canAccessProducts 
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white' 
+                    : 'bg-slate-800 text-amber-400 border border-amber-500/40'
+                }`}
               >
-                {copiedId === 'master-link' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedId === 'master-link' ? 'Copied Master Link!' : 'Copy Master Link'}</span>
+                {!canAccessProducts ? <Lock className="w-4 h-4" /> : copiedId === 'master-link' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{!canAccessProducts ? 'Unlock Master Link' : copiedId === 'master-link' ? 'Copied Master Link!' : 'Copy Master Link'}</span>
               </button>
 
               <button
@@ -771,7 +865,37 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
 
           {/* TAB 1: AFFILIATE MARKETPLACE */}
           {activeTab === 'marketplace' && (
-            <div className="space-y-6">
+            !canAccessProducts ? (
+              <div className="p-8 text-center space-y-5 bg-white dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-3xl shadow-sm max-w-2xl mx-auto my-6">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                    Incomplete Profile: Complete your profile to view products
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Access to the product catalog and promotion link generation is currently restricted. Please complete your affiliate profile (traffic channels & payout account) to unlock the full product catalog.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => setActiveTab('account')}
+                    className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Complete Profile in Account Settings</span>
+                  </button>
+                  <button
+                    onClick={() => toggleProfileCompletedDemo()}
+                    className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  >
+                    Toggle Demo Status
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
               
               {/* Content Type Selector Pills */}
               <div className="flex flex-wrap items-center gap-2">
@@ -1099,7 +1223,7 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
               )}
 
             </div>
-          )}
+          ))}
 
           {/* TAB 2: WALLET & COMMISSIONS */}
           {activeTab === 'wallet' && (
@@ -1308,7 +1432,37 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
 
           {/* TAB 3: MY TRACKED LINKS */}
           {activeTab === 'links' && (
-            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+            !canAccessProducts ? (
+              <div className="p-8 text-center space-y-5 bg-white dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-3xl shadow-sm max-w-2xl mx-auto my-6">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                    Promotion Link Generation Locked
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Incomplete Profile: Complete your profile to view products and generate trackable affiliate links.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => setActiveTab('account')}
+                    className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Complete Profile in Account Settings</span>
+                  </button>
+                  <button
+                    onClick={() => toggleProfileCompletedDemo()}
+                    className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  >
+                    Toggle Demo Status
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">Generated Affiliate Links Performance</h3>
@@ -1397,7 +1551,7 @@ export const AffiliatePortalView: React.FC<AffiliatePortalViewProps> = ({ curren
                 </div>
               )}
             </div>
-          )}
+          ))}
 
           {/* TAB 4: BANK ACCOUNT & PROFILE */}
           {activeTab === 'account' && (

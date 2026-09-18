@@ -94,7 +94,30 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
   sellerName: propSellerName,
   onNavigate
 }) => {
-  const { logout } = useAuth();
+  const { 
+    userProfile, 
+    accessControl, 
+    can_upload_products, 
+    completeProfile, 
+    toggleVerificationDemo, 
+    toggleProfileCompletedDemo, 
+    logout 
+  } = useAuth();
+  
+  const isProfileCompleted = Boolean(userProfile?.profile_completed ?? userProfile?.profileCompleted);
+  const isVerified = Boolean(userProfile?.is_verified ?? userProfile?.isVerified);
+  const isVerifiedSeller = isProfileCompleted && isVerified;
+  const canUpload = Boolean(can_upload_products && isVerifiedSeller);
+
+  // Complete Profile Modal & Form State
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  const [profileStoreName, setProfileStoreName] = useState(userProfile?.storeName || '');
+  const [profileCategory, setProfileCategory] = useState(userProfile?.businessCategory || 'Electronics & Gadgets');
+  const [profilePhone, setProfilePhone] = useState(userProfile?.phone || '');
+  const [profileNinOrCac, setProfileNinOrCac] = useState(userProfile?.ninOrCac || '');
+  const [profileDescription, setProfileDescription] = useState(userProfile?.storeDescription || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   const currentStore: Store = STORES[0]; // NexaTech Global Store fallback
   const resolvedSellerId = propSellerId || auth.currentUser?.uid || currentStore.id;
   const resolvedSellerName = propSellerName || auth.currentUser?.displayName || currentStore.name;
@@ -366,6 +389,13 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const handleSaveSellerProductData = async (productData: Partial<Product>) => {
+    // 0. Enforce verified seller gatekeeping
+    if (!canUpload) {
+      alert('Unverified: Complete your profile. Product creation and uploading is blocked until your profile is completed and verified.');
+      setShowCompleteProfileModal(true);
+      return;
+    }
+
     // 1. Inspect threat patterns on incoming product data
     const fieldsToAudit = [
       { key: 'Title', val: productData.title },
@@ -461,9 +491,16 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h1 className="text-2xl sm:text-3xl font-black">Seller Dashboard</h1>
-                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> Verified Merchant
-                  </span>
+                  {isVerifiedSeller ? (
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Verified Merchant
+                    </span>
+                  ) : (
+                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Unverified: Complete your profile</span>
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm font-bold text-slate-200">{currentStore.name}</div>
                 <p className="text-xs text-slate-300">{currentStore.description}</p>
@@ -501,7 +538,45 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Notifications Drawer Banner */}
+      {/* Prominent Access Control Banner: Unverified Seller */}
+      {!isVerifiedSeller && (
+        <div className="p-5 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-slate-900 dark:text-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-sm sm:text-base text-amber-600 dark:text-amber-400">
+                  Unverified: Complete your profile
+                </h3>
+                <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                  Uploads Blocked
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
+                Status: {isProfileCompleted ? 'Profile completed' : 'Profile incomplete'} | Verification: {isVerified ? 'Verified' : 'Pending verification'}. Product creation, uploads, and AI descriptions are locked until your merchant profile is complete and verified.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+            <button
+              onClick={() => setShowCompleteProfileModal(true)}
+              className="w-full md:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Complete Profile Now</span>
+            </button>
+            <button
+              onClick={() => toggleVerificationDemo()}
+              className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-semibold border border-slate-700 transition-colors cursor-pointer"
+              title="Toggle verification flag for testing"
+            >
+              Toggle Demo Status
+            </button>
+          </div>
+        </div>
+      )}
       {notifications.length > 0 && (
         <div className="p-4 bg-slate-900 border border-cyan-500/30 rounded-2xl space-y-2">
           <div className="flex items-center justify-between">
@@ -1069,13 +1144,21 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
             </div>
             <button
               onClick={() => {
+                if (!canUpload) {
+                  setShowCompleteProfileModal(true);
+                  return;
+                }
                 setEditingProduct(null);
                 setActiveTab('ai-generator');
               }}
-              className="px-4 py-2.5 bg-cyan-500 text-slate-950 font-bold text-xs rounded-xl shadow-md hover:bg-cyan-400 transition-colors flex items-center gap-2"
+              className={`px-4 py-2.5 font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-2 ${
+                canUpload 
+                  ? 'bg-cyan-500 text-slate-950 hover:bg-cyan-400 cursor-pointer' 
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500 cursor-pointer border border-amber-500/40'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span>Add New Product / E-Book</span>
+              {!canUpload ? <Lock className="w-4 h-4 text-amber-500" /> : <Plus className="w-4 h-4" />}
+              <span>{!canUpload ? 'Add Product (Unverified)' : 'Add New Product / E-Book'}</span>
             </button>
           </div>
 
@@ -1233,14 +1316,45 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
             </p>
           </div>
 
-          <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-md">
-            <EbookProductUploadForm
-              sellerId={currentStore.id}
-              sellerName={currentStore.name}
-              onSave={handleSaveSellerProductData}
-              onCancel={() => setActiveTab('products')}
-            />
-          </div>
+          {!canUpload ? (
+            <div className="p-8 text-center space-y-5 bg-white dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-3xl shadow-sm max-w-2xl mx-auto my-6">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                  Unverified: Complete your profile
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Product upload and AI listing generation are restricted for unverified seller accounts. Please complete your merchant profile and verification to unlock listing privileges.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setShowCompleteProfileModal(true)}
+                  className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Complete Merchant Profile</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('products')}
+                  className="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  Return to Inventory
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-md">
+              <EbookProductUploadForm
+                sellerId={currentStore.id}
+                sellerName={currentStore.name}
+                onSave={handleSaveSellerProductData}
+                onCancel={() => setActiveTab('products')}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -1424,6 +1538,135 @@ const SellerDashboardContent: React.FC<SellerDashboardViewProps> = ({
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: COMPLETE SELLER PROFILE */}
+      {showCompleteProfileModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowCompleteProfileModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-slate-800 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-2 text-left">
+              <div className="flex items-center gap-2 text-amber-400 text-xs font-black uppercase">
+                <ShieldCheck className="w-4 h-4" />
+                <span>MERCHANT VERIFICATION GATEWAY</span>
+              </div>
+              <h3 className="text-2xl font-black">Complete Seller Profile</h3>
+              <p className="text-xs text-slate-400">
+                Provide your merchant business details to verify your store and immediately unlock product creation and upload permissions.
+              </p>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSavingProfile(true);
+                try {
+                  await completeProfile({
+                    storeName: profileStoreName || currentStore.name,
+                    businessCategory: profileCategory,
+                    phone: profilePhone,
+                    ninOrCac: profileNinOrCac,
+                    storeDescription: profileDescription,
+                    is_verified: true
+                  });
+                  setShowCompleteProfileModal(false);
+                } catch (err: any) {
+                  alert(err?.message || 'Failed to complete profile');
+                } finally {
+                  setIsSavingProfile(false);
+                }
+              }}
+              className="space-y-4 text-left"
+            >
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300">Store / Business Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. NexaTech Global Hub"
+                  value={profileStoreName}
+                  onChange={(e) => setProfileStoreName(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300">Business Category</label>
+                  <select
+                    value={profileCategory}
+                    onChange={(e) => setProfileCategory(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="Electronics & Gadgets">Electronics & Gadgets</option>
+                    <option value="Home Appliances">Home Appliances</option>
+                    <option value="Smart Home & Automation">Smart Home & Automation</option>
+                    <option value="Digital Products & E-Books">Digital Products & E-Books</option>
+                    <option value="Solar & Renewable Energy">Solar & Renewable Energy</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300">Contact Phone Number</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 08012345678"
+                    value={profilePhone}
+                    onChange={(e) => setProfilePhone(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300">CAC / NIN Identification Number</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. RC-12345678 or 12345678901"
+                  value={profileNinOrCac}
+                  onChange={(e) => setProfileNinOrCac(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300">Business Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Briefly describe what your store sells..."
+                  value={profileDescription}
+                  onChange={(e) => setProfileDescription(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCompleteProfileModal(false)}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingProfile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  <span>{isSavingProfile ? 'Verifying Profile...' : 'Save & Verify Profile'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

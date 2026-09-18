@@ -45,7 +45,7 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
     } else if (role === 'affiliate') {
       onNavigate('/dashboard/affiliate');
     } else if (role === 'verified_expert_pending' || role === 'verified_expert_approved' || role === 'verified_expert_rejected' || role === 'expert') {
-      onNavigate('/dashboard/verified-expert');
+      onNavigate('/dashboard/expert');
     } else {
       onNavigate('/dashboard/customer');
     }

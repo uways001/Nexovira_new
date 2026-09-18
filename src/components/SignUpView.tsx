@@ -178,7 +178,7 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
         selectedRole === 'customer' ? '/dashboard/customer' :
         selectedRole === 'seller' ? '/dashboard/seller' :
         selectedRole === 'affiliate' ? '/dashboard/affiliate' :
-        '/dashboard/verified-expert';
+        '/dashboard/expert';
 
       await signUpWithEmail(
         sanitizedEmailResult.sanitizedEmail,

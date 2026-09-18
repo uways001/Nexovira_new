@@ -22,7 +22,8 @@ import {
   MicOff,
   Layers,
   Compass,
-  Briefcase
+  Briefcase,
+  ChevronRight
 } from 'lucide-react';
 import { NexoviraLogo } from './NexoviraLogo';
 import { CATEGORIES } from '../data/mockData';
@@ -278,6 +279,17 @@ export const Header: React.FC<HeaderProps> = ({
               showFullLabel={false}
             />
           </div>
+
+          {/* AI Concierge Modal Trigger */}
+          <button
+            type="button"
+            onClick={() => onOpenAI()}
+            className="p-2 sm:px-2.5 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-colors flex items-center gap-1.5 border border-cyan-500/30 font-bold text-xs min-h-[40px] cursor-pointer"
+            title="Nexovira Website Assistant (AI Concierge)"
+          >
+            <Sparkles className="w-4 h-4 text-cyan-500 dark:text-cyan-400 animate-pulse" />
+            <span className="hidden md:inline">AI Concierge</span>
+          </button>
 
           {/* Theme Toggle */}
           <button
@@ -584,6 +596,24 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="p-3 bg-slate-50 dark:bg-[#0D2B45] rounded-2xl border border-[#E2E8F0] dark:border-slate-700/80 text-center">
             <NexoviraLogo size={32} showText={true} showTagline={true} taglineClassName="text-[10px] font-medium text-[#1769FF] dark:text-[#00A6A6] mt-0.5" />
           </div>
+
+          {/* AI Concierge Mobile Quick Bar */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onOpenAI();
+            }}
+            className="w-full p-3 bg-gradient-to-r from-blue-600/15 to-cyan-500/15 border border-cyan-500/40 rounded-2xl flex items-center justify-between text-left cursor-pointer hover:bg-cyan-500/20 transition-all"
+          >
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-cyan-500 dark:text-cyan-400 animate-pulse shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">Nexovira AI Concierge</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">Official Assistant for Tech Services, Academy, Marketplace</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-cyan-400 shrink-0" />
+          </button>
 
           <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
             <div className="col-span-2 p-3 bg-gradient-to-r from-blue-950/20 to-slate-900/10 dark:from-[#081A2B] dark:to-[#0D2B45] rounded-xl border border-[#1769FF]/30 space-y-2">

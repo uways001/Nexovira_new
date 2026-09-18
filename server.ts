@@ -33,6 +33,8 @@ import {
   authenticateToken,
   optionalAuth,
   requireRole,
+  requireVerifiedSeller,
+  requireCompletedAffiliate,
   isValidEmail,
   isPositiveNumber,
   sanitizeString,
@@ -831,6 +833,111 @@ app.post('/api/v1/auth/verify-role', async (req, res) => {
   }
 });
 
+// C1. Evaluates authoritative access control & role permissions
+app.get('/api/v1/auth/access-control', optionalAuth, (req, res) => {
+  const user = req.user;
+  if (!user) {
+    return res.json({
+      success: true,
+      authenticated: false,
+      role: 'customer',
+      profile_completed: false,
+      is_verified: false,
+      can_upload_products: false,
+      can_access_products: true,
+      statusBadgeText: 'Guest Account',
+      designationRoute: '/dashboard/customer'
+    });
+  }
+
+  const designationRoute = getDashboardPathForRole(user.role);
+  let statusBadgeText = 'Active Account';
+  if (user.role === 'seller') {
+    statusBadgeText = (user.profile_completed && user.is_verified) 
+      ? 'Verified Merchant' 
+      : 'Unverified: Complete your profile';
+  } else if (user.role === 'affiliate') {
+    statusBadgeText = user.profile_completed 
+      ? 'Active Affiliate Partner' 
+      : 'Incomplete Profile: Complete your profile to view products';
+  }
+
+  res.json({
+    success: true,
+    authenticated: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      profile_completed: user.profile_completed,
+      is_verified: user.is_verified,
+      can_upload_products: user.can_upload_products,
+      can_access_products: user.can_access_products,
+      designationRoute,
+      statusBadgeText
+    }
+  });
+});
+
+// C2. Complete Profile & Unlock Restricted Capabilities
+app.post('/api/v1/auth/complete-profile', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user!;
+    const updates = req.body || {};
+    const firestore = getAdminFirestore();
+    
+    const profileUpdate: Record<string, any> = {
+      profile_completed: true,
+      profileCompleted: true,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (updates.displayName) profileUpdate.displayName = updates.displayName;
+    if (updates.phone) profileUpdate.phone = updates.phone;
+    if (updates.storeName) profileUpdate.storeName = updates.storeName;
+    if (updates.businessCategory) profileUpdate.businessCategory = updates.businessCategory;
+    if (updates.storeDescription) profileUpdate.storeDescription = updates.storeDescription;
+    if (updates.registrationNumber) profileUpdate.registrationNumber = updates.registrationNumber;
+    if (updates.ninOrCac) profileUpdate.ninOrCac = updates.ninOrCac;
+    if (updates.bankDetails) profileUpdate.bankDetails = updates.bankDetails;
+    if (updates.promotionalChannels) profileUpdate.promotionalChannels = updates.promotionalChannels;
+
+    if (user.role === 'seller') {
+      profileUpdate.is_verified = true;
+      profileUpdate.isVerified = true;
+      profileUpdate.can_upload_products = true;
+    }
+
+    try {
+      await firestore.collection('users').doc(user.id).set(profileUpdate, { merge: true });
+      if (user.role === 'affiliate') {
+        await firestore.collection('affiliates').doc(user.id).set({
+          profile_completed: true,
+          profileCompleted: true,
+          phone: updates.phone || '',
+          bankDetails: updates.bankDetails || null,
+          promotionalChannels: updates.promotionalChannels || '',
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Complete Profile Firestore notice]: ${dbErr?.message}`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile completed successfully. Capabilities unlocked.',
+      profile_completed: true,
+      is_verified: user.role === 'seller' ? true : user.is_verified,
+      can_upload_products: user.role === 'seller' ? true : false,
+      can_access_products: true
+    });
+  } catch (err: any) {
+    safeLogger.error('[Complete Profile Error]:', err);
+    res.status(500).json({ success: false, error: 'Server Error', message: 'Failed to update profile completion status.' });
+  }
+});
+
 // D. Administrator Role & Status Management (Approve/Reject Verified Experts, Change Roles)
 app.post('/api/v1/admin/users/:uid/role', authenticateToken, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
@@ -931,9 +1038,16 @@ app.get('/api/v1/admin/products', authenticateToken, requireRole('admin', 'selle
 });
 
 // 3a. GET /api/v1/admin/products/:id & edit - Retrieve product with metadata (Protected)
-app.get(['/api/v1/admin/products/:id/edit', '/api/v1/admin/products/:id'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+app.get(['/api/v1/admin/products/:id/edit', '/api/v1/admin/products/:id', '/api/products/:id'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
   const productId = req.params.id;
-  const product = inMemoryProducts.find(p => p.id === productId);
+  let product = inMemoryProducts.find(p => p.id === productId);
+  if (!product) {
+    const fromMock = PRODUCTS.find(p => p.id === productId);
+    if (fromMock) {
+      product = { ...fromMock };
+      inMemoryProducts.push(product);
+    }
+  }
 
   if (!product) {
     return res.status(404).json({
@@ -968,20 +1082,38 @@ app.get(['/api/v1/admin/products/:id/edit', '/api/v1/admin/products/:id'], authe
 });
 
 // 3b. PUT /api/v1/admin/products/:id - Strictly isolated endpoint to UPDATE/MODIFY an existing product (Protected)
-app.put('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+app.put(['/api/v1/admin/products/:id', '/api/v1/products/:id', '/api/products/:id'], authenticateToken, requireRole('admin', 'seller'), async (req, res) => {
   const productId = req.params.id;
-  const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+  let existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+  let existingProduct = existingProductIndex >= 0 ? inMemoryProducts[existingProductIndex] : null;
 
-  if (existingProductIndex < 0) {
-    return res.status(404).json({
-      success: false,
-      error: 'Not Found',
-      message: `Cannot update: Product with ID "${productId}" does not exist. Use POST /api/v1/admin/products to create new inventory.`
-    });
+  if (!existingProduct) {
+    const fromMock = PRODUCTS.find(p => p.id === productId);
+    if (fromMock) {
+      existingProduct = { ...fromMock };
+      inMemoryProducts.push(existingProduct);
+      existingProductIndex = inMemoryProducts.length - 1;
+    }
   }
 
   const user = req.user!;
-  const existingProduct = inMemoryProducts[existingProductIndex];
+  const updatePayload = req.body.product || req.body || {};
+
+  if (!existingProduct) {
+    // If not previously cached in server memory, upsert using payload
+    existingProduct = {
+      id: productId,
+      title: updatePayload.title || 'NEXOVIRA Appliance',
+      sellerId: user.isAdmin ? (updatePayload.sellerId || updatePayload.seller_id || 'nexovira-official') : user.id,
+      seller_id: user.isAdmin ? (updatePayload.seller_id || updatePayload.sellerId || 'nexovira-official') : user.id,
+      price: Number(updatePayload.price || 100),
+      currency: updatePayload.currency || 'USD',
+      createdAt: new Date().toISOString()
+    } as any;
+    inMemoryProducts.unshift(existingProduct);
+    existingProductIndex = 0;
+  }
+
   const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
 
   if (!user.isAdmin && user.id !== existingSellerId) {
@@ -992,7 +1124,6 @@ app.put('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 's
     });
   }
 
-  const updatePayload = req.body.product || req.body;
   if (updatePayload.price !== undefined && !isPositiveNumber(updatePayload.price)) {
     return res.status(400).json({
       success: false,
@@ -1005,11 +1136,20 @@ app.put('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 's
     ...existingProduct,
     ...updatePayload,
     id: productId, // Immutable ID
-    createdAt: existingProduct.createdAt, // Preserve original creation date
+    createdAt: existingProduct.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
   inMemoryProducts[existingProductIndex] = updatedProduct;
+
+  // Authoritative server sync to Firestore (bypasses client permission issues)
+  try {
+    const firestore = getAdminFirestore();
+    await firestore.collection('products').doc(productId).set(updatedProduct, { merge: true });
+    safeLogger.info(`[Product Updated via Admin API]: ${productId}`);
+  } catch (dbErr: any) {
+    safeLogger.warn(`[Firestore Product Update Notice]: ${dbErr?.message}`);
+  }
 
   return res.json({
     success: true,
@@ -1020,11 +1160,21 @@ app.put('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 's
 });
 
 // 3c. PATCH /api/v1/admin/products/:id - Partial updates to existing product (Protected)
-app.patch('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+app.patch(['/api/v1/admin/products/:id', '/api/v1/products/:id', '/api/products/:id'], authenticateToken, requireRole('admin', 'seller'), async (req, res) => {
   const productId = req.params.id;
-  const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+  let existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
+  let existingProduct = existingProductIndex >= 0 ? inMemoryProducts[existingProductIndex] : null;
 
-  if (existingProductIndex < 0) {
+  if (!existingProduct) {
+    const fromMock = PRODUCTS.find(p => p.id === productId);
+    if (fromMock) {
+      existingProduct = { ...fromMock };
+      inMemoryProducts.push(existingProduct);
+      existingProductIndex = inMemoryProducts.length - 1;
+    }
+  }
+
+  if (!existingProduct) {
     return res.status(404).json({
       success: false,
       error: 'Not Found',
@@ -1033,7 +1183,6 @@ app.patch('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 
   }
 
   const user = req.user!;
-  const existingProduct = inMemoryProducts[existingProductIndex];
   const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
 
   if (!user.isAdmin && user.id !== existingSellerId) {
@@ -1049,11 +1198,19 @@ app.patch('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 
     ...existingProduct,
     ...updatePayload,
     id: productId,
-    createdAt: existingProduct.createdAt,
+    createdAt: existingProduct.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
   inMemoryProducts[existingProductIndex] = updatedProduct;
+
+  try {
+    const firestore = getAdminFirestore();
+    await firestore.collection('products').doc(productId).set(updatedProduct, { merge: true });
+    safeLogger.info(`[Product Patched via Admin API]: ${productId}`);
+  } catch (dbErr: any) {
+    safeLogger.warn(`[Firestore Product Patch Notice]: ${dbErr?.message}`);
+  }
 
   return res.json({
     success: true,
@@ -1063,8 +1220,8 @@ app.patch('/api/v1/admin/products/:id', authenticateToken, requireRole('admin', 
   });
 });
 
-// 3d. POST /api/v1/admin/products & /api/v1/products - Create a new product (Protected)
-app.post(['/api/v1/admin/products', '/api/v1/products'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+// 3d. POST /api/v1/admin/products & /api/v1/products - Create a new product (Protected: Verified Sellers Only)
+app.post(['/api/v1/admin/products', '/api/v1/products'], authenticateToken, requireVerifiedSeller, async (req, res) => {
   const user = req.user!;
   const productData = req.body.product || req.body || {};
 
@@ -1085,19 +1242,11 @@ app.post(['/api/v1/admin/products', '/api/v1/products'], authenticateToken, requ
   }
 
   const candidateId = productData.id;
-  if (candidateId) {
-    const exists = inMemoryProducts.some(p => p.id === candidateId);
-    if (exists) {
-      return res.status(409).json({
-        success: false,
-        error: 'Conflict',
-        message: `A product with ID "${candidateId}" already exists. You must use PUT /api/v1/admin/products/${candidateId} to modify existing inventory.`
-      });
-    }
-  }
-
+  const existingIndex = candidateId ? inMemoryProducts.findIndex(p => p.id === candidateId) : -1;
   const assignedSellerId = user.isAdmin ? (productData.sellerId || productData.seller_id || user.id) : user.id;
   const newId = candidateId || `prod-admin-${Date.now()}`;
+  const nowIso = new Date().toISOString();
+
   const newProduct = {
     ...productData,
     id: newId,
@@ -1107,11 +1256,23 @@ app.post(['/api/v1/admin/products', '/api/v1/products'], authenticateToken, requ
     sellerVerified: true,
     price: Number(productData.price),
     currency: productData.currency || 'USD',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: productData.createdAt || nowIso,
+    updatedAt: nowIso
   };
 
-  inMemoryProducts.unshift(newProduct);
+  if (existingIndex >= 0) {
+    inMemoryProducts[existingIndex] = newProduct;
+  } else {
+    inMemoryProducts.unshift(newProduct);
+  }
+
+  try {
+    const firestore = getAdminFirestore();
+    await firestore.collection('products').doc(newId).set(newProduct, { merge: true });
+    safeLogger.info(`[Product Created via Admin API]: ${newId}`);
+  } catch (dbErr: any) {
+    safeLogger.warn(`[Firestore Product Create Notice]: ${dbErr?.message}`);
+  }
 
   return res.status(201).json({
     success: true,
@@ -1122,32 +1283,54 @@ app.post(['/api/v1/admin/products', '/api/v1/products'], authenticateToken, requ
 });
 
 // 3e. DELETE /api/v1/admin/products/:id & /api/v1/products/:id - Delete product (Protected)
-app.delete(['/api/v1/admin/products/:id', '/api/v1/products/:id'], authenticateToken, requireRole('admin', 'seller'), (req, res) => {
+app.delete(['/api/v1/admin/products/:id', '/api/v1/products/:id'], authenticateToken, requireRole('admin', 'seller'), async (req, res) => {
   const productId = req.params.id;
   const user = req.user!;
 
   const existingProductIndex = inMemoryProducts.findIndex(p => p.id === productId);
-  if (existingProductIndex < 0) {
-    return res.status(404).json({ 
-      success: false, 
-      error: 'Not Found', 
-      message: `Product with ID "${productId}" not found.` 
-    });
+  if (existingProductIndex >= 0) {
+    const existingProduct = inMemoryProducts[existingProductIndex];
+    const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
+
+    if (!user.isAdmin && user.id !== existingSellerId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: `Row-Level Security violation: user id "${user.id}" does not match product seller id "${existingSellerId}". Deletion rejected.`
+      });
+    }
+
+    inMemoryProducts.splice(existingProductIndex, 1);
   }
 
-  const existingProduct = inMemoryProducts[existingProductIndex];
-  const existingSellerId = (existingProduct as any).seller_id || existingProduct.sellerId;
-
-  if (!user.isAdmin && user.id !== existingSellerId) {
-    return res.status(403).json({
-      success: false,
-      error: 'Forbidden',
-      message: `Row-Level Security violation: user id "${user.id}" does not match product seller id "${existingSellerId}". Deletion rejected.`
-    });
+  try {
+    const firestore = getAdminFirestore();
+    await firestore.collection('products').doc(productId).delete();
+    safeLogger.info(`[Product Deleted via Admin API]: ${productId}`);
+  } catch (dbErr: any) {
+    safeLogger.warn(`[Firestore Product Delete Notice]: ${dbErr?.message}`);
   }
 
-  inMemoryProducts.splice(existingProductIndex, 1);
   return res.json({ success: true, message: `Product ${productId} deleted successfully` });
+});
+
+// 3e-2. POST /api/v1/admin/products/clear-all - Clear all products
+app.post(['/api/v1/admin/products/clear-all', '/api/v1/products/clear-all'], authenticateToken, requireRole('admin'), async (req, res) => {
+  inMemoryProducts = [];
+  try {
+    const adminDb = getAdminFirestore();
+    const productsSnapshot = await adminDb.collection('products').get();
+    if (!productsSnapshot.empty) {
+      const batch = adminDb.batch();
+      productsSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    }
+  } catch (err: any) {
+    safeLogger.warn(`[Firestore Clear All Products Notice]: ${err?.message}`);
+  }
+  return res.json({ success: true, message: 'All products cleared from catalog.' });
 });
 
 // ============================================================================
@@ -1393,11 +1576,11 @@ app.post('/api/v1/orders', orderRateLimiter, async (req, res) => {
   }
 });
 
-// 4. Intelligent NEXOVIRA AI Ecosystem Chatbot Endpoint (Customer Advisory Grounded strictly in available products)
+// 4. Intelligent NEXOVIRA Website Assistant (Official AI Concierge for https://nexovira.com.ng)
 app.post('/api/v1/ai/chat', aiRateLimiter, async (req, res) => {
   try {
     const rawPrompt = req.body.prompt || req.body.message;
-    const { availableProducts: clientProducts, currency = 'NGN' } = req.body || {};
+    const { availableProducts: clientProducts, currency = 'NGN', history = [] } = req.body || {};
     if (!rawPrompt || typeof rawPrompt !== 'string' || !rawPrompt.trim()) {
       return res.status(400).json({ 
         success: false,
@@ -1406,96 +1589,296 @@ app.post('/api/v1/ai/chat', aiRateLimiter, async (req, res) => {
       });
     }
     const prompt = rawPrompt.trim();
+    const promptLower = prompt.toLowerCase();
 
     // STRICT INVENTORY POLICY: Filter strictly to products that have stock > 0
     const sourceProducts = Array.isArray(clientProducts) && clientProducts.length > 0 ? clientProducts : PRODUCTS;
     const availableInStockProducts = sourceProducts.filter((p: any) => (p.stock ?? 0) > 0);
 
     const ai = getAIClient();
-    const systemPrompt = `You are NEXOVIRA AI, the official shopping, appliance, and tech advisor for NEXOVIRA in Nigeria.
-Your job is to advise customers intelligently, practically, and accurately based on what they ask.
+    const systemPrompt = `SYSTEM ROLE & PURPOSE:
+You are the Nexovira Website Assistant, the official AI concierge for the Nexovira platform (https://nexovira.com.ng). Your primary purpose is to assist website visitors, students, clients, vendors, and affiliates in navigating and utilizing the features, portals, and services within the Nexovira ecosystem.
+You focus exclusively on Nexovira's products, services, site features, and user guidance.
 
-CRITICAL INVENTORY & ADVISORY DIRECTIVES (MANDATORY):
-1. STRICTLY ONLY DISCUSS AVAILABLE PRODUCTS: You may ONLY discuss, advise on, or recommend products that are currently in stock and present in the AVAILABLE PRODUCTS list below.
-2. STRICTLY PROHIBIT UNAVAILABLE / HYPOTHETICAL PRODUCTS: Never invent, name, or discuss products, models, or brands that are not listed in the AVAILABLE PRODUCTS list below.
-3. HANDLING OUT-OF-STOCK OR MISSING ITEMS: If a customer asks about a product, category, or model that is NOT in the available products list, clearly explain:
-   "We do not currently have that specific item in stock at NEXOVIRA. However, here are the verified appliances and products currently available in our inventory that can serve your needs:"
-   Then recommend only the available in-stock products that best fit their purpose.
-4. ALL PRICES MUST BE IN NIGERIAN NAIRA (₦ NGN): Calculate and state prices exclusively in ₦ NGN. (Base conversion is ₦1,600 per $1 USD if base USD price is listed).
-5. PRACTICAL ADVICE: Provide thoughtful, actionable advice tailored to their question:
-   - For air conditioners: calculate room area (sqm) to HP (1.0 HP for ~15m², 1.5 HP for ~25m², 2.0 HP for ~35m²), power consumption, dual inverter energy savings.
-   - For refrigerators: capacity in liters, inverter compressors, voltage stabilization during power cuts.
-   - For solar/power: load capacity in watts, battery specs, surge protection.
-   - For electronics: screen size, refresh rate, verified warranty in Nigeria.
+1. NEXOVIRA ECOSYSTEM & FEATURE MAP
+You must be deeply knowledgeable about the five core pillars of the Nexovira platform and guide users to their respective features on the website:
+1. Nexovira Tech Services
+   Overview: Enterprise & SME solutions including custom website development, AI integration, app creation, platform redesigns, and workflow automation.
+   Website Features:
+   - Project quote request form and booking consultation feature (click "Tech Services" in top nav -> "Request a Quote" or "Book Consultation").
+   - Portfolio/case study showcase.
+   - Service tier breakdown and custom tech scope submission.
+2. Nexovira Academy
+   Overview: AI-driven learning portal with personalized learning paths, interactive courses, and skill certifications.
+   Website Features:
+   - Course catalog search and category filtering (click "Academy" in top nav).
+   - Student enrollment and learning dashboard navigation.
+   - Interactive learning assistant & certification track guidance.
+3. Nexovira Marketplace
+   Overview: A digital hub where creators, developers, and sellers list and purchase digital assets, software, templates, and tools, alongside verified home and office appliances.
+   Website Features:
+   - Product browsing, search, and vendor verification tags (click "Marketplace" in top nav).
+   - Creator onboarding and product listing guidelines.
+   - Instant digital checkout and instant asset download delivery.
+4. Nexovira Affiliate Program
+   Overview: An automated referral system allowing registered users to earn commissions by promoting Nexovira products and services.
+   Website Features:
+   - Referral link generator and affiliate portal access (click "Affiliate & Earn" in top nav).
+   - Real-time commission dashboard and analytics.
+   - Marketing materials, banners, and payout configuration.
+5. Nexovira Digital Library
+   Overview: Centralized resource repository featuring curated e-books, research whitepapers, business templates, and digital guides.
+   Website Features:
+   - Document search and downloadable resource portal (click "Digital Library" in top nav).
+   - Premium vs. free access tier indicators.
 
-AVAILABLE IN-STOCK PRODUCTS LIST:
-${JSON.stringify(availableInStockProducts.map((p: any) => ({
+2. USER INTERACTION & SITE NAVIGATION RULES
+When a visitor interacts with you on the website:
+- Identify User Intent: Determine which portal or service the user is inquiring about (Tech Services, Academy, Marketplace, Affiliate, or Library).
+- Guide to Direct Action: Provide step-by-step instructions on how to access that feature on the site (e.g., "To request a quote for website development, click on 'Tech Services' in the main navigation menu and select 'Request a Quote'").
+- Internal Lead Support: Collect basic inquiry details if a user wants to order a service, hire developers, or contact support:
+  * Full Name
+  * Email Address
+  * Specific Service or Portal Interest
+  * Brief message or project requirement
+- Clarification Protocol: If a request is vague, ask one short direct question:
+  "Which Nexovira service or feature can I help you explore today?"
+
+3. OFFICIAL CONTACT & SUPPORT INFORMATION
+Provide official contact channels when visitors request human support:
+- Official Website: https://nexovira.com.ng
+- Official Support Email: nexovirasupport@gmail.com
+- Platform Inquiries: Contact Form on https://nexovira.com.ng/contact
+
+4. BRAND VOICE & GUARDRAILS
+- Tone: Professional, welcoming, innovative, and encouraging.
+- Focus Area: Keep all answers strictly centered on Nexovira's platform capabilities, products, digital content, and technology services.
+- Out-of-Scope Requests: If asked about external third-party search listings, local business directories, or unrelated personal questions, politely redirect the user back to how Nexovira can assist them:
+  "I am specialized in helping you navigate the Nexovira platform and services. How can I assist you with our Tech Services, Academy, Marketplace, Affiliate Program, or Digital Library today?"
+- Integrity: Never guarantee instant approval or custom prices without directing the user to the official booking/quote forms on the site.
+
+AVAILABLE IN-STOCK MARKETPLACE PRODUCTS:
+${JSON.stringify(availableInStockProducts.slice(0, 10).map((p: any) => ({
   id: p.id,
   title: p.title,
   brand: p.brand,
   category: p.categoryId,
   priceNGN: `₦${((p.price || 0) * 1600).toLocaleString('en-NG')}`,
-  stock: p.stock,
-  specifications: p.specifications,
-  keyFeatures: p.keyFeatures,
-  warranty: p.warranty
-})))}
-
-Provide direct, polite, highly competent advice to the customer's query.`;
+  stock: p.stock
+})))}`;
 
     let response;
     try {
       response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
-        contents: `${systemPrompt}\n\nCustomer Inquired: ${prompt}`,
+        model: 'gemini-3.8-flash',
+        contents: `${systemPrompt}\n\nVisitor Inquired: ${prompt}`,
       });
     } catch {
       response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: `${systemPrompt}\n\nCustomer Inquired: ${prompt}`,
+        model: 'gemini-3.1-flash-lite',
+        contents: `${systemPrompt}\n\nVisitor Inquired: ${prompt}`,
       });
     }
 
-    const aiText = response.text || 'I analyzed our verified inventory and retrieved these in-stock options for your needs:';
+    const aiText = response.text || 'Welcome to Nexovira! How can I assist you with our Tech Services, Academy, Marketplace, Affiliate Program, or Digital Library today?';
     
-    // Select relevant in-stock products matching the prompt
-    const promptLower = prompt.toLowerCase();
+    // Intent Detection & Navigation Mapping
+    let detectedIntent = 'GENERAL';
+    let navigationLink: { label: string; path: string } | undefined = undefined;
+    let leadCaptureSuggested = false;
+
+    if (
+      promptLower.includes('quote') || 
+      promptLower.includes('web dev') || 
+      promptLower.includes('website') || 
+      promptLower.includes('app') || 
+      promptLower.includes('custom software') || 
+      promptLower.includes('automation') || 
+      promptLower.includes('tech service') ||
+      promptLower.includes('hire') ||
+      promptLower.includes('consultation')
+    ) {
+      detectedIntent = 'TECH_SERVICES';
+      navigationLink = { label: 'Explore Tech Services & Request Quote', path: '/services' };
+      if (promptLower.includes('quote') || promptLower.includes('hire') || promptLower.includes('order') || promptLower.includes('consult') || promptLower.includes('build')) {
+        leadCaptureSuggested = true;
+      }
+    } else if (
+      promptLower.includes('course') || 
+      promptLower.includes('academy') || 
+      promptLower.includes('learn') || 
+      promptLower.includes('student') || 
+      promptLower.includes('certificat') ||
+      promptLower.includes('class')
+    ) {
+      detectedIntent = 'ACADEMY';
+      navigationLink = { label: 'Go to Nexovira Academy', path: '/academy' };
+    } else if (
+      promptLower.includes('affiliate') || 
+      promptLower.includes('referral') || 
+      promptLower.includes('commission') || 
+      promptLower.includes('earn')
+    ) {
+      detectedIntent = 'AFFILIATE';
+      navigationLink = { label: 'Access Affiliate Program Portal', path: '/affiliate' };
+    } else if (
+      promptLower.includes('library') || 
+      promptLower.includes('ebook') || 
+      promptLower.includes('e-book') || 
+      promptLower.includes('whitepaper') || 
+      promptLower.includes('template') || 
+      promptLower.includes('guide')
+    ) {
+      detectedIntent = 'LIBRARY';
+      navigationLink = { label: 'Browse Digital Library', path: '/library' };
+    } else if (
+      promptLower.includes('contact') || 
+      promptLower.includes('support') || 
+      promptLower.includes('email') || 
+      promptLower.includes('call') || 
+      promptLower.includes('human')
+    ) {
+      detectedIntent = 'CONTACT';
+      navigationLink = { label: 'Official Contact & Support Form', path: '/contact' };
+      leadCaptureSuggested = true;
+    } else if (
+      promptLower.includes('product') || 
+      promptLower.includes('buy') || 
+      promptLower.includes('appliance') || 
+      promptLower.includes('marketplace') || 
+      promptLower.includes('price') || 
+      promptLower.includes('order')
+    ) {
+      detectedIntent = 'MARKETPLACE';
+      navigationLink = { label: 'Visit Nexovira Marketplace', path: '/marketplace' };
+    }
+
+    // Contextual matching of items
     let relevantProducts = availableInStockProducts.filter((p: any) => {
-      const matchText = `${p.title} ${p.brand} ${p.categoryId} ${JSON.stringify(p.specifications || {})} ${JSON.stringify(p.keyFeatures || [])}`.toLowerCase();
+      const matchText = `${p.title} ${p.brand} ${p.categoryId}`.toLowerCase();
       const words = promptLower.split(/\s+/).filter((w: string) => w.length > 2);
       return words.some((w: string) => matchText.includes(w));
-    });
+    }).slice(0, 4);
 
-    if (relevantProducts.length === 0) {
-      relevantProducts = availableInStockProducts.slice(0, 3);
-    } else {
-      relevantProducts = relevantProducts.slice(0, 4);
-    }
+    let relevantCourses = COURSES.filter((c: any) => {
+      const matchText = `${c.title} ${c.category} ${c.description || ''}`.toLowerCase();
+      return promptLower.split(/\s+/).some(w => w.length > 2 && matchText.includes(w));
+    }).slice(0, 2);
+
+    let relevantServices = TECH_SERVICES.filter((s: any) => {
+      const matchText = `${s.title} ${s.category} ${s.description || ''}`.toLowerCase();
+      return promptLower.split(/\s+/).some(w => w.length > 2 && matchText.includes(w));
+    }).slice(0, 2);
+
+    let relevantEbooks = DIGITAL_PRODUCTS.filter((e: any) => {
+      const matchText = `${e.title} ${e.category} ${e.description || ''}`.toLowerCase();
+      return promptLower.split(/\s+/).some(w => w.length > 2 && matchText.includes(w));
+    }).slice(0, 2);
 
     res.json({
       success: true,
       replyText: aiText,
-      intent: 'PRODUCT',
+      intent: detectedIntent,
+      navigationLink,
+      leadCaptureSuggested,
       suggestedProducts: relevantProducts,
-      suggestedServices: [],
-      suggestedCourses: [],
-      suggestedEbooks: [],
+      suggestedServices: relevantServices,
+      suggestedCourses: relevantCourses,
+      suggestedEbooks: relevantEbooks,
       actions: [
-        { label: 'View In-Stock Appliances', actionQuery: 'Show me available inverter air conditioners' },
-        { label: 'Energy Efficient Inverters', actionQuery: 'Which in-stock items have high energy efficiency?' },
-        { label: 'Best Refrigerators for Power Cuts', actionQuery: 'Which in-stock refrigerators have low power draw?' }
+        { label: 'Request Tech Service Quote', actionQuery: 'I would like to request a quote for custom website & tech development' },
+        { label: 'Explore Academy Courses', actionQuery: 'What AI and coding courses are available in Nexovira Academy?' },
+        { label: 'Marketplace Verified Products', actionQuery: 'Show me verified digital assets and appliances on Nexovira Marketplace' },
+        { label: 'Affiliate Program Info', actionQuery: 'How does the Nexovira Affiliate Program work?' },
+        { label: 'Official Support Channels', actionQuery: 'How do I contact official human support at Nexovirasupport@gmail.com?' }
       ]
     });
   } catch (error) {
     safeLogger.error('Gemini AI API Error in /api/v1/ai/chat:', error);
-    const availableInStock = PRODUCTS.filter(p => (p.stock ?? 0) > 0);
     res.json({
       success: true,
-      replyText: 'I reviewed our verified in-stock catalog. Here are the available products matching your inquiry:',
-      suggestedProducts: availableInStock.slice(0, 2),
-      suggestedServices: [],
-      suggestedCourses: []
+      replyText: 'Welcome to Nexovira! I am the Nexovira Website Assistant, your official AI concierge. You can explore our Tech Services, Academy, Marketplace, Affiliate Program, and Digital Library, or reach our official support team at nexovirasupport@gmail.com. Which feature can I help you explore today?',
+      intent: 'GENERAL',
+      actions: [
+        { label: 'Explore Tech Services', actionQuery: 'Tell me about Nexovira Tech Services' },
+        { label: 'Explore Academy', actionQuery: 'Tell me about Nexovira Academy' },
+        { label: 'Browse Marketplace', actionQuery: 'Tell me about Nexovira Marketplace' },
+        { label: 'Official Support', actionQuery: 'How do I contact human support?' }
+      ]
     });
+  }
+});
+
+// 4.1. Nexovira Lead Capture Ingestion Endpoint (Internal Lead Support)
+app.post('/api/v1/ai/lead', contactRateLimiter, async (req, res) => {
+  try {
+    const { fullName, email, serviceInterest, message, phone } = req.body || {};
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation Error',
+        message: 'A valid email address is required.' 
+      });
+    }
+
+    const referenceNumber = `NX-LEAD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const leadRecord = {
+      id: referenceNumber,
+      referenceNumber,
+      fullName: sanitizeString(fullName || 'Valued Visitor', 120),
+      email: sanitizeString(email, 120),
+      phone: sanitizeString(phone || '', 50),
+      serviceInterest: sanitizeString(serviceInterest || 'General Nexovira Inquiry', 150),
+      message: sanitizeString(message || '', 2000),
+      source: 'Nexovira Website Assistant',
+      status: 'new',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const firestore = getAdminFirestore();
+      await firestore.collection('leads').doc(referenceNumber).set(leadRecord);
+      safeLogger.info(`[Lead Stored in Firestore]: ${referenceNumber}`);
+    } catch (dbErr: any) {
+      safeLogger.warn(`[Firestore Lead Storage Notice]: ${dbErr?.message}`);
+    }
+
+    try {
+      await sendEmailNotification({
+        to: 'nexovirasupport@gmail.com',
+        subject: `[Nexovira Website Lead] ${leadRecord.serviceInterest} - ${leadRecord.fullName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <h2 style="color: #0284c7;">New Inquiry: Nexovira Website Assistant</h2>
+            <p><strong>Reference:</strong> ${referenceNumber}</p>
+            <p><strong>Full Name:</strong> ${leadRecord.fullName}</p>
+            <p><strong>Email Address:</strong> <a href="mailto:${leadRecord.email}">${leadRecord.email}</a></p>
+            <p><strong>Phone:</strong> ${leadRecord.phone || 'N/A'}</p>
+            <p><strong>Service / Portal Interest:</strong> ${leadRecord.serviceInterest}</p>
+            <p><strong>Message / Project Requirement:</strong></p>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; font-style: italic;">
+              ${leadRecord.message || 'No additional details provided.'}
+            </div>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;" />
+            <p style="font-size: 12px; color: #64748b;">Source: https://nexovira.com.ng Concierge Lead System</p>
+          </div>
+        `,
+        text: `New Lead Ref: ${referenceNumber}\nName: ${leadRecord.fullName}\nEmail: ${leadRecord.email}\nInterest: ${leadRecord.serviceInterest}\nMessage: ${leadRecord.message}`
+      });
+    } catch (mailErr) {
+      safeLogger.warn('Lead email dispatch notification notice:', mailErr);
+    }
+
+    res.status(201).json({
+      success: true,
+      referenceNumber,
+      message: `Thank you, ${leadRecord.fullName}! Your inquiry (${referenceNumber}) has been submitted to Nexovira Support (nexovirasupport@gmail.com). Our team will contact you shortly.`,
+      supportEmail: 'nexovirasupport@gmail.com',
+      website: 'https://nexovira.com.ng'
+    });
+  } catch (err: any) {
+    safeLogger.error('Lead processing error:', err);
+    res.status(500).json({ success: false, error: 'Failed to process inquiry.' });
   }
 });
 
@@ -2282,7 +2665,7 @@ app.post('/api/v1/scholarship/verify-payment', async (req, res) => {
 });
 
 // 5.4d. AI Seller Description Generator (Missing endpoint fix)
-app.post('/api/v1/ai/seller', authenticateToken, requireRole('seller', 'admin', 'super_admin'), aiRateLimiter, async (req, res) => {
+app.post('/api/v1/ai/seller', authenticateToken, requireVerifiedSeller, aiRateLimiter, async (req, res) => {
   try {
     const { title, brand, isDigital, author } = req.body || {};
     if (!title || typeof title !== 'string' || !title.trim()) {

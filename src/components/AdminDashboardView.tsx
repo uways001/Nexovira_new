@@ -58,6 +58,7 @@ import {
   deleteCategoryFromFirestore,
   saveProductToFirestore, 
   deleteProductFromFirestore, 
+  clearAllProductsFromFirestore, 
   uploadProductImage, 
   getOrdersFromFirestore, 
   updateOrderStatusInFirestore, 
@@ -135,6 +136,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   // Product Deletion State
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  const [isClearingProducts, setIsClearingProducts] = useState(false);
   const [deleteProductError, setDeleteProductError] = useState('');
 
   // Category Deletion State
@@ -786,15 +788,43 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setProductViewMode('create');
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shrink-0 shadow-lg transition-all cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add New Product
-                </button>
+                <div className="flex items-center gap-2">
+                  {products.length > 0 && (
+                    <button
+                      disabled={isClearingProducts}
+                      onClick={async () => {
+                        if (window.confirm('Are you sure you want to CLEAR ALL PRODUCTS from the catalog? This will delete all products from Firestore and reset the marketplace catalog.')) {
+                          try {
+                            setIsClearingProducts(true);
+                            await clearAllProductsFromFirestore();
+                            await loadData();
+                            setSaveSuccessMsg('All products cleared from catalog.');
+                            setTimeout(() => setSaveSuccessMsg(''), 4000);
+                          } catch (err: any) {
+                            alert(`Failed to clear products: ${err?.message || err}`);
+                          } finally {
+                            setIsClearingProducts(false);
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/80 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                      title="Purge all products from the catalog"
+                    >
+                      <Trash2 className="w-4 h-4 text-rose-400" />
+                      <span>{isClearingProducts ? 'Clearing Catalog...' : 'Clear All Products'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setProductViewMode('create');
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shrink-0 shadow-lg transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Product
+                  </button>
+                </div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-sm">
@@ -811,7 +841,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
-                      {filteredProducts.map((p) => {
+                      {filteredProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-12 text-center text-slate-500 text-sm">
+                            No products in the catalog. Use "Add Product" above to create one.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredProducts.map((p) => {
                         const priceInUSD = p.price >= 500 
                           ? Math.round((p.price / liveRateInfo.rate) * 100) / 100 
                           : p.price;
@@ -871,7 +908,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                           </td>
                         </tr>
                       );
-                    })}
+                    }))}
                     </tbody>
                   </table>
                 </div>

@@ -20,59 +20,27 @@ import {
   UserProfile, 
   UserRole, 
   UserAccountStatus, 
-  WishlistNotificationPreferences 
+  WishlistNotificationPreferences,
+  UserAccessControl
 } from '../types';
 import { safeJsonParse } from '../lib/safeFetch';
+import { 
+  getRoleDashboardRoute, 
+  getRoleDashboardTitle, 
+  evaluateUserAccessControl 
+} from '../lib/accessControl';
 
-export type { UserProfile, UserRole, UserAccountStatus };
-
-export function getRoleDashboardRoute(role?: UserRole | string): string {
-  switch (role) {
-    case 'customer':
-      return '/dashboard/customer';
-    case 'seller':
-      return '/dashboard/seller';
-    case 'affiliate':
-      return '/dashboard/affiliate';
-    case 'verified_expert_pending':
-    case 'verified_expert_approved':
-    case 'verified_expert_rejected':
-    case 'expert':
-      return '/dashboard/verified-expert';
-    case 'admin':
-    case 'super_admin':
-    case 'management':
-    case 'content_editor':
-      return '/admin';
-    default:
-      return '/dashboard/customer';
-  }
-}
-
-export function getRoleDashboardTitle(role?: UserRole | string): string {
-  switch (role) {
-    case 'customer':
-      return 'Customer Dashboard';
-    case 'seller':
-      return 'Seller Dashboard';
-    case 'affiliate':
-      return 'Affiliate Dashboard';
-    case 'verified_expert_pending':
-    case 'verified_expert_approved':
-    case 'verified_expert_rejected':
-    case 'expert':
-      return 'Verified Expert Dashboard';
-    case 'admin':
-    case 'super_admin':
-      return 'Admin Command Center';
-    default:
-      return 'Customer Dashboard';
-  }
-}
+export type { UserProfile, UserRole, UserAccountStatus, UserAccessControl };
+export { getRoleDashboardRoute, getRoleDashboardTitle, evaluateUserAccessControl };
 
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
+  accessControl: UserAccessControl;
+  profile_completed: boolean;
+  is_verified: boolean;
+  can_upload_products: boolean;
+  can_access_products: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isManagement: boolean;
@@ -95,11 +63,14 @@ interface AuthContextType {
     autoSignIn?: boolean
   ) => Promise<UserProfile | null>;
   signInWithEmail: (email: string, pass: string) => Promise<UserProfile | null>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<UserProfile | null>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<UserProfile | null>;
   loginAsPresetUser: (role: UserRole) => Promise<void>;
+  completeProfile: (updates: Partial<UserProfile>) => Promise<UserProfile>;
+  toggleVerificationDemo: (verified?: boolean) => Promise<UserProfile>;
+  toggleProfileCompletedDemo: (completed?: boolean) => Promise<UserProfile>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -172,6 +143,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let assignedRole: UserRole = isEmailOwner ? 'super_admin' : (data.role || 'customer');
         let assignedStatus: UserAccountStatus = isEmailOwner ? 'active' : (data.accountStatus || 'active');
 
+        const rawRole = assignedRole;
+        const defaultCompleted = rawRole === 'customer' || isEmailOwner;
+        const defaultVerified = rawRole === 'customer' || rawRole === 'verified_expert_approved' || isEmailOwner;
+
+        const profile_completed = data.profile_completed !== undefined 
+          ? Boolean(data.profile_completed) 
+          : (data.profileCompleted !== undefined ? Boolean(data.profileCompleted) : defaultCompleted);
+
+        const is_verified = data.is_verified !== undefined
+          ? Boolean(data.is_verified)
+          : (data.isVerified !== undefined ? Boolean(data.isVerified) : defaultVerified);
+
         profile = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || data.email || '',
@@ -185,6 +168,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           affiliateId: data.affiliateId,
           storeName: data.storeName,
           businessName: data.businessName,
+          businessCategory: data.businessCategory,
+          storeDescription: data.storeDescription,
+          businessAddress: data.businessAddress,
+          registrationNumber: data.registrationNumber,
+          ninOrCac: data.ninOrCac,
+          profile_completed,
+          profileCompleted: profile_completed,
+          is_verified,
+          isVerified: is_verified,
           notificationPreferences: data.notificationPreferences,
           addresses: data.addresses,
           createdAt: data.createdAt || new Date().toISOString(),
@@ -194,6 +186,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       } else {
         const defaultRole: UserRole = isEmailOwner ? 'super_admin' : 'customer';
+        const defaultCompleted = defaultRole === 'customer' || isEmailOwner;
+        const defaultVerified = defaultRole === 'customer' || isEmailOwner;
+
         profile = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || '',
@@ -203,11 +198,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           accountStatus: 'active',
           emailVerified: firebaseUser.emailVerified || false,
           isAffiliate: false,
+          profile_completed: defaultCompleted,
+          profileCompleted: defaultCompleted,
+          is_verified: defaultVerified,
+          isVerified: defaultVerified,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           lastActiveAt: new Date().toISOString()
         };
       }
+
+      const evalResult = evaluateUserAccessControl(profile);
+      profile.can_upload_products = evalResult.can_upload_products;
+      profile.can_access_products = evalResult.can_access_products;
 
       // Authoritative Server Role Verification
       // Ensures localStorage or client tampering cannot spoof administrative or elevated access
@@ -596,9 +599,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<UserProfile | null> => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result?.user) {
+        return await fetchUserProfile(result.user);
+      }
+      return null;
     } catch (err: any) {
       console.warn('Google signin fallback triggered:', err);
       const localProfile: UserProfile = {
@@ -611,6 +618,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString()
       };
       setUserSession(localProfile);
+      return localProfile;
     }
   };
 
@@ -670,6 +678,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {}
 
+    const isSellerRole = role === 'seller';
+    const isAffiliateRole = role === 'affiliate';
+
+    // By default for demo/testing of the new access control system:
+    // Seller starts as unverified & incomplete: profile_completed: false, is_verified: false
+    // Affiliate starts as incomplete: profile_completed: false, is_verified: true
     const presetProfile: UserProfile = {
       uid: liveUid,
       email,
@@ -678,8 +692,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       accountStatus: 'active',
       isAffiliate: role === 'affiliate',
       affiliateCode: role === 'affiliate' ? 'NEXO-PRESET' : undefined,
+      profile_completed: isSellerRole ? false : (isAffiliateRole ? false : true),
+      profileCompleted: isSellerRole ? false : (isAffiliateRole ? false : true),
+      is_verified: isSellerRole ? false : true,
+      isVerified: isSellerRole ? false : true,
       createdAt: new Date().toISOString()
     };
+
+    const evalResult = evaluateUserAccessControl(presetProfile);
+    presetProfile.can_upload_products = evalResult.can_upload_products;
+    presetProfile.can_access_products = evalResult.can_access_products;
 
     await setDoc(doc(db, 'users', liveUid), sanitizeFirestoreData(presetProfile), { merge: true }).catch(() => {});
     if (isOwnerRole || effectiveRole === 'management') {
@@ -695,10 +717,110 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserSession(presetProfile);
   };
 
+  const completeProfile = async (updates: Partial<UserProfile>): Promise<UserProfile> => {
+    if (!userProfile) {
+      throw new Error('No active user profile to update.');
+    }
+
+    const updatedProfile: UserProfile = {
+      ...userProfile,
+      ...updates,
+      profile_completed: true,
+      profileCompleted: true,
+      // For seller, completing profile marks them verified or ready for verification
+      is_verified: userProfile.role === 'seller' ? true : (userProfile.is_verified ?? true),
+      isVerified: userProfile.role === 'seller' ? true : (userProfile.is_verified ?? true),
+      updatedAt: new Date().toISOString()
+    };
+
+    const evalResult = evaluateUserAccessControl(updatedProfile);
+    updatedProfile.can_upload_products = evalResult.can_upload_products;
+    updatedProfile.can_access_products = evalResult.can_access_products;
+
+    // Persist to Firestore
+    try {
+      await setDoc(doc(db, 'users', updatedProfile.uid), sanitizeFirestoreData(updatedProfile), { merge: true });
+      if (updatedProfile.role === 'affiliate') {
+        await applyForAffiliateProgramInFirestore(
+          updatedProfile.uid, 
+          updatedProfile.displayName, 
+          updatedProfile.email, 
+          (updates as any).promotionalChannels || 'Direct Portal Completion'
+        ).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Firestore update profile warning:', e);
+    }
+
+    // Call server endpoint
+    try {
+      await fetch('/api/v1/auth/complete-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': updatedProfile.uid,
+          'x-user-email': updatedProfile.email,
+          'x-user-role': updatedProfile.role,
+          'x-user-profile-completed': 'true',
+          'x-user-verified': String(updatedProfile.is_verified)
+        },
+        body: JSON.stringify(updates)
+      });
+    } catch (apiErr) {
+      console.warn('Complete profile API notice:', apiErr);
+    }
+
+    setUserSession(updatedProfile);
+    return updatedProfile;
+  };
+
+  const toggleVerificationDemo = async (verified?: boolean): Promise<UserProfile> => {
+    if (!userProfile) throw new Error('No user profile');
+    const targetVerified = verified !== undefined ? verified : !userProfile.is_verified;
+    const updated: UserProfile = {
+      ...userProfile,
+      is_verified: targetVerified,
+      isVerified: targetVerified,
+      updatedAt: new Date().toISOString()
+    };
+    const evalResult = evaluateUserAccessControl(updated);
+    updated.can_upload_products = evalResult.can_upload_products;
+    updated.can_access_products = evalResult.can_access_products;
+
+    await setDoc(doc(db, 'users', updated.uid), sanitizeFirestoreData(updated), { merge: true }).catch(() => {});
+    setUserSession(updated);
+    return updated;
+  };
+
+  const toggleProfileCompletedDemo = async (completed?: boolean): Promise<UserProfile> => {
+    if (!userProfile) throw new Error('No user profile');
+    const targetCompleted = completed !== undefined ? completed : !userProfile.profile_completed;
+    const updated: UserProfile = {
+      ...userProfile,
+      profile_completed: targetCompleted,
+      profileCompleted: targetCompleted,
+      updatedAt: new Date().toISOString()
+    };
+    const evalResult = evaluateUserAccessControl(updated);
+    updated.can_upload_products = evalResult.can_upload_products;
+    updated.can_access_products = evalResult.can_access_products;
+
+    await setDoc(doc(db, 'users', updated.uid), sanitizeFirestoreData(updated), { merge: true }).catch(() => {});
+    setUserSession(updated);
+    return updated;
+  };
+
+  const accessControl = evaluateUserAccessControl(userProfile);
+
   return (
     <AuthContext.Provider value={{
       user,
       userProfile,
+      accessControl,
+      profile_completed: accessControl.profile_completed,
+      is_verified: accessControl.is_verified,
+      can_upload_products: accessControl.can_upload_products,
+      can_access_products: accessControl.can_access_products,
       isAdmin,
       isSuperAdmin,
       isManagement,
@@ -718,7 +840,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPassword,
       logout,
       refreshProfile,
-      loginAsPresetUser
+      loginAsPresetUser,
+      completeProfile,
+      toggleVerificationDemo,
+      toggleProfileCompletedDemo
     }}>
       {children}
     </AuthContext.Provider>

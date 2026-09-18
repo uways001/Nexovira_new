@@ -92,6 +92,12 @@ export const Footer: React.FC<FooterProps> = ({
                 <a href={`tel:${displayPhone.replace(/[^0-9+]/g, '')}`} className="hover:text-white font-mono">{displayPhone}</a>
               </div>
               <div className="flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <a href="mailto:nexovirasupport@gmail.com" className="hover:text-cyan-400 font-mono text-slate-300">
+                  nexovirasupport@gmail.com
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <a 
                   href={`https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(NEXOVIRA_CONTACT_CONFIG.defaultMessage)}`} 
@@ -181,8 +187,8 @@ export const Footer: React.FC<FooterProps> = ({
                 </a>
               </li>
               <li>
-                <button onClick={onOpenAI} className="text-cyan-400 font-bold hover:underline flex items-center gap-1 mt-1">
-                  <Sparkles className="w-3.5 h-3.5" /> Ask AI Assistant
+                <button onClick={onOpenAI} className="text-cyan-400 font-bold hover:underline flex items-center gap-1.5 mt-1 cursor-pointer">
+                  <Sparkles className="w-3.5 h-3.5" /> Nexovira AI Concierge
                 </button>
               </li>
             </ul>

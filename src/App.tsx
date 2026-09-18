@@ -45,6 +45,7 @@ import {
   subscribeToCategories,
   subscribeToUserWishlist
 } from './lib/firestoreService';
+import { subscribeToGlobalSyncEvents } from './lib/globalSync';
 import { isAllowedDestinationPath } from './lib/domainConfig';
 import { AboutView } from './components/AboutView';
 import { PrivacyView } from './components/PrivacyView';
@@ -56,7 +57,6 @@ import { SEOHead } from './components/SEOHead';
 import { AuthDebugDiagnostics } from './components/AuthDebugDiagnostics';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
-import { WhatsAppSupportButton } from './components/WhatsAppSupportButton';
 import { Footer } from './components/Footer';
 import { formatCurrency } from './lib/currency';
 import { 
@@ -180,7 +180,7 @@ function parseRoute(pathname: string): {
   if (clean === '/dashboard/customer' || clean === '/account') return { view: 'dashboard-customer' };
   if (clean === '/dashboard/seller' || clean === '/seller') return { view: 'dashboard-seller' };
   if (clean === '/dashboard/affiliate' || clean === '/affiliate') return { view: 'dashboard-affiliate' };
-  if (clean === '/dashboard/verified-expert' || clean === '/expert') return { view: 'dashboard-verified-expert' };
+  if (clean === '/dashboard/expert' || clean === '/dashboard/verified-expert' || clean === '/expert') return { view: 'dashboard-verified-expert' };
   if (clean === '/admin') return { view: 'admin' };
   if (clean === '/signin') return { view: 'signin' };
   if (clean === '/signup') return { view: 'signup' };
@@ -389,8 +389,20 @@ export default function App() {
     };
     window.addEventListener('nexovira:products-changed', handleProductsChanged);
 
-    // 4. Cross-tab & Multi-domain Storage Synchronization (cart, wishlist, currencies)
+    // Global real-time cross-tab synchronization bus
+    const unsubGlobal = subscribeToGlobalSyncEvents((event) => {
+      if (event.type === 'PRODUCT_UPDATED' || event.type === 'PRODUCT_DELETED') {
+        handleProductsChanged();
+      }
+    });
+
+    // 4. Cross-tab & Multi-domain Storage Synchronization (cart, wishlist, edited products)
     const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'nexovira_edited_products' || e.key === 'nexovira_deleted_products') {
+        getProductsFromFirestore().then((liveProds) => {
+          if (liveProds) setAllProducts(liveProds);
+        }).catch(() => {});
+      }
       if (e.key === 'nexovira_cart' && e.newValue) {
         try {
           const parsed = safeJsonParse<CartItem[]>(e.newValue, []);
@@ -417,6 +429,7 @@ export default function App() {
     return () => {
       unsubProducts();
       unsubCategories();
+      unsubGlobal();
       window.removeEventListener('nexovira:products-changed', handleProductsChanged);
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -750,9 +763,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating WhatsApp Support Widget */}
-      <WhatsAppSupportButton whatsappNumber={INITIAL_BRAND_SETTINGS.whatsappPhone} variant="floating" />
-
       {/* Geolocation Auto-Detection Currency Toast / Banner */}
       <GeoCurrencyBanner
         currentCurrency={currentCurrency}
@@ -779,6 +789,7 @@ export default function App() {
         onSelectProduct={(p) => setSelectedProduct(p)}
         onAddToCart={(p) => handleAddToCart(p, 1)}
         onCompareProduct={(p) => handleToggleCompare(p)}
+        onNavigate={handleNavigate}
       />
 
       <ProductDetailModal
@@ -850,6 +861,19 @@ export default function App() {
           setActiveView('account');
         }}
       />
+
+      {/* Floating AI Concierge FAB */}
+      <button
+        onClick={() => handleOpenAIWithQuery()}
+        className="fixed bottom-6 right-6 z-40 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold rounded-2xl shadow-xl shadow-cyan-500/25 flex items-center gap-2.5 group transition-all duration-300 hover:scale-105 cursor-pointer border border-cyan-300/30"
+        title="Nexovira Website Assistant (AI Concierge)"
+        aria-label="Open Nexovira Website Assistant"
+      >
+        <Sparkles className="w-4 h-4 text-cyan-200 animate-pulse" />
+        <span className="text-xs font-extrabold tracking-wide drop-shadow-xs">
+          Ask Nexovira AI
+        </span>
+      </button>
 
       {/* Live Auth State Inspector Diagnostics (Dev Only) */}
       {import.meta.env.DEV && <AuthDebugDiagnostics activeView={activeView} />}

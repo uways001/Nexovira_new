@@ -1,5 +1,10 @@
 import { Product } from '../types';
-import { getProductFromFirestore, updateProductInFirestore, saveProductToFirestore } from './firestoreService';
+import { 
+  getProductFromFirestore, 
+  updateProductInFirestore, 
+  saveProductToFirestore, 
+  saveEditedProductToCache 
+} from './firestoreService';
 import { safeFetchJson } from './safeFetch';
 
 export interface AdminProductEditMeta {
@@ -101,8 +106,9 @@ export async function updateAdminProductEntry(
 
     const data = await response.json();
     if (data.product) {
+      saveEditedProductToCache(data.product);
       // Sync to Firestore for real-time subscribers & listeners
-      await updateProductInFirestore(productId, updates).catch(err => {
+      await updateProductInFirestore(productId, { ...data.product, ...updates }).catch(err => {
         console.warn('[AdminProductAPI] Secondary Firestore sync notice:', err);
       });
       return data.product;

@@ -105,6 +105,8 @@ export interface Product {
   affiliateCommissionRate?: number;
   affiliateEnabled?: boolean;
   createdAt: string;
+  updatedAt?: string;
+  name?: string;
 
   // Digital E-book Fields
   productType?: 'physical' | 'digital_ebook';
@@ -653,6 +655,8 @@ export interface AIMessage {
   suggestedEbooks?: DigitalProduct[];
   compareProducts?: Product[];
   actions?: { label: string; actionQuery: string }[];
+  navigationLink?: { label: string; path: string };
+  leadCaptureSuggested?: boolean;
 }
 
 export interface AffiliateLinkItem {
@@ -790,6 +794,11 @@ export interface AffiliateProfile {
   userEmail: string;
   affiliateCode: string; // e.g. JOHN8K4P2M
   status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  profile_completed?: boolean;
+  profileCompleted?: boolean;
+  is_verified?: boolean;
+  isVerified?: boolean;
+  phone?: string;
   promotionalChannels?: string;
   totalClicks: number;
   totalConversions: number;
@@ -922,12 +931,42 @@ export interface UserProfile {
   affiliateId?: string;
   storeName?: string;
   businessName?: string;
+  businessCategory?: string;
+  storeDescription?: string;
+  businessAddress?: string;
+  ninOrCac?: string;
+  registrationNumber?: string;
+  profile_completed?: boolean;
+  profileCompleted?: boolean;
+  is_verified?: boolean;
+  isVerified?: boolean;
+  can_upload_products?: boolean;
+  can_access_products?: boolean;
+  verificationRequestedAt?: string;
+  verificationStatus?: 'pending' | 'verified' | 'rejected' | 'none';
+  verificationNotes?: string;
+  promotionalChannels?: string;
+  accountNumber?: string;
+  bankName?: string;
+  accountName?: string;
   notificationPreferences?: WishlistNotificationPreferences;
   addresses?: Array<{ id: string; fullName: string; street: string; city: string; country: string; phone: string; default: boolean }>;
   createdAt: string;
   updatedAt?: string;
   lastActiveAt?: string;
   internalNotes?: string;
+}
+
+export interface UserAccessControl {
+  role: UserRole;
+  profile_completed: boolean;
+  is_verified: boolean;
+  can_upload_products: boolean;
+  can_access_products: boolean;
+  statusBadgeText: string;
+  statusBadgeVariant: 'verified' | 'unverified' | 'incomplete' | 'standard';
+  requiresProfileCompletion: boolean;
+  designationRoute: string;
 }
 
 export interface PriceAlert {
