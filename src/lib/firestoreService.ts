@@ -5565,7 +5565,7 @@ export async function updateUserRoleAndStatusInFirestore(
   const targetEmail = (existingData.email || '').toLowerCase();
 
   // Guard: Protect Super Admin owner accounts
-  if (targetEmail === 'nexoviratech@gmail.com' || targetEmail === 'nexovirasupport@gmail.com') {
+  if (targetEmail === 'nexoviratech@gmail.com' || targetEmail === 'nexovirasupport@gmail.com' || targetEmail === 'hubproductpro@gmail.com') {
     if (updates.role && updates.role !== 'super_admin') {
       throw new Error('The primary Nexovira Super Admin account cannot be modified or downgraded.');
     }
@@ -5595,7 +5595,7 @@ export async function deleteUserFromFirestore(targetUid: string, operatorRole?: 
   if (snap.exists()) {
     const data = snap.data();
     const targetEmail = (data.email || '').toLowerCase();
-    if (targetEmail === 'nexoviratech@gmail.com' || targetEmail === 'nexovirasupport@gmail.com') {
+    if (targetEmail === 'nexoviratech@gmail.com' || targetEmail === 'nexovirasupport@gmail.com' || targetEmail === 'hubproductpro@gmail.com') {
       throw new Error('CRITICAL: The Nexovira Super Admin account cannot be deleted.');
     }
     if (data.role === 'super_admin' && operatorRole !== 'super_admin') {

@@ -135,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const docSnap = await getDoc(userDocRef);
       
       const cleanEmail = (firebaseUser.email || '').toLowerCase().trim();
-      const isEmailOwner = cleanEmail === 'nexoviratech@gmail.com' || cleanEmail === 'nexovirasupport@gmail.com';
+      const isEmailOwner = cleanEmail === 'nexoviratech@gmail.com' || cleanEmail === 'nexovirasupport@gmail.com' || cleanEmail === 'hubproductpro@gmail.com';
 
       let profile: UserProfile;
       if (docSnap.exists()) {
@@ -245,7 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.error('Error fetching user profile:', err);
       const cleanEmail = (firebaseUser.email || '').toLowerCase().trim();
-      const isEmailOwner = cleanEmail === 'nexoviratech@gmail.com' || cleanEmail === 'nexovirasupport@gmail.com';
+      const isEmailOwner = cleanEmail === 'nexoviratech@gmail.com' || cleanEmail === 'nexovirasupport@gmail.com' || cleanEmail === 'hubproductpro@gmail.com';
       
       const fallback: UserProfile = {
         uid: firebaseUser.uid,

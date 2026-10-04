@@ -25,5 +25,14 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
+    {
+  "rewrites": [
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://firebaseapp.com*"
+    }
+  ]
+}
+
   ]
 }

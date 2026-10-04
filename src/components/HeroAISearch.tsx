@@ -220,16 +220,18 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
   return (
     <section className="relative overflow-hidden bg-[#081A2B] text-white pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-16 lg:pb-20 border-b border-slate-800/80">
-      {/* Background Soft Subtle Ambient Illumination */}
+      {/* Background Soft Subtle Ambient Illumination & Floating Aurora Orbs */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0D2B45] via-[#081A2B] to-[#081A2B]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-[#1769FF]/10 blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-72 bg-[#1769FF]/15 blur-3xl pointer-events-none animate-pulse-glow" />
+      <div className="absolute -top-12 -left-20 w-80 h-80 bg-[#00A6A6]/10 blur-3xl pointer-events-none rounded-full animate-float-slow" />
+      <div className="absolute -bottom-10 -right-20 w-96 h-96 bg-[#1769FF]/10 blur-3xl pointer-events-none rounded-full animate-float-reverse" />
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-7 sm:space-y-8">
         
-        {/* Subtle Category Pill Indicator */}
+        {/* Subtle Category Pill Indicator with Shimmer & Float */}
         <div className="flex items-center justify-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#DDF8F2]/10 border border-[#00A6A6]/30 text-[#DDF8F2] text-xs font-semibold tracking-wide shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#00A6A6]" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#DDF8F2]/10 border border-[#00A6A6]/30 text-[#DDF8F2] text-xs font-semibold tracking-wide shadow-xs shimmer-container animate-float-slow">
+            <Sparkles className="w-3.5 h-3.5 text-[#00A6A6] animate-pulse" />
             <span>Smart Technology & Digital Services</span>
           </div>
         </div>
@@ -386,7 +388,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
                   key={idx}
                   type="button"
                   onClick={() => handleExecuteSearch(item.query)}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#0D2B45]/80 hover:bg-[#0D2B45] border border-slate-700/80 hover:border-[#1769FF]/50 text-xs text-slate-300 hover:text-white font-medium shadow-xs transition-all duration-150 cursor-pointer min-h-[36px]"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#0D2B45]/80 hover:bg-[#0D2B45] border border-slate-700/80 hover:border-[#1769FF]/50 text-xs text-slate-300 hover:text-white font-medium shadow-xs transition-all duration-150 cursor-pointer min-h-[36px] motion-btn-pop active:scale-95"
                 >
                   "{item.label}"
                 </button>
@@ -403,7 +405,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-2.5">
             <button
               onClick={() => onNavigate('marketplace')}
-              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#1769FF]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#1769FF]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer motion-btn-pop active:scale-95 hover:shadow-lg hover:shadow-blue-500/10"
             >
               <ShoppingBag className="w-4 h-4 text-[#1769FF] group-hover:scale-110 transition-transform" />
               <span className="truncate">Appliances</span>
@@ -411,7 +413,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
             <button
               onClick={() => onNavigate('ai')}
-              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#00A6A6]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#00A6A6]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer motion-btn-pop active:scale-95 hover:shadow-lg hover:shadow-purple-500/10"
             >
               <Bot className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Talk to AI</span>
@@ -419,7 +421,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
             <button
               onClick={() => onNavigate('academy')}
-              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#F4B740]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#F4B740]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer motion-btn-pop active:scale-95 hover:shadow-lg hover:shadow-amber-500/10"
             >
               <GraduationCap className="w-4 h-4 text-[#F4B740] group-hover:scale-110 transition-transform" />
               <span className="truncate">Academy</span>
@@ -427,7 +429,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
             <button
               onClick={() => onNavigate('library')}
-              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#168A5B]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#168A5B]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer motion-btn-pop active:scale-95 hover:shadow-lg hover:shadow-emerald-500/10"
             >
               <BookOpen className="w-4 h-4 text-[#168A5B] group-hover:scale-110 transition-transform" />
               <span className="truncate">E-books</span>
@@ -435,7 +437,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
             <button
               onClick={() => onNavigate('services')}
-              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#1769FF]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-[#1769FF]/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer motion-btn-pop active:scale-95 hover:shadow-lg hover:shadow-cyan-500/10"
             >
               <Code2 className="w-4 h-4 text-[#1769FF] group-hover:scale-110 transition-transform" />
               <span className="truncate">Tech Services</span>
@@ -443,7 +445,7 @@ export const HeroAISearch: React.FC<HeroAISearchProps> = ({
 
             <button
               onClick={() => onNavigate('affiliate')}
-              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-rose-500/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#0D2B45]/60 hover:bg-[#0D2B45] border border-slate-800 hover:border-rose-500/40 text-xs font-medium text-slate-300 hover:text-white flex flex-col items-center justify-center gap-1.5 transition-all group min-h-[50px] cursor-pointer motion-btn-pop active:scale-95 hover:shadow-lg hover:shadow-rose-500/10"
             >
               <Share2 className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
               <span className="truncate">Affiliate</span>

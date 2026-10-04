@@ -170,10 +170,10 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, userProfile, isAdmin, isSeller, logout, getRoleDashboard, getRoleDashboardTitle } = useAuth();
 
   const userDashboardRoute = getRoleDashboard ? getRoleDashboard(userProfile?.role) : (
-    userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? '/admin' :
+    userProfile?.role === 'admin' || userProfile?.role === 'super_admin' || userProfile?.role === 'management' || userProfile?.role === 'content_editor' ? '/admin' :
     userProfile?.role === 'seller' ? '/dashboard/seller' :
     userProfile?.role === 'affiliate' ? '/dashboard/affiliate' :
-    (userProfile?.role === 'expert' || userProfile?.role?.startsWith('verified_expert')) ? '/dashboard/verified-expert' :
+    (userProfile?.role === 'expert' || userProfile?.role?.startsWith('verified_expert')) ? '/dashboard/expert' :
     '/dashboard/customer'
   );
 

@@ -29,6 +29,8 @@ import {
   sanitizePhone, 
   logSecurityThreatAttempt 
 } from '../lib/sanitization';
+import { getRoleDashboardRoute, getRoleDashboardTitle } from '../lib/accessControl';
+import { updateUserRoleAndStatusInFirestore } from '../lib/firestoreService';
 
 interface SignUpViewProps {
   onNavigate: (path: string) => void;
@@ -174,11 +176,7 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
     setLoading(true);
 
     try {
-      const targetDashboard = 
-        selectedRole === 'customer' ? '/dashboard/customer' :
-        selectedRole === 'seller' ? '/dashboard/seller' :
-        selectedRole === 'affiliate' ? '/dashboard/affiliate' :
-        '/dashboard/expert';
+      const targetDashboard = getRoleDashboardRoute(selectedRole);
 
       await signUpWithEmail(
         sanitizedEmailResult.sanitizedEmail,
@@ -206,8 +204,22 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
     setDomainNotice(null);
     setLoading(true);
     try {
-      await signInWithGoogle();
-      onNavigate(onSuccessRedirect || '/account');
+      const profile = await signInWithGoogle();
+      let roleToRoute = profile?.role;
+      // If user selected a specific role during sign up and profile is newly created or default customer
+      if (profile && selectedRole && selectedRole !== 'customer' && profile.role === 'customer') {
+        try {
+          await updateUserRoleAndStatusInFirestore(profile.uid, {
+            role: selectedRole as any,
+            accountStatus: selectedRole === 'seller' || selectedRole === 'affiliate' ? 'active' : 'pending'
+          });
+          roleToRoute = selectedRole;
+        } catch (updateErr) {
+          console.warn('Could not assign initial role during Google sign up:', updateErr);
+        }
+      }
+      const target = getRoleDashboardRoute(roleToRoute || selectedRole);
+      onNavigate(target);
     } catch (err: any) {
       setError(formatAuthError(err));
     } finally {
@@ -362,20 +374,11 @@ const SignUpViewContent: React.FC<SignUpViewProps> = ({ onNavigate, onSuccessRed
               <span>Account Created Successfully</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Your account has been authenticated. Redirecting you automatically to your {
-                selectedRole === 'customer' ? 'Customer Dashboard' :
-                selectedRole === 'seller' ? 'Seller Dashboard' :
-                selectedRole === 'affiliate' ? 'Affiliate Dashboard' :
-                'Verified Expert Dashboard'
-              }...
+              Your account has been authenticated. Redirecting you automatically to your {getRoleDashboardTitle(selectedRole)}...
             </p>
             <button
               onClick={() => {
-                const target = 
-                  selectedRole === 'customer' ? '/dashboard/customer' :
-                  selectedRole === 'seller' ? '/dashboard/seller' :
-                  selectedRole === 'affiliate' ? '/dashboard/affiliate' :
-                  '/dashboard/verified-expert';
+                const target = getRoleDashboardRoute(selectedRole);
                 onNavigate(target);
               }}
               className="mt-2 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition-colors cursor-pointer"

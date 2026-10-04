@@ -118,12 +118,12 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
 
         <button
           onClick={() => onNavigate('presentation')}
-          className="px-5 py-2.5 rounded-xl bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer min-h-[44px]"
+          className="px-5 py-2.5 rounded-xl bg-[#1769FF] hover:bg-[#0E56D9] text-white font-bold text-xs shadow-xs hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center gap-2 shrink-0 cursor-pointer min-h-[44px] motion-btn-pop active:scale-95 shimmer-container"
           title="Architectural Overview"
         >
-          <Sparkles className="w-4 h-4 text-blue-200" />
+          <Sparkles className="w-4 h-4 text-blue-200 animate-pulse" />
           <span>Explore Platform Architecture</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 
@@ -134,20 +134,20 @@ export const EcosystemCards: React.FC<EcosystemCardsProps> = ({ onNavigate, prod
             <div
               key={card.id}
               onClick={() => onNavigate(card.id)}
-              className="group cursor-pointer rounded-2xl border border-[#E2E8F0] dark:border-slate-800/80 bg-white dark:bg-[#0D2B45] p-6 shadow-xs hover:shadow-md hover:border-[#1769FF]/50 dark:hover:border-[#00A6A6]/50 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
+              className="group cursor-pointer rounded-2xl border border-[#E2E8F0] dark:border-slate-800/80 bg-white dark:bg-[#0D2B45] p-6 shadow-xs hover:border-[#1769FF]/50 dark:hover:border-[#00A6A6]/50 motion-card-lift relative overflow-hidden flex flex-col justify-between"
             >
-              {/* Background Subtle Image Overlay */}
-              <div className="absolute top-0 right-0 w-32 h-32 opacity-10 dark:opacity-15 group-hover:opacity-20 transition-opacity rounded-bl-full overflow-hidden pointer-events-none">
+              {/* Background Subtle Image Overlay with Zoom Effect */}
+              <div className="absolute top-0 right-0 w-32 h-32 opacity-10 dark:opacity-15 group-hover:opacity-30 group-hover:scale-115 transition-all duration-500 rounded-bl-full overflow-hidden pointer-events-none">
                 <img src={card.image} alt={card.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               </div>
 
               <div>
                 {/* Header Badge & Icon */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${card.iconBg} shadow-xs`}>
+                  <div className={`p-3 rounded-xl ${card.iconBg} shadow-xs group-hover:scale-110 transition-transform duration-300`}>
                     <IconComp className="w-5 h-5" />
                   </div>
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${card.badgeColor}`}>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${card.badgeColor} shimmer-container`}>
                     {card.badge}
                   </span>
                 </div>

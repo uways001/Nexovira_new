@@ -36,10 +36,14 @@ import {
   Info,
   Sparkles,
   RefreshCw,
-  Send
+  Send,
+  Store,
+  Wrench,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse } from '../lib/safeFetch';
+import { getRoleDashboardRoute } from '../lib/accessControl';
 import { 
   getOrdersFromFirestore, 
   getUserNotificationPreferencesFromFirestore,
@@ -339,9 +343,99 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
     .toUpperCase() || 'U';
 
   const isAffiliateAccount = userProfile?.role === 'affiliate' || userProfile?.isAffiliate === true;
+  const isSellerAccount = userProfile?.role === 'seller';
+  const isExpertAccount = userProfile?.role === 'expert' || userProfile?.role?.startsWith('verified_expert');
+  const isAdminAccount = userProfile?.role === 'admin' || userProfile?.role === 'super_admin' || userProfile?.role === 'management' || userProfile?.role === 'content_editor';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-left text-slate-900 dark:text-slate-100">
+      
+      {/* Admin Assigned Role Banner */}
+      {isAdminAccount && (
+        <div className="p-6 bg-gradient-to-r from-cyan-950/60 via-slate-900 to-slate-900 border border-cyan-500/40 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-cyan-500/20 text-cyan-400 rounded-2xl border border-cyan-500/30">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase border border-cyan-500/30">
+                  Administrator Privileges Active
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white mt-1">NEXOVIRA Admin Command Center</h3>
+              <p className="text-xs text-slate-300">
+                You are authenticated with platform administrative authority. Access platform control, catalogs, rates, and users.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate && onNavigate('/admin')}
+            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
+          >
+            <span>Open Admin Command Center</span>
+            <span>→</span>
+          </button>
+        </div>
+      )}
+
+      {/* Seller Assigned Role Banner */}
+      {isSellerAccount && (
+        <div className="p-6 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
+              <Store className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase border border-emerald-500/30">
+                  Seller Account Active
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white mt-1">NEXOVIRA Merchant Seller Dashboard</h3>
+              <p className="text-xs text-slate-300">
+                You are authenticated as an official Seller. Manage your store inventory, list products, and monitor sales.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate && onNavigate('/dashboard/seller')}
+            className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
+          >
+            <span>Open Seller Dashboard</span>
+            <span>→</span>
+          </button>
+        </div>
+      )}
+
+      {/* Expert Assigned Role Banner */}
+      {isExpertAccount && (
+        <div className="p-6 bg-gradient-to-r from-purple-950/60 via-slate-900 to-slate-900 border border-purple-500/40 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-500/20 text-purple-400 rounded-2xl border border-purple-500/30">
+              <Wrench className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase border border-purple-500/30">
+                  Verified Tech Expert Active
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white mt-1">NEXOVIRA Verified Expert Center</h3>
+              <p className="text-xs text-slate-300">
+                You are authenticated as a Tech Expert. Manage professional service requests, client bookings, and project milestones.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate && onNavigate('/dashboard/expert')}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
+          >
+            <span>Open Expert Dashboard</span>
+            <span>→</span>
+          </button>
+        </div>
+      )}
       
       {/* Affiliate Active Role Banner */}
       {isAffiliateAccount && (
@@ -363,10 +457,10 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({
             </div>
           </div>
           <button
-            onClick={() => onNavigate && onNavigate('/affiliate')}
+            onClick={() => onNavigate && onNavigate('/dashboard/affiliate')}
             className="px-6 py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-500/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
           >
-            <span>Open Affiliate Marketplace</span>
+            <span>Open Affiliate Portal</span>
             <span>→</span>
           </button>
         </div>

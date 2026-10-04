@@ -39,6 +39,7 @@ import {
   deleteUserFromFirestore 
 } from '../../lib/firestoreService';
 import { useAuth } from '../../context/AuthContext';
+import { getRoleDashboardRoute, getRoleDashboardTitle } from '../../lib/accessControl';
 
 export const AdminUserManagement: React.FC = () => {
   const { userProfile: currentAdminProfile } = useAuth();
@@ -68,7 +69,7 @@ export const AdminUserManagement: React.FC = () => {
   const isOwnerEmail = (email?: string) => {
     if (!email) return false;
     const lower = email.toLowerCase().trim();
-    return lower === 'nexoviratech@gmail.com' || lower === 'nexovirasupport@gmail.com';
+    return lower === 'nexoviratech@gmail.com' || lower === 'nexovirasupport@gmail.com' || lower === 'hubproductpro@gmail.com';
   };
 
   const loadUsers = async () => {
@@ -482,7 +483,7 @@ export const AdminUserManagement: React.FC = () => {
                 <tr>
                   <th className="py-3 px-4">User</th>
                   <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Role &amp; Dashboard</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Details</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -538,9 +539,15 @@ export const AdminUserManagement: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Role Badge */}
+                      {/* Role Badge & Assigned Dashboard */}
                       <td className="py-3.5 px-4">
-                        {getRoleBadge(u.role)}
+                        <div className="space-y-1">
+                          <div>{getRoleBadge(u.role)}</div>
+                          <div className="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
+                            <span className="text-slate-500">→</span>
+                            <span className="text-cyan-400">{getRoleDashboardRoute(u.role)}</span>
+                          </div>
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -693,6 +700,17 @@ export const AdminUserManagement: React.FC = () => {
                 <p className="text-[11px] text-slate-500 mt-1">
                   Adjusting the role changes access to dashboards, admin tabs, and service privileges.
                 </p>
+
+                {/* Assigned Dashboard Live Preview */}
+                <div className="mt-2.5 p-3 bg-cyan-950/30 border border-cyan-500/30 rounded-xl flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block">Assigned Dashboard</span>
+                    <span className="font-semibold text-white">{getRoleDashboardTitle(editRole)}</span>
+                  </div>
+                  <code className="px-2 py-1 bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] rounded-lg">
+                    {getRoleDashboardRoute(editRole)}
+                  </code>
+                </div>
               </div>
 
               {/* Status Selection */}

@@ -3,6 +3,7 @@ import { Mail, Lock, LogIn, ArrowRight, AlertCircle, Eye, EyeOff, CheckCircle2, 
 import { useAuth } from '../context/AuthContext';
 import { NexoviraLogo } from './NexoviraLogo';
 import { safeJsonParse } from '../lib/safeFetch';
+import { getRoleDashboardRoute } from '../lib/accessControl';
 
 interface SignInViewProps {
   onNavigate: (path: string) => void;
@@ -38,17 +39,9 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
   };
 
   const routeByRole = (role?: string) => {
-    if (role === 'super_admin' || role === 'admin' || role === 'management' || role === 'content_editor') {
-      onNavigate('/admin');
-    } else if (role === 'seller') {
-      onNavigate('/dashboard/seller');
-    } else if (role === 'affiliate') {
-      onNavigate('/dashboard/affiliate');
-    } else if (role === 'verified_expert_pending' || role === 'verified_expert_approved' || role === 'verified_expert_rejected' || role === 'expert') {
-      onNavigate('/dashboard/expert');
-    } else {
-      onNavigate('/dashboard/customer');
-    }
+    // Every role is assigned to their designated primary dashboard
+    const targetDashboard = getRoleDashboardRoute(role);
+    onNavigate(targetDashboard);
   };
 
   const formatAuthError = (err: any) => {
@@ -109,13 +102,15 @@ export const SignInView: React.FC<SignInViewProps> = ({ onNavigate, onSuccessRed
     setDomainNotice(null);
     setLoading(true);
     try {
-      await signInWithGoogle();
-      const saved = localStorage.getItem('nexovira_user_profile');
-      let role = 'customer';
-      if (saved) {
-        try { role = safeJsonParse<any>(saved, {})?.role || 'customer'; } catch (_) {}
+      const profile = await signInWithGoogle();
+      let role = profile?.role;
+      if (!role) {
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('nexovira_user_profile') : null;
+        if (saved) {
+          try { role = safeJsonParse<any>(saved, {})?.role; } catch (_) {}
+        }
       }
-      routeByRole(role);
+      routeByRole(role || 'customer');
     } catch (err: any) {
       setError(formatAuthError(err));
     } finally {

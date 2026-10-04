@@ -47,6 +47,7 @@ import {
 } from './lib/firestoreService';
 import { subscribeToGlobalSyncEvents } from './lib/globalSync';
 import { isAllowedDestinationPath } from './lib/domainConfig';
+import { getRoleDashboardRoute } from './lib/accessControl';
 import { AboutView } from './components/AboutView';
 import { PrivacyView } from './components/PrivacyView';
 import { TermsView } from './components/TermsView';
@@ -54,6 +55,7 @@ import { ContactView } from './components/ContactView';
 import { EcosystemPresentationView } from './components/EcosystemPresentationView';
 import { NotFoundView } from './components/NotFoundView';
 import { SEOHead } from './components/SEOHead';
+import { MotionEffectsOverlay } from './components/MotionEffectsOverlay';
 import { AuthDebugDiagnostics } from './components/AuthDebugDiagnostics';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
@@ -148,7 +150,7 @@ const ForbiddenDashboardView: React.FC<ForbiddenDashboardViewProps> = ({ require
   );
 };
 
-function parseRoute(pathname: string): { 
+function parseRoute(pathname: string, userRole?: UserRole | string): { 
   view: ActiveEcosystemView; 
   categoryId?: CategoryId; 
   productId?: string; 
@@ -177,6 +179,26 @@ function parseRoute(pathname: string): {
   ) return { view: 'academy' };
   if (clean === '/library' || clean.startsWith('/ebook/')) return { view: 'library' };
   if (clean === '/ai') return { view: 'ai' };
+
+  // Centralized Role-Based Dashboard Entrypoint: Resolves any user to their designated dashboard
+  if (clean === '/dashboard' || clean === '/my-dashboard' || clean === '/portal' || clean === '/dashboard/me') {
+    let effectiveRole = userRole;
+    if (!effectiveRole && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('nexovira_user_profile');
+        if (saved) {
+          effectiveRole = JSON.parse(saved)?.role;
+        }
+      } catch (_) {}
+    }
+    const targetRoute = getRoleDashboardRoute(effectiveRole);
+    if (targetRoute === '/admin') return { view: 'admin' };
+    if (targetRoute === '/dashboard/seller') return { view: 'dashboard-seller' };
+    if (targetRoute === '/dashboard/affiliate') return { view: 'dashboard-affiliate' };
+    if (targetRoute === '/dashboard/expert') return { view: 'dashboard-verified-expert' };
+    return { view: 'dashboard-customer' };
+  }
+
   if (clean === '/dashboard/customer' || clean === '/account') return { view: 'dashboard-customer' };
   if (clean === '/dashboard/seller' || clean === '/seller') return { view: 'dashboard-seller' };
   if (clean === '/dashboard/affiliate' || clean === '/affiliate') return { view: 'dashboard-affiliate' };
@@ -205,7 +227,7 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      const parsed = parseRoute(window.location.pathname);
+      const parsed = parseRoute(window.location.pathname, userProfile?.role);
       if (parsed.categoryId) {
         setSelectedCategory(parsed.categoryId);
       }
@@ -218,7 +240,18 @@ export default function App() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [userProfile?.role]);
+
+  // Synchronize dynamic role dashboard if on generic dashboard route
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const clean = window.location.pathname.toLowerCase().split('?')[0].split('#')[0];
+      if (clean === '/dashboard' || clean === '/my-dashboard' || clean === '/portal' || clean === '/dashboard/me') {
+        const parsed = parseRoute(window.location.pathname, userProfile?.role);
+        setActiveView(parsed.view);
+      }
+    }
+  }, [userProfile?.role]);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   
   // Geolocation & Multi-Currency State
@@ -455,7 +488,7 @@ export default function App() {
   // Route Navigation Handler
   const handleNavigate = (path: string) => {
     window.history.pushState({}, '', path);
-    const parsed = parseRoute(path);
+    const parsed = parseRoute(path, userProfile?.role);
     if (parsed.categoryId) {
       setSelectedCategory(parsed.categoryId);
     }
@@ -526,6 +559,9 @@ export default function App() {
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${theme === 'dark' ? 'bg-[#0B0F17] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       
+      {/* High-Impact Modern Motion & Visual FX Layer */}
+      <MotionEffectsOverlay />
+
       {/* Dynamic SEO Meta & Schema Head */}
       <SEOHead 
         currentPath={typeof window !== 'undefined' ? window.location.pathname : '/'} 

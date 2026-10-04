@@ -51,6 +51,10 @@ export function getRoleDashboardTitle(role?: UserRole | string): string {
     case 'admin':
     case 'super_admin':
       return 'Admin Command Center';
+    case 'management':
+      return 'Management Command Center';
+    case 'content_editor':
+      return 'Content Management Center';
     case 'customer':
     default:
       return 'Customer Dashboard';

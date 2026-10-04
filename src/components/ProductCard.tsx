@@ -35,7 +35,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => onSelectProduct(product)}
-      className="group relative bg-white dark:bg-[#0D2B45] rounded-2xl border border-[#E2E8F0] dark:border-slate-800/80 hover:border-[#1769FF]/50 dark:hover:border-[#00A6A6]/50 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden cursor-pointer text-left"
+      className="group relative bg-white dark:bg-[#0D2B45] rounded-2xl border border-[#E2E8F0] dark:border-slate-800/80 hover:border-[#1769FF]/50 dark:hover:border-[#00A6A6]/50 shadow-xs motion-card-lift flex flex-col overflow-hidden cursor-pointer text-left"
     >
       {/* Badges & Media Container */}
       <div className="relative aspect-4/3 w-full bg-slate-100 dark:bg-[#081A2B] overflow-hidden">
@@ -47,7 +47,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600&auto=format&fit=crop&q=80';
           }}
-          className={`w-full h-full object-cover transition-transform duration-500 ${product.stock <= 0 ? 'opacity-60 grayscale-[40%]' : 'group-hover:scale-105'}`}
+          className={`w-full h-full object-cover transition-transform duration-500 ease-out ${product.stock <= 0 ? 'opacity-60 grayscale-[40%]' : 'group-hover:scale-108'}`}
         />
 
         {/* Top Badges */}
@@ -240,7 +240,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.stock > 0 ? (
               <button
                 onClick={(e) => onAddToCart(product, e)}
-                className="w-full py-2.5 px-2 rounded-xl bg-[#081A2B] hover:bg-[#1769FF] dark:bg-[#1769FF] dark:hover:bg-[#0E56D9] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs min-h-[42px] cursor-pointer"
+                className="w-full py-2.5 px-2 rounded-xl bg-[#081A2B] hover:bg-[#1769FF] dark:bg-[#1769FF] dark:hover:bg-[#0E56D9] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs min-h-[42px] cursor-pointer motion-btn-pop active:scale-95"
               >
                 <ShoppingCart className="w-3.5 h-3.5 text-blue-200" />
                 <span>Add Cart</span>
@@ -257,7 +257,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             <button
               onClick={(e) => onAskAI(product, e)}
-              className="w-full py-2.5 px-2 rounded-xl bg-[#00A6A6]/10 hover:bg-[#00A6A6]/20 text-[#00A6A6] dark:text-teal-300 font-semibold text-xs flex items-center justify-center gap-1 transition-colors border border-[#00A6A6]/30 min-h-[42px] cursor-pointer"
+              className="w-full py-2.5 px-2 rounded-xl bg-[#00A6A6]/10 hover:bg-[#00A6A6]/20 text-[#00A6A6] dark:text-teal-300 font-semibold text-xs flex items-center justify-center gap-1 transition-colors border border-[#00A6A6]/30 min-h-[42px] cursor-pointer motion-btn-pop active:scale-95"
             >
               <span>Ask AI</span>
             </button>
